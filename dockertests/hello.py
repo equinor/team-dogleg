@@ -1,4 +1,4 @@
 import numpy as np
 
-print("halla")
+print("halla på deg-testen")
 print(np.sqrt(3))
