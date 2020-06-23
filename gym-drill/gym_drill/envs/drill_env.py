@@ -2,9 +2,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-#from customAdditions import Coordinate
 
-# ---------- Had import issue, putting it here for the time beeing ---------- #
 # A cartesian coordinate
 class Coordinate:
     def __init__(self,x,y):
@@ -25,40 +23,28 @@ class Coordinate:
     def __eq__(self, other):
         return self.y == other.y and self.x == other.x
     
-
-
-# ---------- Global constant vars for class ---------- #
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
-MAX_ANGVEL = 0.05 # Martins golden number
+MAX_ANGVEL = 0.5
 MAX_ANGACC = 0.1
 
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
 
 # Screen size
-SCREEN_X = 600.0
-SCREEN_Y = 400.0
+SCREEN_X = 600
+SCREEN_Y = 400
 
-BIT_SPEED = 5.0
-
-# ---------- For testing, should be removed ---------- #
-START_LOCATION = Coordinate(100.0, SCREEN_Y - 20.0)
-
-TARTGET_LOCATION = Coordinate(500,100)
-TARGET_RADIUS = 30
-
-BIT_INITIALIZATION = [0.0,0.0,0.0]
+DRILL_SPEED = 5.0
 
 class DrillEnv(gym.Env):
-
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
     }
 
-    def __init__(self):  
-        self.viewer = None
+    def __init__(self):      
+        self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
         self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL]), np.array([50, 50, 359.9, MAX_ANGVEL]), dtype=np.float32)
@@ -66,10 +52,9 @@ class DrillEnv(gym.Env):
         self.seed()
 
     def initParameters(self,startLocation,targetLocation,targetRadius,bitInitialization):
-        # X and Y position of drill bit
+        # We init parameters here
+        
         self.bitLocation = startLocation
-
-        # Current heading in angles of drill bit
         self.heading = bitInitialization[0]
         self.angVel = bitInitialization[1]
         self.angAcc = bitInitialization[2]
@@ -100,8 +85,8 @@ class DrillEnv(gym.Env):
             self.heading += self.angVel
 
         # Update position
-        self.bitLocation.x += BIT_SPEED * np.sin(self.heading)
-        self.bitLocation.y += BIT_SPEED * np.cos(self.heading)
+        self.bitLocation.x += DRILL_SPEED * np.sin(self.heading)
+        self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
@@ -127,37 +112,47 @@ class DrillEnv(gym.Env):
         self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
         return np.array(self.state)
 
-
     def render(self, mode='human'):
         screen_width = SCREEN_X
         screen_height = SCREEN_Y
+        from gym.envs.classic_control import rendering
 
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
+            #from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(screen_width, screen_height)
 
             # Create drill bit
             self.bittrans = rendering.Transform()
 
-            self.dbit = rendering.make_circle(20)
-            self.dbit.set_color(0, 0, 0)
+            self.dbit = rendering.make_circle(6)
+            self.dbit.set_color(0.5, 0.5, 0.5)
             self.dbit.add_attr(self.bittrans)
             self.viewer.add_geom(self.dbit)
 
-            self.tracing_list = []
 
             # Draw target ball
             self.tballtrans = rendering.Transform()
 
-            self.tball = rendering.make_circle(self.ball_rad)
+            self.tball = rendering.make_circle(self.targetRadius)
             self.tball.set_color(0, 0, 0)
             self.tball.add_attr(self.tballtrans)
             self.viewer.add_geom(self.tball)
             self.tballtrans.set_translation(self.targetLocation.x, self.targetLocation.y)
 
 
+        # Update position of drill on screen
         this_state = self.state
         self.bittrans.set_translation(this_state[0], this_state[1])
+
+        # Every iteration add a new tracing point
+        self.new_trans = rendering.Transform()
+        self.new_trans.set_translation(this_state[0], this_state[1])
+
+        self.new_point = rendering.make_circle(2)
+        self.new_point.set_color(0.5, 0.5, 0.5)
+        self.new_point.add_attr(self.new_trans)
+
+        self.viewer.add_geom(self.new_point)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
@@ -165,4 +160,5 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
 
