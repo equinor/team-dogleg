@@ -1,9 +1,31 @@
 import gym
 from gym import spaces
 from gym.utils import seeding
-from customAdditions import Coordinate
-
 import numpy as np
+#from customAdditions import Coordinate
+
+# ---------- Had import issue, putting it here for the time beeing ---------- #
+# A cartesian coordinate
+class Coordinate:
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+
+    def getX(self):
+        return self.x
+
+    def getY(self):
+        return self.y
+    
+    # For displaying the coordinate
+    def __str__(self):
+        return "(" + str(self.x) + "," + str(self.y) + ")"
+
+    # For boolean comparison (if myPoint == yourPoint)
+    def __eq__(self, other):
+        return self.y == other.y and self.x == other.x
+    
+
 
 # ---------- Global constant vars for class ---------- #
 # Max values for angular velocity and acceleration
@@ -18,9 +40,9 @@ ANGACC_INCREMENT = 0.01
 SCREEN_X = 600.0
 SCREEN_Y = 400.0
 
-# ---------- For testing, should be removed ---------- #
 BIT_SPEED = 5.0
 
+# ---------- For testing, should be removed ---------- #
 START_LOCATION = Coordinate(100.0, SCREEN_Y - 20.0)
 
 TARTGET_LOCATION = Coordinate(500,100)
@@ -35,7 +57,15 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,targetLocation,targetRadius,bitInitialization):
+    def __init__(self):  
+        self.viewer = None
+
+        self.action_space = spaces.Discrete(3)
+        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL]), np.array([50, 50, 359.9, MAX_ANGVEL]), dtype=np.float32)
+
+        self.seed()
+
+    def initParameters(self,startLocation,targetLocation,targetRadius,bitInitialization):
         # X and Y position of drill bit
         self.bitLocation = startLocation
 
@@ -46,13 +76,6 @@ class DrillEnv(gym.Env):
 
         self.targetLocation = targetLocation
         self.targetRadius = targetRadius
-
-        self.viewer = None
-
-        self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL]), np.array([50, 50, 359.9, MAX_ANGVEL]), dtype=np.float32)
-
-        self.seed()
     
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -142,5 +165,4 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
-
 
