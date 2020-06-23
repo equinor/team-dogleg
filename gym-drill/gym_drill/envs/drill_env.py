@@ -8,7 +8,7 @@ import numpy as np
 # ---------- Global constant vars for class ---------- #
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
-MAX_ANGVEL = 0.5
+MAX_ANGVEL = 0.05 # Martins golden number
 MAX_ANGACC = 0.1
 
 # The allowed increment. We either add or remove this value to the angular acceleration
@@ -77,20 +77,20 @@ class DrillEnv(gym.Env):
             self.heading += self.angVel
 
         # Update position
-        self.x += BIT_SPEED * np.sin(self.heading)
-        self.y += BIT_SPEED * np.cos(self.heading)
+        self.bitLocation.x += BIT_SPEED * np.sin(self.heading)
+        self.bitLocation.y += BIT_SPEED * np.cos(self.heading)
 
         # If drill is no longer on screen, game over.
-        if not (0 < self.x < SCREEN_X and 0 < self.y < SCREEN_Y):
+        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
             reward = -1000.0
             done = True
         
         # Check if targetball hit
-        if np.linalg.norm([self.ball_x - self.x, self.ball_y - self.y]) < self.ball_rad:
+        if np.linalg.norm([self.targetLocation.x - self.bitLocation.x, self.targetLocation.y - self.bitLocation.y]) < self.targetRadius:
             reward = 100.0
             done = True
 
-        self.state = (self.x, self.y, self.heading, self.angVel, self.angAcc)
+        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
 
         return np.array(self.state), reward, done, {}
 
@@ -101,7 +101,7 @@ class DrillEnv(gym.Env):
         self.angVel = bitInitialization[1]
         self.angAcc = bitInitialization[2]
 
-        self.state = (self.x, self.y, self.heading, self.angVel, self.angAcc)
+        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
         return np.array(self.state)
 
 
@@ -130,7 +130,7 @@ class DrillEnv(gym.Env):
             self.tball.set_color(0, 0, 0)
             self.tball.add_attr(self.tballtrans)
             self.viewer.add_geom(self.tball)
-            self.tballtrans.set_translation(self.ball_x, self.ball_y)
+            self.tballtrans.set_translation(self.targetLocation.x, self.targetLocation.y)
 
 
         this_state = self.state
@@ -142,3 +142,5 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+
