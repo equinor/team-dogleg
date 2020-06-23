@@ -51,7 +51,6 @@ class DrillEnv(gym.Env):
         self.ball_rad = BALL_RAD
 
 
-
         self.viewer = None
 
         self.low = np.array([0, 0, 0, -MAX_ANGVEL])
@@ -119,20 +118,20 @@ class DrillEnv(gym.Env):
     def render(self, mode='human'):
         screen_width = SCREEN_X
         screen_height = SCREEN_Y
+        from gym.envs.classic_control import rendering
 
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
+            #from gym.envs.classic_control import rendering
             self.viewer = rendering.Viewer(screen_width, screen_height)
 
             # Create drill bit
             self.bittrans = rendering.Transform()
 
-            self.dbit = rendering.make_circle(20)
-            self.dbit.set_color(0, 0, 0)
+            self.dbit = rendering.make_circle(6)
+            self.dbit.set_color(0.5, 0.5, 0.5)
             self.dbit.add_attr(self.bittrans)
             self.viewer.add_geom(self.dbit)
 
-            self.tracing_list = []
 
             # Draw target ball
             self.tballtrans = rendering.Transform()
@@ -144,10 +143,19 @@ class DrillEnv(gym.Env):
             self.tballtrans.set_translation(self.ball_x, self.ball_y)
 
 
-
-
+        # Update position of drill on screen
         this_state = self.state
         self.bittrans.set_translation(this_state[0], this_state[1])
+
+        # Every iteration add a new tracing point
+        self.new_trans = rendering.Transform()
+        self.new_trans.set_translation(this_state[0], this_state[1])
+
+        self.new_point = rendering.make_circle(2)
+        self.new_point.set_color(0.5, 0.5, 0.5)
+        self.new_point.add_attr(self.new_trans)
+
+        self.viewer.add_geom(self.new_point)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
 
