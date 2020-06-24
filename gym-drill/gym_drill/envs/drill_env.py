@@ -25,13 +25,11 @@ class Coordinate:
         return self.y == other.y and self.x == other.x
 
 def isWithinTraget(bitPosition,targetPosition,targetRadius):
-    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
-    
-
-    
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
+        
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
-MAX_ANGVEL = 0.5
+MAX_ANGVEL = 0.05
 MAX_ANGACC = 0.1
 
 # The allowed increment. We either add or remove this value to the angular acceleration
@@ -63,6 +61,12 @@ class DrillEnv(gym.Env):
         self.heading = bitInitialization[0]
         self.angVel = bitInitialization[1]
         self.angAcc = bitInitialization[2]
+
+        # For resetting the environment
+        self.initialBitLocation = startLocation
+        self.initialHeading = bitInitialization[0]
+        self.initialAngVel = bitInitialization[1]
+        self.initialAngAcc = bitInitialization[2]
 
         # List containing lists of point and radius of targets
         self.targets = targets
@@ -110,12 +114,12 @@ class DrillEnv(gym.Env):
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self,startLocation,bitInitialization):
-        self.bitLocation = startLocation
+    def reset(self):
+        self.bitLocation = self.initialBitLocation
 
-        self.heading = bitInitialization[0]
-        self.angVel = bitInitialization[1]
-        self.angAcc = bitInitialization[2]
+        self.heading = self.initialHeading
+        self.angVel = self.initialAngVel
+        self.angAcc = self.initialAngAcc
 
         self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
         return np.array(self.state)

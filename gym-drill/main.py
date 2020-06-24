@@ -4,7 +4,7 @@ import random
 
 from gym_drill.envs.customAdditions import Coordinate
 
-START_LOCATION = Coordinate(100.0, 380.0)
+START_LOCATION = Coordinate(100.0, 100.0)
 TARTGET_LOCATION = Coordinate(500,100)
 TARGETS = ((Coordinate(500,100),30), (Coordinate(200,100),20))
 
@@ -28,12 +28,13 @@ class Agent():
 		return action
 
 agent = Agent(env)
-state = env.reset(START_LOCATION,BIT_INITIALIZATION)
+state = env.reset()
 
-for _ in range(2000):
-	action = agent.get_action()
-	state, reward, done, info = env.step(action)
+for episode in range(10):
+	for _ in range(150):
+		action = agent.get_action()
+		state, reward, done, info = env.step(action)
 
-	env.render()
-
-env.close()
+		env.render()
+	state = env.reset()
+	env.close()
