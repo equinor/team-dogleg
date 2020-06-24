@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+#import customAdditions as ca
 
 # A cartesian coordinate
 class Coordinate:
@@ -22,10 +23,13 @@ class Coordinate:
     # For boolean comparison (if myPoint == yourPoint)
     def __eq__(self, other):
         return self.y == other.y and self.x == other.x
-    
+
+def isWithinTraget(bitPosition,targetPosition,targetRadius):
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
+        
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
-MAX_ANGVEL = 0.5
+MAX_ANGVEL = 0.05
 MAX_ANGACC = 0.1
 
 # The allowed increment. We either add or remove this value to the angular acceleration
@@ -51,16 +55,21 @@ class DrillEnv(gym.Env):
 
         self.seed()
 
-    def initParameters(self,startLocation,targetLocation,targetRadius,bitInitialization):
-        # We init parameters here
-        
+    def initParameters(self,startLocation,targets,bitInitialization):
+        # We init parameters here        
         self.bitLocation = startLocation
         self.heading = bitInitialization[0]
         self.angVel = bitInitialization[1]
         self.angAcc = bitInitialization[2]
 
-        self.targetLocation = targetLocation
-        self.targetRadius = targetRadius
+        # For resetting the environment
+        self.initialBitLocation = startLocation
+        self.initialHeading = bitInitialization[0]
+        self.initialAngVel = bitInitialization[1]
+        self.initialAngAcc = bitInitialization[2]
+
+        # List containing lists of point and radius of targets
+        self.targets = targets
     
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -94,20 +103,23 @@ class DrillEnv(gym.Env):
             done = True
         
         # Check if targetball hit
-        if np.linalg.norm([self.targetLocation.x - self.bitLocation.x, self.targetLocation.y - self.bitLocation.y]) < self.targetRadius:
-            reward = 100.0
-            done = True
+
+
+        for target in self.targets:
+            if isWithinTraget(self.bitLocation,target[0],target[1]):
+                reward = 100.0
+                done = True
 
         self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self,startLocation,bitInitialization):
-        self.bitLocation = startLocation
+    def reset(self):
+        self.bitLocation = self.initialBitLocation
 
-        self.heading = bitInitialization[0]
-        self.angVel = bitInitialization[1]
-        self.angAcc = bitInitialization[2]
+        self.heading = self.initialHeading
+        self.angVel = self.initialAngVel
+        self.angAcc = self.initialAngAcc
 
         self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
         return np.array(self.state)
@@ -131,13 +143,18 @@ class DrillEnv(gym.Env):
 
 
             # Draw target ball
-            self.tballtrans = rendering.Transform()
 
-            self.tball = rendering.make_circle(self.targetRadius)
-            self.tball.set_color(0, 0, 0)
-            self.tball.add_attr(self.tballtrans)
-            self.viewer.add_geom(self.tball)
-            self.tballtrans.set_translation(self.targetLocation.x, self.targetLocation.y)
+            for target in self.targets:
+                targetCenter = target[0]
+                targetRadius = target[1]
+
+                self.tballtrans = rendering.Transform()
+
+                self.tball = rendering.make_circle(targetRadius)
+                self.tball.set_color(0, 0, 0)
+                self.tball.add_attr(self.tballtrans)
+                self.viewer.add_geom(self.tball)
+                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
 
 
         # Update position of drill on screen
@@ -160,5 +177,3 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
-
-

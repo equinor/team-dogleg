@@ -1,0 +1,5 @@
+FROM python:3-onbuild
+
+RUN pip install gym numpy pyglet
+
+CMD ["python","-u","gym-drill/main.py"]
