@@ -2,4 +2,4 @@
 /.vscode
 /gym-drill/gym_drill.egg-info
 __pycache__/
-
+*.pyc
