@@ -1,5 +1,5 @@
-/.vs
-/.vscode
-/gym-drill/gym_drill.egg-info
+.vs/
+.vscode/
 __pycache__/
+/gym-drill/gym_drill.egg-info
 *.pyc
