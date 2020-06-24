@@ -1,0 +1,6 @@
+/.vs
+/.vscode
+/gym-drill/gym_drill.egg-info
+/gym-drill/gym_drill/__pycache__
+/gym-drill/gym_drill/envs/__pycache__
+
