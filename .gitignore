@@ -1,2 +1,6 @@
+.vs/
+.vscode/
+__pycache__/
+/gym-drill/gym_drill.egg-info
 *.pyc
-__pycache__/*
+
