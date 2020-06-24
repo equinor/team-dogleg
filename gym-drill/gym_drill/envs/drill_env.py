@@ -1,18 +1,34 @@
 import gym
 from gym import spaces
 from gym.utils import seeding
-
 import numpy as np
 
-STATESPACE_POS = 50
-STATESPACE_HEADING = 8
-STATESPACE_ANGVEL = 3
+# A cartesian coordinate
+class Coordinate:
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
 
+    def getX(self):
+        return self.x
+
+    def getY(self):
+        return self.y
+    
+    # For displaying the coordinate
+    def __str__(self):
+        return "(" + str(self.x) + "," + str(self.y) + ")"
+
+    # For boolean comparison (if myPoint == yourPoint)
+    def __eq__(self, other):
+        return self.y == other.y and self.x == other.x
+    
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
 MAX_ANGVEL = 0.5
 MAX_ANGACC = 0.1
 
+# The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
 
 # Screen size
@@ -20,53 +36,37 @@ SCREEN_X = 600
 SCREEN_Y = 400
 
 DRILL_SPEED = 5.0
-DRILL_X0 = 100.0
-DRILL_Y0 = SCREEN_Y - 20.0
-
-BALL_X = 500
-BALL_Y = 100
-BALL_RAD = 30
-
 
 class DrillEnv(gym.Env):
-
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
     }
 
-    def __init__(self):
-
-        # X and Y position of drill bit
-        self.x = DRILL_X0
-        self.y = DRILL_Y0
-
-        # Current heading in angles of drill bit
-        self.heading = 0.0
-        self.angVel = 0.0 #  First derivative of heading
-        self.angAcc = 0.0 # Second derivative of heading
-
-        self.ball_x = BALL_X
-        self.ball_y = BALL_Y
-        self.ball_rad = BALL_RAD
-
-
-        self.viewer = None
-
-        self.low = np.array([0, 0, 0, -MAX_ANGVEL])
-        self.high = np.array([50, 50, 359.9, MAX_ANGVEL])
+    def __init__(self):      
+        self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(self.low, self.high, dtype=np.float32)
+        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL]), np.array([50, 50, 359.9, MAX_ANGVEL]), dtype=np.float32)
 
         self.seed()
+
+    def initParameters(self,startLocation,targetLocation,targetRadius,bitInitialization):
+        # We init parameters here
+        
+        self.bitLocation = startLocation
+        self.heading = bitInitialization[0]
+        self.angVel = bitInitialization[1]
+        self.angAcc = bitInitialization[2]
+
+        self.targetLocation = targetLocation
+        self.targetRadius = targetRadius
     
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
     
     def step(self, action):
-
         reward = -1.0
         done = False
 
@@ -85,35 +85,32 @@ class DrillEnv(gym.Env):
             self.heading += self.angVel
 
         # Update position
-        self.x += DRILL_SPEED * np.sin(self.heading)
-        self.y += DRILL_SPEED * np.cos(self.heading)
+        self.bitLocation.x += DRILL_SPEED * np.sin(self.heading)
+        self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
 
         # If drill is no longer on screen, game over.
-        if not (0 < self.x < SCREEN_X and 0 < self.y < SCREEN_Y):
+        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
             reward = -1000.0
             done = True
         
         # Check if targetball hit
-        if np.linalg.norm([self.ball_x - self.x, self.ball_y - self.y]) < self.ball_rad:
+        if np.linalg.norm([self.targetLocation.x - self.bitLocation.x, self.targetLocation.y - self.bitLocation.y]) < self.targetRadius:
             reward = 100.0
             done = True
 
-
-        self.state = (self.x, self.y, self.heading, self.angVel, self.angAcc)
+        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
 
         return np.array(self.state), reward, done, {}
 
-    def reset(self):
-        self.x = DRILL_X0
-        self.y = DRILL_Y0
+    def reset(self,startLocation,bitInitialization):
+        self.bitLocation = startLocation
 
-        self.heading = 0.0
-        self.angVel = 0.0
-        self.angAcc = 0.0
+        self.heading = bitInitialization[0]
+        self.angVel = bitInitialization[1]
+        self.angAcc = bitInitialization[2]
 
-        self.state = (self.x, self.y, self.heading, self.angVel, self.angAcc)
+        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
         return np.array(self.state)
-
 
     def render(self, mode='human'):
         screen_width = SCREEN_X
@@ -136,11 +133,11 @@ class DrillEnv(gym.Env):
             # Draw target ball
             self.tballtrans = rendering.Transform()
 
-            self.tball = rendering.make_circle(self.ball_rad)
+            self.tball = rendering.make_circle(self.targetRadius)
             self.tball.set_color(0, 0, 0)
             self.tball.add_attr(self.tballtrans)
             self.viewer.add_geom(self.tball)
-            self.tballtrans.set_translation(self.ball_x, self.ball_y)
+            self.tballtrans.set_translation(self.targetLocation.x, self.targetLocation.y)
 
 
         # Update position of drill on screen
@@ -163,3 +160,5 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+
