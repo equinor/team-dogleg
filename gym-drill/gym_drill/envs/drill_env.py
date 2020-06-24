@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+#import customAdditions as ca
 
 # A cartesian coordinate
 class Coordinate:
@@ -22,6 +23,11 @@ class Coordinate:
     # For boolean comparison (if myPoint == yourPoint)
     def __eq__(self, other):
         return self.y == other.y and self.x == other.x
+
+def isWithinTraget(bitPosition,targetPosition,targetRadius):
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
+    
+
     
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
@@ -51,16 +57,15 @@ class DrillEnv(gym.Env):
 
         self.seed()
 
-    def initParameters(self,startLocation,targetLocation,targetRadius,bitInitialization):
-        # We init parameters here
-        
+    def initParameters(self,startLocation,targets,bitInitialization):
+        # We init parameters here        
         self.bitLocation = startLocation
         self.heading = bitInitialization[0]
         self.angVel = bitInitialization[1]
         self.angAcc = bitInitialization[2]
 
-        self.targetLocation = targetLocation
-        self.targetRadius = targetRadius
+        # List containing lists of point and radius of targets
+        self.targets = targets
     
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -94,9 +99,12 @@ class DrillEnv(gym.Env):
             done = True
         
         # Check if targetball hit
-        if np.linalg.norm([self.targetLocation.x - self.bitLocation.x, self.targetLocation.y - self.bitLocation.y]) < self.targetRadius:
-            reward = 100.0
-            done = True
+
+
+        for target in self.targets:
+            if isWithinTraget(self.bitLocation,target[0],target[1]):
+                reward = 100.0
+                done = True
 
         self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
 
@@ -131,13 +139,18 @@ class DrillEnv(gym.Env):
 
 
             # Draw target ball
-            self.tballtrans = rendering.Transform()
 
-            self.tball = rendering.make_circle(self.targetRadius)
-            self.tball.set_color(0, 0, 0)
-            self.tball.add_attr(self.tballtrans)
-            self.viewer.add_geom(self.tball)
-            self.tballtrans.set_translation(self.targetLocation.x, self.targetLocation.y)
+            for target in self.targets:
+                targetCenter = target[0]
+                targetRadius = target[1]
+
+                self.tballtrans = rendering.Transform()
+
+                self.tball = rendering.make_circle(targetRadius)
+                self.tball.set_color(0, 0, 0)
+                self.tball.add_attr(self.tballtrans)
+                self.viewer.add_geom(self.tball)
+                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
 
 
         # Update position of drill on screen
