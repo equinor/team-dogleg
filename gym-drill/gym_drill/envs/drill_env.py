@@ -55,7 +55,7 @@ class DrillEnv(gym.Env):
         self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC]), np.array([600, 400, 359.9, MAX_ANGVEL, MAX_ANGACC]), dtype=np.float32)
+        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC]), np.array([600, 400, 359.9, MAX_ANGVEL, MAX_ANGACC]), dtype=np.float64)
 
         self.seed()
 
