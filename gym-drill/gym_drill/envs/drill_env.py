@@ -24,6 +24,10 @@ class Coordinate:
     def __eq__(self, other):
         return self.y == other.y and self.x == other.x
 
+    @classmethod
+    def getEuclideanDistance(cls,p1,p2):
+        return np.abs(np.sqrt((p1.x - p2.x)**2 + (p1.y-p2.y)**2))
+
 def isWithinTraget(bitPosition,targetPosition,targetRadius):
     return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
         
@@ -182,5 +186,3 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
-
-
