@@ -51,11 +51,15 @@ class DrillEnv(gym.Env):
         self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL]), np.array([50, 50, 359.9, MAX_ANGVEL]), dtype=np.float32)
+        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC]), np.array([50, 50, 359.9, MAX_ANGVEL, MAX_ANGACC]), dtype=np.float32)
 
         self.seed()
 
     def initParameters(self,startLocation,targets,bitInitialization):
+
+        self.start_x = startLocation.x
+        self.start_y = startLocation.y
+        
         # We init parameters here        
         self.bitLocation = startLocation
         self.heading = bitInitialization[0]
@@ -115,13 +119,14 @@ class DrillEnv(gym.Env):
         return np.array(self.state), reward, done, {}
 
     def reset(self):
-        self.bitLocation = self.initialBitLocation
+        self.bitLocation.x = self.start_x
+        self.bitLocation.y = self.start_y
 
         self.heading = self.initialHeading
         self.angVel = self.initialAngVel
         self.angAcc = self.initialAngAcc
 
-        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
+        self.state = (self.start_x, self.start_y, self.heading, self.angVel, self.angAcc)
         return np.array(self.state)
 
     def render(self, mode='human'):
