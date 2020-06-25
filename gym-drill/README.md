@@ -17,7 +17,7 @@ To create an instance of the environment do
 
 ```python
 env = gym.make("drill-v0")
-env.initParameters(startLocation,targetLocation,targetRadius,bitInitialization[3])
+env.initParameters(startLocation,targets,bitInitialization[3])
 ```
 
-where `startLocation` and `targetLocation` are Coordinate types representing the starting location of the bit, and the center of the target ball respectively. `targetRadius`indicates the radius of the target ball and is a number (float or int). Finally, `bitInitialization` is a tuple (*could be list also, but tuple ensures immutability*) containing the initial angle of the bit, the initial angular velocity and angular acceleration of the bit `tuple(angle,angularVelocity,angularAcceleration)`.
+where `startLocation` is a Coordinate type representing the starting location of the bit. `targets` is a tuple, where each element is another tuple consisting of a Coordinate and a raduis which completely specifies a target ball `tuple(tuple(Coordinate,raduis))`. `targetRadius`indicates the radius of the target ball and is a number (float or int). Finally, `bitInitialization` is a tuple (*could be list also, but tuple ensures immutability*) containing the initial angle of the bit, the initial angular velocity and angular acceleration of the bit `tuple(angle,angularVelocity,angularAcceleration)`.
