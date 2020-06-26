@@ -55,11 +55,11 @@ class DrillEnv(gym.Env):
         self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC]), np.array([600, 400, 359.9, MAX_ANGVEL, MAX_ANGACC]), dtype=np.float64)
+        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC,0,0,5]), np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC,SCREEN_X,0.7*SCREEN_Y, 50]), dtype=np.float64)
 
         self.seed()
 
-    def initParameters(self,startLocation,targets,bitInitialization):
+    def initParameters(self,startLocation, bitInitialization):
 
         self.start_x = startLocation.x
         self.start_y = startLocation.y
@@ -76,8 +76,13 @@ class DrillEnv(gym.Env):
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
 
-        # List containing lists of point and radius of targets
-        self.targets = targets
+        # List containing lists of targets of random radius and position
+        target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
+        target_radius = np.random.uniform(5.0,50.0)
+        self.targets = [[target_center,target_radius]]
+
+
+
     
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -118,7 +123,7 @@ class DrillEnv(gym.Env):
                 reward = 100.0
                 done = True
 
-        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
+        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc,self.targets[0][0].x,self.targets[0][0].y,self.targets[0][1])
 
         return np.array(self.state), reward, done, {}
 
@@ -130,7 +135,11 @@ class DrillEnv(gym.Env):
         self.angVel = self.initialAngVel
         self.angAcc = self.initialAngAcc
 
-        self.state = (self.start_x, self.start_y, self.heading, self.angVel, self.angAcc)
+        target_center = Coordinate(np.random.uniform(0.0,SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
+        target_radius = np.random.uniform(5.0,50.0)
+        self.targets = [[target_center,target_radius]]
+
+        self.state = (self.start_x, self.start_y, self.heading, self.angVel, self.angAcc, self.targets[0][0].x,self.targets[0][0].y,self.targets[0][1])
         return np.array(self.state)
 
     def render(self, mode='human'):
