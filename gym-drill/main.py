@@ -7,7 +7,7 @@ from gym_drill.envs.customAdditions import Coordinate
 
 START_LOCATION = Coordinate(100.0, 350.0)
 
-BIT_INITIALIZATION = [3*np.pi/4,0.0,0.0]
+BIT_INITIALIZATION = [np.pi,0.0,0.0]
 
 
 env_name = 'drill-v0'
@@ -34,8 +34,6 @@ for episode in range(10):
 	while done==False:
 		action = agent.get_action()
 		state, reward, done, info = env.step(action)
-		if done:
-			break
 		env.render()
 	state = env.reset()
 	env.close()
