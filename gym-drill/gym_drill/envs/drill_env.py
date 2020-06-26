@@ -66,11 +66,12 @@ class DrillEnv(gym.Env):
         upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
 
         for target in range(NUM_TARGETS):
-            np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
-            np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
+            lower_obs_space_limit = np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
+            upper_obs_space_limit = np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
 
+        
         self.observation_space = spaces.Box(lower_obs_space_limit,upper_obs_space_limit, dtype=np.float64)
-
+        print("The length of the observation space is:",len(lower_obs_space_limit))
         self.seed()
 
     def initParameters(self,startLocation, bitInitialization):
@@ -147,7 +148,7 @@ class DrillEnv(gym.Env):
             state_list.append(target[1])
 
         self.state = tuple(state_list)
-
+        #print("The length of the state is:",len(self.state))
         return np.array(self.state), reward, done, {}
 
     def reset(self):
@@ -173,7 +174,8 @@ class DrillEnv(gym.Env):
             state_list.append(target[0].y)
             state_list.append(target[1])
 
-        self.state = tuple(state_list)
+        self.state = tuple(state_list)        
+    
         return np.array(self.state)
 
     def render(self, mode='human'):
