@@ -4,7 +4,17 @@ This is a custom environment modelling the trajectory of a well. Compatible with
 
 ### Installation
 
-Using the custom environment requires [OpenAI Gym](https://gym.openai.com/) and [Numpy](https://numpy.org/)
+Using the custom environment requires [OpenAI Gym](https://gym.openai.com/) and [Numpy](https://numpy.org/). If not already installed run from the terminal:
+
+```
+$~ pip install gym numpy
+```
+
+To install the custom gym environment run:
+
+```python
+$~ pip install -e .
+```
 
 ### Usage
 
