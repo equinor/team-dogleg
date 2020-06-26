@@ -1,19 +1,18 @@
 import gym
 import gym_drill
 import random
+import numpy as np 
 
 from gym_drill.envs.customAdditions import Coordinate
 
-START_LOCATION = Coordinate(100.0, 100.0)
-TARTGET_LOCATION = Coordinate(500,100)
-TARGETS = ((Coordinate(500,100),30), (Coordinate(200,100),20))
+START_LOCATION = Coordinate(100.0, 350.0)
 
-BIT_INITIALIZATION = [0.0,0.0,0.0]
+BIT_INITIALIZATION = [np.pi,0.0,0.0]
 
 
 env_name = 'drill-v0'
 env = gym.make(env_name)
-env.initParameters(START_LOCATION,TARGETS,BIT_INITIALIZATION)
+env.initParameters(START_LOCATION,BIT_INITIALIZATION)
 
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
@@ -31,10 +30,10 @@ agent = Agent(env)
 state = env.reset()
 
 for episode in range(10):
-	for _ in range(150):
+	done= False
+	while done==False:
 		action = agent.get_action()
 		state, reward, done, info = env.step(action)
-
 		env.render()
 	state = env.reset()
 	env.close()
