@@ -5,14 +5,11 @@ import numpy as np
 
 from gym_drill.envs.customAdditions import Coordinate
 
-START_LOCATION = Coordinate(100.0, 350.0)
-
-BIT_INITIALIZATION = [np.pi,0.0,0.0]
-
+STARTLOCATION = Coordinate(0.0,0.0)
+BIT_INITIALIZATION = [0.0,0.0,0.0]
 
 env_name = 'drill-v0'
-env = gym.make(env_name)
-env.initParameters(START_LOCATION,BIT_INITIALIZATION)
+env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
 
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
