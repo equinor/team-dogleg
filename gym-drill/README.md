@@ -44,7 +44,6 @@ where `STARTLOCATION` is of type [**Coordinate**](gym_drill/envs/customAdditions
 ```python
 import gym
 import gym_drill
-import random
 import numpy as np 
 
 from gym_drill.envs.customAdditions import Coordinate
