@@ -57,7 +57,31 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self):      
+    def __init__(self,startLocation,bitInitialization):
+        self.start_x = startLocation.x
+        self.start_y = startLocation.y
+
+        # We init parameters here        
+        self.bitLocation = startLocation
+        self.heading = bitInitialization[0]
+        self.angVel = bitInitialization[1]
+        self.angAcc = bitInitialization[2]
+
+        # For resetting the environment
+        self.initialBitLocation = startLocation
+        self.initialHeading = bitInitialization[0]
+        self.initialAngVel = bitInitialization[1]
+        self.initialAngAcc = bitInitialization[2]
+
+        # List containing lists of targets of random radius and position
+        self.targets = []
+        for target in range(NUM_TARGETS):
+            target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
+            target_radius = np.random.uniform(5.0,50.0)
+
+            target_pair = [target_center,target_radius]
+            self.targets.append(target_pair)
+
         self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
@@ -66,15 +90,15 @@ class DrillEnv(gym.Env):
         upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
 
         for target in range(NUM_TARGETS):
-            np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
-            np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
-
+            lower_obs_space_limit = np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
+            upper_obs_space_limit = np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
+        
         self.observation_space = spaces.Box(lower_obs_space_limit,upper_obs_space_limit, dtype=np.float64)
-
+        print("The length of the observation space is:",len(lower_obs_space_limit))
         self.seed()
-
+        
+    """
     def initParameters(self,startLocation, bitInitialization):
-
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         
@@ -98,7 +122,7 @@ class DrillEnv(gym.Env):
 
             target_pair = [target_center,target_radius]
             self.targets.append(target_pair)            
-    
+    """
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -147,7 +171,7 @@ class DrillEnv(gym.Env):
             state_list.append(target[1])
 
         self.state = tuple(state_list)
-
+        #print("The length of the state is:",len(self.state))
         return np.array(self.state), reward, done, {}
 
     def reset(self):
@@ -173,7 +197,8 @@ class DrillEnv(gym.Env):
             state_list.append(target[0].y)
             state_list.append(target[1])
 
-        self.state = tuple(state_list)
+        self.state = tuple(state_list)        
+    
         return np.array(self.state)
 
     def render(self, mode='human'):
