@@ -24,6 +24,10 @@ class Coordinate:
     def __eq__(self, other):
         return self.y == other.y and self.x == other.x
 
+    @classmethod
+    def getEuclideanDistance(cls,p1,p2):
+        return np.abs(np.sqrt((p1.x - p2.x)**2 + (p1.y-p2.y)**2))
+
 def isWithinTraget(bitPosition,targetPosition,targetRadius):
     return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
         
@@ -39,7 +43,13 @@ ANGACC_INCREMENT = 0.01
 SCREEN_X = 600
 SCREEN_Y = 400
 
+# Target specs
+TARGET_BOUND_X =[300,SCREEN_X]
+TARGET_BOUND_Y = [0,0.7*SCREEN_Y]
+TARGET_RADII_BOUND = [10,50]
+
 DRILL_SPEED = 5.0
+NUM_TARGETS = 2
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -47,13 +57,37 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self):      
+    def __init__(self,startLocation,bitInitialization):
+        self.start_x = startLocation.x
+        self.start_y = startLocation.y
+
+        # We init parameters here        
+        self.bitLocation = startLocation
+        self.heading = bitInitialization[0]
+        self.angVel = bitInitialization[1]
+        self.angAcc = bitInitialization[2]
+
+        # For resetting the environment
+        self.initialBitLocation = startLocation
+        self.initialHeading = bitInitialization[0]
+        self.initialAngVel = bitInitialization[1]
+        self.initialAngAcc = bitInitialization[2]
+
+        # List containing lists of targets of random radius and position
+        self.targets = []
+        for target in range(NUM_TARGETS):
+            target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
+            target_radius = np.random.uniform(5.0,50.0)
+
+            target_pair = [target_center,target_radius]
+            self.targets.append(target_pair)
+
         self.viewer = None      
 
         self.action_space = spaces.Discrete(3)
-        self.observation_space = spaces.Box(np.array([0, 0, 0, -MAX_ANGVEL]), np.array([50, 50, 359.9, MAX_ANGVEL]), dtype=np.float32)
 
-        self.seed()
+        lower_obs_space_limit = np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC])
+        upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
 
     def initParameters(self,startLocation,targets,bitInitialization):
         # We init parameters here        
@@ -102,26 +136,51 @@ class DrillEnv(gym.Env):
             reward = -1000.0
             done = True
         
-        # Check if targetball hit
-
-
-        for target in self.targets:
-            if isWithinTraget(self.bitLocation,target[0],target[1]):
-                reward = 100.0
+        # Check if targetball hit   
+        if not done:
+            targets_hit = 0
+            for target in self.targets:
+                if isWithinTraget(self.bitLocation,target[0],target[1]):
+                    reward = 100.0 # It gets rewarded even if only one target has been hit.
+                    targets_hit += 1
+            if targets_hit == NUM_TARGETS:
                 done = True
 
-        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
+        state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
+        for target in self.targets:
+            state_list.append(target[0].x)
+            state_list.append(target[0].y)
+            state_list.append(target[1])
 
+        self.state = tuple(state_list)
+        #print("The length of the state is:",len(self.state))
         return np.array(self.state), reward, done, {}
 
     def reset(self):
-        self.bitLocation = self.initialBitLocation
+        self.bitLocation.x = self.start_x
+        self.bitLocation.y = self.start_y
 
         self.heading = self.initialHeading
         self.angVel = self.initialAngVel
         self.angAcc = self.initialAngAcc
 
-        self.state = (self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc)
+        # List containing lists of targets of random radius and position
+        self.targets = []
+        for target in range(NUM_TARGETS):
+            target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
+            target_radius = np.random.uniform(5.0,50.0)
+
+            target_pair = [target_center,target_radius]
+            self.targets.append(target_pair)            
+
+        state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
+        for target in self.targets:
+            state_list.append(target[0].x)
+            state_list.append(target[0].y)
+            state_list.append(target[1])
+
+        self.state = tuple(state_list)        
+    
         return np.array(self.state)
 
     def render(self, mode='human'):

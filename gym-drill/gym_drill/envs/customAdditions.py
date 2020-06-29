@@ -21,4 +21,7 @@ class Coordinate:
     # For boolean comparison (if myPoint == yourPoint)
     def __eq__(self, other):
         return self.y == other.y and self.x == other.x
+
+def isWithinTraget(bitPosition,targetPosition,targetRadius):
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
     
