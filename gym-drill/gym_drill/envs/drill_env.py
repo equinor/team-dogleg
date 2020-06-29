@@ -99,6 +99,13 @@ class DrillEnv(gym.Env):
         for target in range(NUM_TARGETS):
             lower_obs_space_limit = np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
             upper_obs_space_limit = np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
+
+        #Can be made as a seperate function
+        self.initial_distances=[]
+        for i in range (NUM_TARGETS):
+            self.initial_distances.append(Coordinate.getEuclideanDistance(self.bitLocation,self.targets[i][0]))
+        #print(self.initial_distances)
+        
         
         self.observation_space = spaces.Box(lower_obs_space_limit,upper_obs_space_limit, dtype=np.float64)
         print("The length of the observation space is:",len(lower_obs_space_limit))
@@ -174,6 +181,7 @@ class DrillEnv(gym.Env):
                 reward +=1000
                 if all_visited(self.visited):
                     done = True
+                    #reward += 150 - number of steps taken
             i+=1
 
                 
