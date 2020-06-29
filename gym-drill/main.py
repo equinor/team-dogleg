@@ -2,11 +2,12 @@ import gym
 import gym_drill
 import random
 import numpy as np 
+import matplotlib.pyplot as plt
 
 from gym_drill.envs.customAdditions import Coordinate
 
-STARTLOCATION = Coordinate(0.0,0.0)
-BIT_INITIALIZATION = [0.0,0.0,0.0]
+STARTLOCATION = Coordinate(100,300)
+BIT_INITIALIZATION = [3*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
 env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
@@ -26,11 +27,21 @@ class Agent():
 agent = Agent(env)
 state = env.reset()
 
-for episode in range(10):
-	done= False
-	while done==False:
-		action = agent.get_action()
-		state, reward, done, info = env.step(action)
-		env.render()
-	state = env.reset()
-	env.close()
+#for episode in range(1):
+done= False
+x_coordinates = []
+y_coordinates = []
+while done==False:
+	action = agent.get_action()
+	state, reward, done, info = env.step(action)
+		
+	x_coordinates.append(state[0])	
+	y_coordinates.append(state[1])
+
+	#env.render()
+state = env.reset()
+env.close()
+	
+plt.plot(x_coordinates,y_coordinates)
+plt.title("Well trajectory")
+plt.show()
