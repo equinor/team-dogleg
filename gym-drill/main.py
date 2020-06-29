@@ -35,7 +35,17 @@ model.learn(total_timesteps=10000) #Where the learning happens
 model.save(model_name) #Saving the wisdom for later 
 del model # removing the model to demonstrate saving and loading
 model = DQN.load(model_name, env) #Upload the model you just saved
+"""
+for episode in range(10):
+    	done= False
+	steps = 0
+	while done==False:
+		action = agent.get_action()
+		state, reward, done, info = env.step(action)
+		env.render()		
 
+	env.display_environment()
+"""
 
 #Show the result of the training
 obs = env.reset()
