@@ -2,6 +2,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+import matplotlib.pyplot as plt
 #import customAdditions as ca
 
 # A cartesian coordinate
@@ -39,9 +40,9 @@ MAX_ANGACC = 0.1
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
 
-# Screen size
+# Screen size, environment should be square
 SCREEN_X = 600
-SCREEN_Y = 400
+SCREEN_Y = 600
 
 # Target specs
 TARGET_BOUND_X =[300,SCREEN_X]
@@ -73,7 +74,7 @@ class DrillEnv(gym.Env):
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
 
-        # List containing lists of targets of random radius and position
+        # Init targets. List containing lists of targets of random radius and position
         self.targets = []
         for target in range(NUM_TARGETS):
             target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
@@ -86,6 +87,7 @@ class DrillEnv(gym.Env):
 
         self.action_space = spaces.Discrete(3)
 
+        # Init observation space
         lower_obs_space_limit = np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC])
         upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
 
@@ -95,34 +97,12 @@ class DrillEnv(gym.Env):
         
         self.observation_space = spaces.Box(lower_obs_space_limit,upper_obs_space_limit, dtype=np.float64)
         print("The length of the observation space is:",len(lower_obs_space_limit))
+        
         self.seed()
-        
-    """
-    def initParameters(self,startLocation, bitInitialization):
-        self.start_x = startLocation.x
-        self.start_y = startLocation.y
-        
-        # We init parameters here        
-        self.bitLocation = startLocation
-        self.heading = bitInitialization[0]
-        self.angVel = bitInitialization[1]
-        self.angAcc = bitInitialization[2]
 
-        # For resetting the environment
-        self.initialBitLocation = startLocation
-        self.initialHeading = bitInitialization[0]
-        self.initialAngVel = bitInitialization[1]
-        self.initialAngAcc = bitInitialization[2]
-
-        # List containing lists of targets of random radius and position
-        self.targets = []
-        for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
-            target_radius = np.random.uniform(5.0,50.0)
-
-            target_pair = [target_center,target_radius]
-            self.targets.append(target_pair)            
-    """
+        # Save the starting position as "first" step
+        self.step_history = [[self.start_x,self.start_y]]       
+  
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -148,6 +128,7 @@ class DrillEnv(gym.Env):
         # Update position
         self.bitLocation.x += DRILL_SPEED * np.sin(self.heading)
         self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
+        self.step_history.append([self.bitLocation.x,self.bitLocation.y])
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
@@ -181,6 +162,9 @@ class DrillEnv(gym.Env):
         self.heading = self.initialHeading
         self.angVel = self.initialAngVel
         self.angAcc = self.initialAngAcc
+
+        # Save the starting position as "first" step
+        self.step_history = [[self.start_x,self.start_y]]       
 
         # List containing lists of targets of random radius and position
         self.targets = []
@@ -218,9 +202,7 @@ class DrillEnv(gym.Env):
             self.dbit.add_attr(self.bittrans)
             self.viewer.add_geom(self.dbit)
 
-
             # Draw target ball
-
             for target in self.targets:
                 targetCenter = target[0]
                 targetRadius = target[1]
@@ -232,7 +214,6 @@ class DrillEnv(gym.Env):
                 self.tball.add_attr(self.tballtrans)
                 self.viewer.add_geom(self.tball)
                 self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
-
 
         # Update position of drill on screen
         this_state = self.state
@@ -254,3 +235,34 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def display_environment(self):
+        # Get data
+        x_positions = []
+        y_positions = []
+        for position in self.step_history:
+            x_positions.append(position[0])
+            y_positions.append(position[1])
+        
+        # Plot circles from targetballs
+        theta = np.linspace(0, 2*np.pi, 100)
+        for target in self.targets:
+            center = target[0]
+            radius = target[1]
+
+            x = center.x + radius*np.cos(theta)
+            y = center.y + radius*np.sin(theta)
+
+            plt.plot(x,y,"r")
+
+            
+        
+        # Set axis 
+        axes = plt.gca()
+        axes.set_xlim(0,SCREEN_X)
+        axes.set_ylim(0,SCREEN_Y)
+
+        plt.plot(x_positions,y_positions,"b")
+        plt.title("Well trajectory path")
+
+        plt.show()
