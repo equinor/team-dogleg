@@ -31,7 +31,13 @@ class Coordinate:
 
 def isWithinTraget(bitPosition,targetPosition,targetRadius):
     return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
-        
+
+def all_visited(list):
+    for i in range(len(list)):
+        if list[i]==False:
+            return False
+    return True
+
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
 MAX_ANGVEL = 0.05
@@ -45,9 +51,9 @@ SCREEN_X = 600
 SCREEN_Y = 600
 
 # Target specs
-TARGET_BOUND_X =[300,SCREEN_X]
-TARGET_BOUND_Y = [0,0.7*SCREEN_Y]
-TARGET_RADII_BOUND = [10,50]
+TARGET_BOUND_X =[0.5*SCREEN_X,0.9*SCREEN_X]
+TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
+TARGET_RADII_BOUND = [20,50]
 
 DRILL_SPEED = 5.0
 NUM_TARGETS = 2
@@ -76,12 +82,13 @@ class DrillEnv(gym.Env):
 
         # Init targets. List containing lists of targets of random radius and position
         self.targets = []
+        self.visited = []
         for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
-            target_radius = np.random.uniform(5.0,50.0)
-
+            target_center = Coordinate(np.random.uniform(0.5*SCREEN_X,0.9*SCREEN_X),(np.random.uniform(0.1*SCREEN_Y, 0.6*SCREEN_Y)))
+            target_radius = np.random.uniform(20.0,50.0)
             target_pair = [target_center,target_radius]
             self.targets.append(target_pair)
+            self.visited.append(False)
 
         self.viewer = None      
 
@@ -94,6 +101,13 @@ class DrillEnv(gym.Env):
         for target in range(NUM_TARGETS):
             lower_obs_space_limit = np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
             upper_obs_space_limit = np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
+
+        #Can be made as a seperate function
+        self.initial_distances=[]
+        for i in range (NUM_TARGETS):
+            self.initial_distances.append(Coordinate.getEuclideanDistance(self.bitLocation,self.targets[i][0]))
+        #print(self.initial_distances)
+        
         
         self.observation_space = spaces.Box(lower_obs_space_limit,upper_obs_space_limit, dtype=np.float64)
         print("The length of the observation space is:",len(lower_obs_space_limit))
@@ -108,9 +122,7 @@ class DrillEnv(gym.Env):
         return [seed]
     
     def step(self, action):
-        reward = -1.0
-        done = False
-
+        done = False        
         # Update angular acceleration, if within limits
         if action == 0 and self.angAcc > -MAX_ANGACC:
             self.angAcc -= ANGACC_INCREMENT
@@ -130,21 +142,28 @@ class DrillEnv(gym.Env):
         self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
         self.step_history.append([self.bitLocation.x,self.bitLocation.y])
 
+        reward = -1.0 #step-penalty
+
+        if self.angAcc != 0:
+            reward -= 1.0 #angAcc-penalty
+
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward = -1000.0
+            reward  -=1000.0
             done = True
         
-        # Check if targetball hit   
-        if not done:
-            targets_hit = 0
-            for target in self.targets:
-                if isWithinTraget(self.bitLocation,target[0],target[1]):
-                    reward = 100.0 # It gets rewarded even if only one target has been hit.
-                    targets_hit += 1
-            if targets_hit == NUM_TARGETS:
-                done = True
+        # Check if targetball hit  
+        i=0
+        for target in self.targets:
+            if isWithinTraget(self.bitLocation,target[0],target[1]) and self.visited[i]==False: 
+                self.visited[i]=True
+                reward +=1000
+                if all_visited(self.visited):
+                    done = True
+                    #reward += 150 - number of steps taken
+            i+=1
 
+                
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
         for target in self.targets:
             state_list.append(target[0].x)
@@ -152,8 +171,9 @@ class DrillEnv(gym.Env):
             state_list.append(target[1])
 
         self.state = tuple(state_list)
-        #print("The length of the state is:",len(self.state))
+
         return np.array(self.state), reward, done, {}
+
 
     def reset(self):
         self.bitLocation.x = self.start_x
@@ -169,8 +189,8 @@ class DrillEnv(gym.Env):
         # List containing lists of targets of random radius and position
         self.targets = []
         for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(0.0,1.0*SCREEN_X),(np.random.uniform(0.0, 0.7*SCREEN_Y)))
-            target_radius = np.random.uniform(5.0,50.0)
+            target_center = Coordinate(np.random.uniform(0.5*SCREEN_X,0.9*SCREEN_X),(np.random.uniform(0.1*SCREEN_Y, 0.6*SCREEN_Y)))
+            target_radius = np.random.uniform(20.0,50.0)
 
             target_pair = [target_center,target_radius]
             self.targets.append(target_pair)            
@@ -253,9 +273,7 @@ class DrillEnv(gym.Env):
             x = center.x + radius*np.cos(theta)
             y = center.y + radius*np.sin(theta)
 
-            plt.plot(x,y,"r")
-
-            
+            plt.plot(x,y,"r")            
         
         # Set axis 
         axes = plt.gca()
