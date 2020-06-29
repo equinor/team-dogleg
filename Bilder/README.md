@@ -1,0 +1,1 @@
+## Bilder som blir brukt i README filer
