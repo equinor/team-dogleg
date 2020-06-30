@@ -34,3 +34,8 @@ Finally, run the container using
 ```shell
 ~$ docker run -it --rm --name wwrunning -e DISPLAY=$DISPLAY my_name
 ```
+
+### Life advice when using docker
+
+- List all your docker images by running `docker image`
+- Delete a docker image using `docker image rm [IMAGE ID]`. You can find the ID of the image by listing all images using `docker image`

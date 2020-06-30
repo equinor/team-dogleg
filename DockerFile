@@ -2,4 +2,4 @@ FROM python:3-onbuild
 
 RUN pip install gym numpy matplotlib
 
-CMD ["python","-u","gym-drill/main.py"]
+CMD ["python","-u","gym-drill/testdockerplot.py"]
