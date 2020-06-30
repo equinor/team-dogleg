@@ -1,5 +1,8 @@
-FROM python:3-onbuild
+FROM python:3.7
 
-RUN pip install gym numpy matplotlib
+RUN pip install gym numpy matplotlib tensorflow==1.15 stable-baselines
 
-CMD ["python","-u","gym-drill/testdockerplot.py"]
+WORKDIR /usr/src/app
+COPY gym-drill ./
+
+CMD ["python","-u","main.py"]
