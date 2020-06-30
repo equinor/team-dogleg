@@ -83,8 +83,9 @@ class DrillEnv(gym.Env):
         self.targets = []
         self.visited = []
         for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(0.5*SCREEN_X,0.9*SCREEN_X),(np.random.uniform(0.1*SCREEN_Y, 0.6*SCREEN_Y)))
-            target_radius = np.random.uniform(20.0,50.0)
+            target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
+            target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
+
             target_pair = [target_center,target_radius]
             self.targets.append(target_pair)
             self.visited.append(False)
@@ -207,8 +208,8 @@ class DrillEnv(gym.Env):
         # List containing lists of targets of random radius and position
         self.targets = []
         for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(0.5*SCREEN_X,0.9*SCREEN_X),(np.random.uniform(0.1*SCREEN_Y, 0.6*SCREEN_Y)))
-            target_radius = np.random.uniform(20.0,50.0)
+            target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
+            target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
 
             target_pair = [target_center,target_radius]
             self.targets.append(target_pair)            
