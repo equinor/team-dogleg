@@ -2,6 +2,7 @@ import gym
 import gym_drill
 import random
 import numpy as np 
+import matplotlib.pyplot as plt
 
 from gym_drill.envs.customAdditions import Coordinate
 
@@ -26,8 +27,8 @@ print("action space", env.action_space)
 #Using Stable-Baselines to teach an agent 
 
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(MlpPolicy, env, verbose=1)		#1) Make a new model
-model = DQN.load(model_name, env)			#2) Load an existing one from your own files
+model = DQN(MlpPolicy, env, verbose=1)		#1) Make a new model
+#model = DQN.load(model_name, env)			#2) Load an existing one from your own files
 
 model.learn(total_timesteps=10000) #Where the learning happens
 
