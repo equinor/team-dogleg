@@ -3,14 +3,10 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
+
 from gym_drill.envs.customAdditions import Coordinate
 from gym_drill.envs.customAdditions import isWithinTraget
-
-def all_visited(list):
-    for i in range(len(list)):
-        if list[i]==False:
-            return False
-    return True
+from gym_drill.envs.customAdditions import all_visited
 
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
