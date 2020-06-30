@@ -51,7 +51,7 @@ SCREEN_X = 600
 SCREEN_Y = 600
 
 # Target specs
-TARGET_BOUND_X =[0.5*SCREEN_X,0.9*SCREEN_X]
+TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
 TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
@@ -188,13 +188,15 @@ class DrillEnv(gym.Env):
         self.step_history = [[self.start_x,self.start_y]]       
 
         # List containing lists of targets of random radius and position
+        self.visited = []
         self.targets = []
         for target in range(NUM_TARGETS):
             target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
             target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
 
             target_pair = [target_center,target_radius]
-            self.targets.append(target_pair)            
+            self.targets.append(target_pair)
+            self.visited.append(False)            
 
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
         for target in self.targets:
