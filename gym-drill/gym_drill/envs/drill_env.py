@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 
 # Our own libs
 from gym_drill.envs.Coordinate import Coordinate
-from gym_drill.envs.ObservationSpace import ObservationSpace 
+from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.customAdditions import *
 
@@ -32,7 +32,7 @@ TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
 TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 4
+NUM_TARGETS = 5
 TARGET_WINDOW_SIZE = 3
 
 class DrillEnv(gym.Env):
@@ -58,17 +58,17 @@ class DrillEnv(gym.Env):
         self.initialHeading = bitInitialization[0]
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
-        
+        print(1)
         # Init targets. See _init_targets function
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
-        
+        print(2,len(self.targets))
         self.action_space = spaces.Discrete(3)        
          
-        self.observation_space_container = ObservationSpace(SPACE_BOUNDS,BIT_BOUNDS,self.targets)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,BIT_BOUNDS,self.targets)
         print("here is the obs spacer")
         print(self.observation_space_container)        
         self.observation_space = self.observation_space_container.get_space_box3()        
-                
+        print(3)
         self.seed()
         self.viewer = None      
   
@@ -77,8 +77,9 @@ class DrillEnv(gym.Env):
         return [seed]
     
     def step(self, action):
+        print("asdasdasdasdasdasdasdasd")
         done = False        
-
+        print(4)
         self.update_bit(action)
 
         reward = -1.0 #step-penalty
@@ -93,7 +94,7 @@ class DrillEnv(gym.Env):
             done = True     
                 
         self.state = self.get_state()
-
+        print(5)
         return np.array(self.state), reward, done, {}
     
     # For encapsulation. Updates the bit according to the action
@@ -120,14 +121,15 @@ class DrillEnv(gym.Env):
     # Returns tuple of current state
     def get_state(self):
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
-        for target in self.targets:
+        for target in self.observation_space_container.target_window: # This will cause bug
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.radius)
-
+        print(6,len(state_list))
         self.state = tuple(state_list) 
 
     def reset(self):
+        print(7)
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
 
@@ -142,7 +144,7 @@ class DrillEnv(gym.Env):
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
 
         self.state = self.get_state()      
-    
+        print(8)
         return np.array(self.state)
     """
     def render(self, mode='human'):

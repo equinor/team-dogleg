@@ -7,7 +7,7 @@ from gym import spaces
 SCREEN_X = 600
 SCREEN_Y = 600
 
-TARGET_WINDOW_SIZE = 2
+TARGET_WINDOW_SIZE = 3
 
 # Used in space_box3. If needed they should be plart of arguments to init function
 TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
