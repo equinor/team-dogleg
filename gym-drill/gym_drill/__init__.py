@@ -29,11 +29,6 @@ class Coordinate:
 
 register(
     id='drill-v0',
-    entry_point='gym_drill.envs:DrillEnv',
-    kwargs={
-        # Default values
-        "startLocation" : Coordinate(100.0,300.0),
-        "bitInitialization" : [3*np.pi/4,0.0,0.0]
+    entry_point='gym_drill.envs:DrillEnv'
 
-    }
 )

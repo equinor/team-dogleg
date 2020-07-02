@@ -65,16 +65,16 @@ def generate_targets():
 
     # Let's just create three targets.
     # TODO: This function has to be improved.
-    x1 = np.random.uniform(TARGET_MIN_X, TARGET_MAX_X*0.33)
-    y1 = np.random.uniform(TARGET_MIN_Y, TARGET_MAX_Y)
+    x1 = np.random.uniform(0.5*TARGET_MAX_X, TARGET_MAX_X*0.9)
+    y1 = np.random.uniform(0.1*TARGET_MAX_Y, 0.5*TARGET_MAX_Y)
     rad1 = np.random.uniform(TARGET_MIN_RAD, TARGET_MAX_RAD)
 
-    x2 = np.random.uniform(TARGET_MAX_X*0.33, TARGET_MAX_X*0.66)
-    y2 = np.random.uniform(TARGET_MIN_Y, TARGET_MAX_Y)
+    x2 = np.random.uniform(0.5*TARGET_MAX_X, TARGET_MAX_X*0.9)
+    y2 = np.random.uniform(0.1*TARGET_MAX_Y, 0.5*TARGET_MAX_Y)
     rad2 = np.random.uniform(TARGET_MIN_RAD, TARGET_MAX_RAD)
 
-    x3 = np.random.uniform(TARGET_MAX_X*0.66, TARGET_MAX_X)
-    y3 = np.random.uniform(TARGET_MIN_Y, TARGET_MAX_Y)
+    x3 = np.random.uniform(0.5*TARGET_MAX_X, TARGET_MAX_X*0.9)
+    y3 = np.random.uniform(0.1*TARGET_MAX_Y, 0.5*TARGET_MAX_Y)
     rad3 = np.random.uniform(TARGET_MIN_RAD, TARGET_MAX_RAD)
 
     
@@ -115,7 +115,7 @@ class DrillEnv(gym.Env):
 
         # TODO: What data type is optimal?
         # TODO: What data type is big enough to store values?
-        self.observation_space = spaces.Box(self.obs_space_low, self.obs_space_high, dtype=np.float32)
+        self.observation_space = spaces.Box(self.obs_space_low, self.obs_space_high, dtype=np.float64)
         self.action_space = spaces.Discrete(3)
 
         # Create state array, and fill it with values
@@ -140,7 +140,11 @@ class DrillEnv(gym.Env):
         # Check if we have hit any targets;
         # calculate reward.
         reward, done = self.calculate_reward()
-
+        self.state = np.array([
+            self.pos[0], self.pos[1], self.inclination, self.ang_vel, self.ang_acc,
+            self.targets[0].pos[0], self.targets[0].pos[1], self.targets[0].rad,
+            self.targets[1].pos[0], self.targets[1].pos[1], self.targets[1].rad
+        ])
         return self.state, reward, done, {}
 
 
@@ -220,7 +224,7 @@ class DrillEnv(gym.Env):
         return reward, done
 
     def update_pos(self, action):
-        print("update pos")
+        #print("update pos")
         # Update angular acceleration, if within limits
         if action == 0 and self.ang_acc > -MAX_ANG_ACC:
             self.ang_acc -= ANG_ACC_INCREMENT
@@ -245,6 +249,7 @@ class DrillEnv(gym.Env):
         self.step_render_list.append(self.pos)
         
     def reset(self, x = -1, y = -1, inclination = -1, targets = []):
+        self.viewer = None
         # Reset the state of the environment to an initial state.
         # If x = -1, reset it to random value
 
@@ -257,14 +262,14 @@ class DrillEnv(gym.Env):
         self.pos = np.array([0, 0])
         if x == -1 or y == -1:
             self.pos[0] = generate_random_drill_x_value()
-            self.pos[1] = np.random.uniform(0.01*SCREEN_Y, 0.02*SCREEN_Y)
+            self.pos[1] = np.random.uniform(0.95*SCREEN_Y, 1.0*SCREEN_Y)
         else:
             self.pos[0] = x
             self.pos[1] = y
 
         # Set inclination (heading). If no value given, choose one at random.
         if inclination == -1:
-            self.inclination = np.random.normal(0, np.pi/6) % (2*np.pi)
+            self.inclination = 3.5*np.pi/4 #np.random.normal(0, np.pi/6) % (2*np.pi)
         else:
             self.inclination = inclination
         
@@ -286,12 +291,13 @@ class DrillEnv(gym.Env):
             self.targets[0].pos[0], self.targets[0].pos[1], self.targets[0].rad,
             self.targets[1].pos[0], self.targets[1].pos[1], self.targets[1].rad
         ])
+        self.close()
         return self.state
 
         
 
     def render(self, mode='human'):
-        print("render")
+        #print("render")
         screen_width = SCREEN_X
         screen_height = SCREEN_Y
         from gym.envs.classic_control import rendering
@@ -330,6 +336,11 @@ class DrillEnv(gym.Env):
         self.viewer.add_geom(self.new_point)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
+
+    def close(self):
+        if self.viewer:
+            self.viewer.close()
+            self.viewer = None
 
 
     def display_environment(self):
