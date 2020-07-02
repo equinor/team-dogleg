@@ -63,3 +63,5 @@ for episode in range (10):
 	env.display_environment()
 	state = env.reset()
 	env.close()
+
+print("done")

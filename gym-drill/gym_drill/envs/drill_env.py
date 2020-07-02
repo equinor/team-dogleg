@@ -4,29 +4,36 @@ from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Our own libs
 from gym_drill.envs.Coordinate import Coordinate
+from gym_drill.envs.ObservationSpace import ObservationSpace 
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.customAdditions import *
 
 # Max values for angular velocity and acceleration
-MAX_HEADING = 3.0
+MAX_HEADING = 3.0 # issue1: In the obs space we set this to 360 deg
 MAX_ANGVEL = 0.05
 MAX_ANGACC = 0.1
 
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
+DRILL_SPEED = 5.0
 
 # Screen size, environment should be square
 SCREEN_X = 600
 SCREEN_Y = 600
+
+# Observation space specs
+SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
+BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
 
 # Target specs
 TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
 TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-DRILL_SPEED = 5.0
-NUM_TARGETS = 2
+NUM_TARGETS = 4
+TARGET_WINDOW_SIZE = 3
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -37,6 +44,8 @@ class DrillEnv(gym.Env):
     def __init__(self,startLocation,bitInitialization):
         self.start_x = startLocation.x
         self.start_y = startLocation.y
+        # Save the starting position as "first" step. Needed for plotting in matplotlib
+        self.step_history = [[self.start_x,self.start_y]]        
 
         # We init parameters here        
         self.bitLocation = startLocation
@@ -49,44 +58,19 @@ class DrillEnv(gym.Env):
         self.initialHeading = bitInitialization[0]
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
-
-        # Init targets. List containing lists of targets of random radius and position
-        self.targets = []
-        self.visited = []
-        for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
-            target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
-
-            target_pair = [target_center,target_radius]
-            self.targets.append(target_pair)
-            self.visited.append(False)
-
-        self.viewer = None      
-
-        self.action_space = spaces.Discrete(3)
-
-        # Init observation space
-        lower_obs_space_limit = np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC])
-        upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
-
-        for target in range(NUM_TARGETS):
-            lower_obs_space_limit = np.append(lower_obs_space_limit,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
-            upper_obs_space_limit = np.append(upper_obs_space_limit,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
-
-        #Can be made as a seperate function
-        self.initial_distances=[]
-        for i in range (NUM_TARGETS):
-            self.initial_distances.append(Coordinate.getEuclideanDistance(self.bitLocation,self.targets[i][0]))
-        #print(self.initial_distances)
         
+        # Init targets. See _init_targets function
+        self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
         
-        self.observation_space = spaces.Box(lower_obs_space_limit,upper_obs_space_limit, dtype=np.float64)
-        print("The length of the observation space is:",len(lower_obs_space_limit))
-        
+        self.action_space = spaces.Discrete(3)        
+         
+        self.observation_space_container = ObservationSpace(SPACE_BOUNDS,BIT_BOUNDS,self.targets)
+        print("here is the obs spacer")
+        print(self.observation_space_container)        
+        self.observation_space = self.observation_space_container.get_space_box3()        
+                
         self.seed()
-
-        # Save the starting position as "first" step. Needed for plotting in matplotlib
-        self.step_history = [[self.start_x,self.start_y]]        
+        self.viewer = None      
   
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -94,6 +78,26 @@ class DrillEnv(gym.Env):
     
     def step(self, action):
         done = False        
+
+        self.update_bit(action)
+
+        reward = -1.0 #step-penalty
+
+        # Maybe create an entire function that handles all rewards, and call it here?
+        if self.angAcc != 0:
+            reward -= 1.0 #angAcc-penalty
+
+        # If drill is no longer on screen, game over.
+        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
+            reward  -=1000.0
+            done = True     
+                
+        self.state = self.get_state()
+
+        return np.array(self.state), reward, done, {}
+    
+    # For encapsulation. Updates the bit according to the action
+    def update_bit(self,action):
         # Update angular acceleration, if within limits
         if action == 0 and self.angAcc > -MAX_ANGACC:
             self.angAcc -= ANGACC_INCREMENT
@@ -105,7 +109,7 @@ class DrillEnv(gym.Env):
             self.angVel += self.angAcc
 
         # Update heading, if within limits
-        if abs(self.heading + self.angVel) < MAX_HEADING:
+        if abs(self.heading + self.angVel) < MAX_HEADING: # issue1
             self.heading += self.angVel
 
         # Update position
@@ -113,40 +117,15 @@ class DrillEnv(gym.Env):
         self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
         self.step_history.append([self.bitLocation.x,self.bitLocation.y])
 
-        reward = -1.0 #step-penalty
-
-        # Maybe create an entire function that handles all rewards, all call it here?
-
-        if self.angAcc != 0:
-            reward -= 1.0 #angAcc-penalty
-
-        # If drill is no longer on screen, game over.
-        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward  -=1000.0
-            done = True
-        
-        # Check if targetball hit  
-        i=0
-        for target in self.targets:
-            if isWithinTraget(self.bitLocation,target[0],target[1]) and self.visited[i]==False: 
-                self.visited[i]=True
-                reward +=1000
-                if all_visited(self.visited):
-                    done = True
-                    #reward += 150 - number of steps taken
-            i+=1
-
-                
+    # Returns tuple of current state
+    def get_state(self):
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
         for target in self.targets:
-            state_list.append(target[0].x)
-            state_list.append(target[0].y)
-            state_list.append(target[1])
+            state_list.append(target.center.x)
+            state_list.append(target.center.y)
+            state_list.append(target.radius)
 
-        self.state = tuple(state_list)
-
-        return np.array(self.state), reward, done, {}
-
+        self.state = tuple(state_list) 
 
     def reset(self):
         self.bitLocation.x = self.start_x
@@ -159,27 +138,13 @@ class DrillEnv(gym.Env):
         # Save the starting position as "first" step
         self.step_history = [[self.start_x,self.start_y]]       
 
-        # List containing lists of targets of random radius and position
-        self.visited = []
-        self.targets = []
-        for target in range(NUM_TARGETS):
-            target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
-            target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
+        # Need to init new targets
+        self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
 
-            target_pair = [target_center,target_radius]
-            self.targets.append(target_pair)
-            self.visited.append(False)            
-
-        state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
-        for target in self.targets:
-            state_list.append(target[0].x)
-            state_list.append(target[0].y)
-            state_list.append(target[1])
-
-        self.state = tuple(state_list)        
+        self.state = self.get_state()      
     
         return np.array(self.state)
-
+    """
     def render(self, mode='human'):
         screen_width = SCREEN_X
         screen_height = SCREEN_Y
@@ -225,6 +190,7 @@ class DrillEnv(gym.Env):
         self.viewer.add_geom(self.new_point)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
+    """
 
     def close(self):
         if self.viewer:
@@ -239,6 +205,8 @@ class DrillEnv(gym.Env):
             x_positions.append(position[0])
             y_positions.append(position[1])
         
+
+        """
         # Plot circles from targetballs
         theta = np.linspace(0, 2*np.pi, 100)
         for target in self.targets:
@@ -248,7 +216,8 @@ class DrillEnv(gym.Env):
             x = center.x + radius*np.cos(theta)
             y = center.y + radius*np.sin(theta)
 
-            plt.plot(x,y,"r")            
+            plt.plot(x,y,"r")
+        """            
         
         # Set axis 
         axes = plt.gca()
@@ -259,3 +228,66 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path")
 
         plt.show()
+
+# Finds nearest between 1 point and a list of candidate points
+# startlocation is type Coordinate, and candidates is list of types Targets
+def _findNearest(start_location,candidates):
+    current_shortest_distance = SCREEN_X # Distance cant be greater than the screen
+    current_closest_target_index = 0
+    for candidate_index in range(len(candidates)):        
+        candidate = candidates[candidate_index]     
+        distance = Coordinate.getEuclideanDistance(candidate.center,start_location)
+        if distance < current_shortest_distance:
+            current_shortest_distance = distance
+            current_closest_target_index = candidate_index
+    
+    return candidate_index
+
+# Orders the target based upon a given start location
+# start_location is type Coordiante, all_targets is list of type targets
+def _orderTargets(start_location,all_targets):
+    #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
+    target_order = [] 
+    loop_counter = 0
+    while len(all_targets) != 0:
+        if loop_counter == 0:
+            next_in_line_index = _findNearest(start_location,all_targets)
+            next_in_line_target = all_targets[next_in_line_index]
+            target_order.append(next_in_line_target)
+            all_targets.pop(next_in_line_index)
+        else:
+            next_in_line_index = _findNearest(target_order[loop_counter-1].center,all_targets)
+            next_in_line_target = all_targets[next_in_line_index]
+            target_order.append(next_in_line_target)
+            all_targets.pop(next_in_line_index)
+        
+        loop_counter += 1
+
+    return target_order
+
+# Returns an ordered list of randomly generated targets within the bounds given. 
+def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
+    all_targets = []
+
+    for t in range(num_targets):
+        target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
+
+
+        target_radius = np.random.uniform(r_bound[0],r_bound[1])
+
+        target = TargetBall(target_center.x,target_center.y,target_radius)
+               
+        all_targets.append(target)
+    
+    all_targets = _orderTargets(start_location,all_targets)
+
+    return all_targets
+
+# Will 
+def _init_observation_space(window_targets):
+    # These are all given by global vars in the environment
+    lower_obs_space_limit = np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC])
+    upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
+
+    for target in range(len(window_targets)):
+        pass
