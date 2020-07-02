@@ -4,9 +4,9 @@ from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
 
-from gym_drill.envs.customAdditions import Coordinate
-from gym_drill.envs.customAdditions import isWithinTraget
-from gym_drill.envs.customAdditions import all_visited
+from gym_drill.envs.Coordinate import Coordinate
+from gym_drill.envs.Target import TargetBall
+from gym_drill.envs.customAdditions import *
 
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0
@@ -85,8 +85,8 @@ class DrillEnv(gym.Env):
         
         self.seed()
 
-        # Save the starting position as "first" step
-        self.step_history = [[self.start_x,self.start_y]]       
+        # Save the starting position as "first" step. Needed for plotting in matplotlib
+        self.step_history = [[self.start_x,self.start_y]]        
   
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -114,6 +114,8 @@ class DrillEnv(gym.Env):
         self.step_history.append([self.bitLocation.x,self.bitLocation.y])
 
         reward = -1.0 #step-penalty
+
+        # Maybe create an entire function that handles all rewards, all call it here?
 
         if self.angAcc != 0:
             reward -= 1.0 #angAcc-penalty
