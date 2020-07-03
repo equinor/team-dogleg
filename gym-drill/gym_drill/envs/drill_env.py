@@ -132,6 +132,13 @@ class DrillEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
+    def update_state(self):
+        self.state = np.array([
+            self.pos[0], self.pos[1], self.inclination, self.ang_vel, self.ang_acc,
+            self.targets[0].pos[0], self.targets[0].pos[1], self.targets[0].rad,
+            self.targets[1].pos[0], self.targets[1].pos[1], self.targets[1].rad
+        ])
+
     def step(self, action):
 
         # Update all attribites related to position
@@ -140,11 +147,7 @@ class DrillEnv(gym.Env):
         # Check if we have hit any targets;
         # calculate reward.
         reward, done = self.calculate_reward()
-        self.state = np.array([
-            self.pos[0], self.pos[1], self.inclination, self.ang_vel, self.ang_acc,
-            self.targets[0].pos[0], self.targets[0].pos[1], self.targets[0].rad,
-            self.targets[1].pos[0], self.targets[1].pos[1], self.targets[1].rad
-        ])
+
         return self.state, reward, done, {}
 
 
@@ -166,9 +169,9 @@ class DrillEnv(gym.Env):
             reward += STEER_REW
 
         # We have a target. It is the first targetball in the list.
-        cur_target = self.targets[0]
+
         # If the target has been hit:
-        if dist_between(self.pos, cur_target.pos) < cur_target.rad:
+        if dist_between(self.pos, self.targets[0].pos) < self.targets[0].rad:
 
             # Remove target from target list
             self.targets.pop()
@@ -186,7 +189,7 @@ class DrillEnv(gym.Env):
 
             # If we now only have one target remaining, duplicate it in obs. space:
             if len(self.targets) == N_TARGETS_IN_OBS_SPACE - 1:
-                # Remove the target we just hit 
+                # Overwrite the target we just hit 
                 self.state[5] = self.state[8]
                 self.state[6] = self.state[9]
                 self.state[7] = self.state[10]
@@ -214,17 +217,17 @@ class DrillEnv(gym.Env):
             # The reward is multiplied by 0 if angle is pi
             # 1 if 0*pi
             # -1 if -1*pi degree
-            approach_vector = cur_target.pos - self.pos
+            approach_vector = self.targets[0].pos - self.pos
             inclination_vector = np.array([np.sin(self.inclination), np.cos(self.inclination)])
             angle = angle_between_vectors(approach_vector, inclination_vector)
 
             reward_factor = np.cos(angle)
             reward += reward_factor * APPROACH_REW
         
+        self.update_state()
         return reward, done
 
     def update_pos(self, action):
-        #print("update pos")
         # Update angular acceleration, if within limits
         if action == 0 and self.ang_acc > -MAX_ANG_ACC:
             self.ang_acc -= ANG_ACC_INCREMENT
@@ -243,6 +246,8 @@ class DrillEnv(gym.Env):
         # Update position
         self.pos[0] += DRILL_SPEED * np.sin(self.inclination)
         self.pos[1] += DRILL_SPEED * np.cos(self.inclination)
+
+        self.update_state()
 
         # Add position to position-tracking list
         # TODO: This probably work, but not 100% certain.
@@ -279,6 +284,9 @@ class DrillEnv(gym.Env):
         else:
             self.targets = targets
         
+        # Clear path tracking list
+        self.step_render_list = []
+        
         # Add the positions and radii of all targets to the render list, so we can draw them later.
         # This is a list containing numpy 3D vectors: [x-pos, y-pos, radius] for each target.
         self.target_render_list = [] # Clear list, just in case.
@@ -297,7 +305,6 @@ class DrillEnv(gym.Env):
         
 
     def render(self, mode='human'):
-        #print("render")
         screen_width = SCREEN_X
         screen_height = SCREEN_Y
         from gym.envs.classic_control import rendering
