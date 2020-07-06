@@ -4,8 +4,7 @@ import random
 import numpy as np 
 import matplotlib.pyplot as plt
 
-from gym_drill.envs.customAdditions import Coordinate
-from gym_drill.envs.ObservationSpace import ObservationSpace
+from gym_drill.envs.Coordinate import Coordinate
 from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy
 #from stable_baselines.deepq.policies import LnCnnPolicy
