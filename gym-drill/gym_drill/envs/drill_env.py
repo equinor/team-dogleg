@@ -251,30 +251,33 @@ class DrillEnv(gym.Env):
 # Finds nearest between 1 point and a list of candidate points
 # startlocation is type Coordinate, and candidates is list of types Targets
 def _findNearest(start_location,candidates):
-    current_shortest_distance = SCREEN_X # Distance cant be greater than the screen
+    print("Starting find_nearest")
+    current_shortest_distance = -1 # Init with an impossible distance
     current_closest_target_index = 0
     for candidate_index in range(len(candidates)):        
         candidate = candidates[candidate_index]     
         distance = Coordinate.getEuclideanDistance(candidate.center,start_location)
-        if distance < current_shortest_distance:
+        print("Currently the shortest distance is: ",current_shortest_distance)
+        print("The distance between start and ", str(candidate.name), " is: ", distance)
+        if distance < current_shortest_distance or current_shortest_distance == -1:
+            #print("got in, my index is ", candidate_index)
+            print("Im updating the current shortest distance from ", current_shortest_distance, " to ", distance)
             current_shortest_distance = distance
             current_closest_target_index = candidate_index
+        else:
+            print("Im not going to update the shortest distance for now")
+        print()
     
-    return candidate_index
+    print("find_nearest is done for now")
+    print()
+    return current_closest_target_index
 
 # Orders the target based upon a given start location
 # start_location is type Coordiante, all_targets is list of type targets
 def _orderTargets(start_location,all_targets):
     #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
     target_order = [] 
-    loop_counter = 0
-    """
-    t = 0
-    for target in all_targets:
-        t += 1
-        d = Coordinate.getEuclideanDistance(start_location,target.center)
-        print("Distance from start to target #",t, "is: ",d)
-    """
+    loop_counter = 0    
 
     while len(all_targets) != 0:
         if loop_counter == 0:
@@ -286,17 +289,9 @@ def _orderTargets(start_location,all_targets):
             next_in_line_index = _findNearest(target_order[loop_counter-1].center,all_targets)
             next_in_line_target = all_targets[next_in_line_index]
             target_order.append(next_in_line_target)
-            all_targets.pop(next_in_line_index)
-        
-        loop_counter += 1
-    """
-    print("------------------------")
-    t = 0
-    for target in target_order:
-        t += 1
-        d = Coordinate.getEuclideanDistance(start_location,target.center)
-        print("Distance from start to target #",t, "is: ",d)
-    """
+            all_targets.pop(next_in_line_index)  
+
+        loop_counter += 1  
 
     return target_order
 
@@ -330,6 +325,33 @@ def _create_unique_random_target(x_bound,y_bound,r_bound,existing_targets):
 
     return target_candidate
 
-    
 
+def test_order():
+    start = Coordinate(0,0)
+    t1 = TargetBall(1,0,2)
+    t2 = TargetBall(2,0,2)
+    t3 = TargetBall(3,0,2)
+    t4 = TargetBall(4,0,2)
+    t5 = TargetBall(5,0,2)
+    t6 = TargetBall(6,0,2)
+    
+    t1.set_name("Im first")
+    t2.set_name("second")
+    t3.set_name("third")
+    t4.set_name("fourth")
+    t5.set_name("fifth")
+    t6.set_name("sixth")
+
+    target_list = [t4,t2,t5,t1,t3,t6]
+
+    n = _findNearest(start,target_list)
+    print(target_list[n].name)
+    target_list = _orderTargets(start,target_list)
+    print("After ordering it looks like this")
+    for t in target_list:
+        print(t.name)
+
+
+if __name__ == '__main__':
+    test_order()
 
