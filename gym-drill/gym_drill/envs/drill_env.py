@@ -32,7 +32,7 @@ TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
 TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 5
+NUM_TARGETS = 4
 TARGET_WINDOW_SIZE = 3
 
 class DrillEnv(gym.Env):
@@ -61,7 +61,7 @@ class DrillEnv(gym.Env):
 
         # Init targets. See _init_targets function
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
-
+        
         self.action_space = spaces.Discrete(3)        
          
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,BIT_BOUNDS,self.targets)
@@ -125,12 +125,9 @@ class DrillEnv(gym.Env):
             state_list.append(target.center.y)
             state_list.append(target.radius)
 
-        return tuple(state_list)
-
-        
+        return tuple(state_list)        
 
     def reset(self):
-
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
 
@@ -147,6 +144,8 @@ class DrillEnv(gym.Env):
         self.state = self.get_state()
 
         return np.array(self.state)
+
+    
     """
     def render(self, mode='human'):
         screen_width = SCREEN_X
@@ -206,21 +205,36 @@ class DrillEnv(gym.Env):
         y_positions = []
         for position in self.step_history:
             x_positions.append(position[0])
-            y_positions.append(position[1])
-        
+            y_positions.append(position[1])       
 
-        """
-        # Plot circles from targetballs
+        
+        # Plot circles from targetballs, just to verify the order of the balls
         theta = np.linspace(0, 2*np.pi, 100)
+        colors_order = {
+            1:"b",
+            2:"g",
+            3:"r",
+            4:"c",
+            5:"m",
+            6:"y",
+            7:"k"
+            }
+        cnt = 1
+        t = 0
         for target in self.targets:
-            center = target[0]
-            radius = target[1]
+            t += 1
+            center = target.center
+            radius = target.radius
+            
+            d = Coordinate.getEuclideanDistance(Coordinate(x_positions[0],y_positions[0]),target.center)
+            print("Distance from start to target #",t, "is: ",d)         
+
 
             x = center.x + radius*np.cos(theta)
             y = center.y + radius*np.sin(theta)
 
-            plt.plot(x,y,"r")
-        """            
+            plt.plot(x,y,colors_order[cnt])
+            cnt += 1                
         
         # Set axis 
         axes = plt.gca()
@@ -231,6 +245,8 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path")
 
         plt.show()
+
+# These could possibly be moved to another file
 
 # Finds nearest between 1 point and a list of candidate points
 # startlocation is type Coordinate, and candidates is list of types Targets
@@ -252,6 +268,14 @@ def _orderTargets(start_location,all_targets):
     #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
     target_order = [] 
     loop_counter = 0
+    """
+    t = 0
+    for target in all_targets:
+        t += 1
+        d = Coordinate.getEuclideanDistance(start_location,target.center)
+        print("Distance from start to target #",t, "is: ",d)
+    """
+
     while len(all_targets) != 0:
         if loop_counter == 0:
             next_in_line_index = _findNearest(start_location,all_targets)
@@ -265,6 +289,14 @@ def _orderTargets(start_location,all_targets):
             all_targets.pop(next_in_line_index)
         
         loop_counter += 1
+    """
+    print("------------------------")
+    t = 0
+    for target in target_order:
+        t += 1
+        d = Coordinate.getEuclideanDistance(start_location,target.center)
+        print("Distance from start to target #",t, "is: ",d)
+    """
 
     return target_order
 
@@ -273,24 +305,31 @@ def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
     all_targets = []
 
     for t in range(num_targets):
-        target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
-
-
-        target_radius = np.random.uniform(r_bound[0],r_bound[1])
-
-        target = TargetBall(target_center.x,target_center.y,target_radius)
-               
-        all_targets.append(target)
+        target = _create_unique_random_target(x_bound,y_bound,r_bound,all_targets)
+        all_targets.append(target)        
     
     all_targets = _orderTargets(start_location,all_targets)
 
     return all_targets
 
-# Will 
-def _init_observation_space(window_targets):
-    # These are all given by global vars in the environment
-    lower_obs_space_limit = np.array([0, 0, 0, -MAX_ANGVEL, -MAX_ANGACC])
-    upper_obs_space_limit = np.array([SCREEN_X,SCREEN_Y, 2*np.pi, MAX_ANGVEL, MAX_ANGACC])
+def _is_overlapping(t1,t2):
+    total_radii = t1.radius + t2.radius
+    distance = Coordinate.getEuclideanDistance(t1.center,t2.center)
+    return  distance < total_radii
 
-    for target in range(len(window_targets)):
-        pass
+# I'm a bit worried that the recursion might have messed this up..?
+def _create_unique_random_target(x_bound,y_bound,r_bound,existing_targets):
+    target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
+    target_radius = np.random.uniform(r_bound[0],r_bound[1])
+    target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
+
+    for target in existing_targets:
+        if _is_overlapping(target,target_candidate):
+            target_candidate =_create_unique_random_target(x_bound,y_bound,r_bound,existing_targets)
+            break
+
+    return target_candidate
+
+    
+
+
