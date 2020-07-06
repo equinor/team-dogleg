@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
-from gym_drill.envs.customAdditions import *
+import gym_drill.envs.environment_support as es
 
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0 # issue1: In the obs space we set this to 360 deg
@@ -60,7 +60,7 @@ class DrillEnv(gym.Env):
         self.initialAngAcc = bitInitialization[2]
 
         # Init targets. See _init_targets function
-        self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
+        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
         
         self.action_space = spaces.Discrete(3)        
          
@@ -139,7 +139,7 @@ class DrillEnv(gym.Env):
         self.step_history = [[self.start_x,self.start_y]]       
 
         # Need to init new targets
-        self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
+        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
 
         self.state = self.get_state()
 
@@ -245,113 +245,4 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path")
 
         plt.show()
-
-# These could possibly be moved to another file
-
-# Finds nearest between 1 point and a list of candidate points
-# startlocation is type Coordinate, and candidates is list of types Targets
-def _findNearest(start_location,candidates):
-    print("Starting find_nearest")
-    current_shortest_distance = -1 # Init with an impossible distance
-    current_closest_target_index = 0
-    for candidate_index in range(len(candidates)):        
-        candidate = candidates[candidate_index]     
-        distance = Coordinate.getEuclideanDistance(candidate.center,start_location)
-        print("Currently the shortest distance is: ",current_shortest_distance)
-        print("The distance between start and ", str(candidate.name), " is: ", distance)
-        if distance < current_shortest_distance or current_shortest_distance == -1:
-            #print("got in, my index is ", candidate_index)
-            print("Im updating the current shortest distance from ", current_shortest_distance, " to ", distance)
-            current_shortest_distance = distance
-            current_closest_target_index = candidate_index
-        else:
-            print("Im not going to update the shortest distance for now")
-        print()
-    
-    print("find_nearest is done for now")
-    print()
-    return current_closest_target_index
-
-# Orders the target based upon a given start location
-# start_location is type Coordiante, all_targets is list of type targets
-def _orderTargets(start_location,all_targets):
-    #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
-    target_order = [] 
-    loop_counter = 0    
-
-    while len(all_targets) != 0:
-        if loop_counter == 0:
-            next_in_line_index = _findNearest(start_location,all_targets)
-            next_in_line_target = all_targets[next_in_line_index]
-            target_order.append(next_in_line_target)
-            all_targets.pop(next_in_line_index)
-        else:
-            next_in_line_index = _findNearest(target_order[loop_counter-1].center,all_targets)
-            next_in_line_target = all_targets[next_in_line_index]
-            target_order.append(next_in_line_target)
-            all_targets.pop(next_in_line_index)  
-
-        loop_counter += 1  
-
-    return target_order
-
-# Returns an ordered list of randomly generated targets within the bounds given. 
-def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
-    all_targets = []
-
-    for t in range(num_targets):
-        target = _create_unique_random_target(x_bound,y_bound,r_bound,all_targets)
-        all_targets.append(target)        
-    
-    all_targets = _orderTargets(start_location,all_targets)
-
-    return all_targets
-
-def _is_overlapping(t1,t2):
-    total_radii = t1.radius + t2.radius
-    distance = Coordinate.getEuclideanDistance(t1.center,t2.center)
-    return  distance < total_radii
-
-# I'm a bit worried that the recursion might have messed this up..?
-def _create_unique_random_target(x_bound,y_bound,r_bound,existing_targets):
-    target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
-    target_radius = np.random.uniform(r_bound[0],r_bound[1])
-    target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
-
-    for target in existing_targets:
-        if _is_overlapping(target,target_candidate):
-            target_candidate =_create_unique_random_target(x_bound,y_bound,r_bound,existing_targets)
-            break
-
-    return target_candidate
-
-
-def test_order():
-    start = Coordinate(0,0)
-    t1 = TargetBall(1,0,2)
-    t2 = TargetBall(2,0,2)
-    t3 = TargetBall(3,0,2)
-    t4 = TargetBall(4,0,2)
-    t5 = TargetBall(5,0,2)
-    t6 = TargetBall(6,0,2)
-    
-    t1.set_name("Im first")
-    t2.set_name("second")
-    t3.set_name("third")
-    t4.set_name("fourth")
-    t5.set_name("fifth")
-    t6.set_name("sixth")
-
-    target_list = [t4,t2,t5,t1,t3,t6]
-
-    n = _findNearest(start,target_list)
-    print(target_list[n].name)
-    target_list = _orderTargets(start,target_list)
-    print("After ordering it looks like this")
-    for t in target_list:
-        print(t.name)
-
-
-if __name__ == '__main__':
-    test_order()
 
