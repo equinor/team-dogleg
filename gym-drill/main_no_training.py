@@ -32,7 +32,7 @@ for episode in range(10):
 	while done==False:
 		action = agent.get_action()
 		state, reward, done, info = env.step(action)
-		env.render()		
+		#env.render()		
 
 	env.display_environment()
 	state = env.reset()
