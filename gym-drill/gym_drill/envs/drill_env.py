@@ -8,10 +8,7 @@ import matplotlib.pyplot as plt
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
-#import gym_drill.envs.environment_support as es
-#from gym_drill.envs.environment_support import *
-
-
+from gym_drill.envs.Hazard import Hazard
 
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0 # issue1: In the obs space we set this to 360 deg
@@ -26,10 +23,6 @@ DRILL_SPEED = 5.0
 SCREEN_X = 600
 SCREEN_Y = 600
 
-# Observation space specs
-SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
-BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
-
 # Target specs
 TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
 TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
@@ -38,13 +31,26 @@ TARGET_RADII_BOUND = [20,50]
 NUM_TARGETS = 4
 TARGET_WINDOW_SIZE = 3
 
+# Hazard specs. Can be in entire screen
+HAZARD_BOUND_X = [0,SCREEN_X]
+HAZARD_BOUND_Y = [0,SCREEN_Y]
+HAZARD_RADII_BOUND = [20,50]
+
+NUM_HAZARDS = 4
+
+# Observation space specs
+SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
+BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
+HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
+TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
+
 class DrillEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,bitInitialization):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False):
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         # Save the starting position as "first" step. Needed for plotting in matplotlib
@@ -65,11 +71,18 @@ class DrillEnv(gym.Env):
         # Init targets. See _init_targets function
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
         
+        if activate_hazards:
+            print("Initiating environment with hazards")
+            self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
+        else:
+            print("Initiating environment without hazards")
+            self.hazards = []
+
         self.action_space = spaces.Discrete(3)        
-         
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,BIT_BOUNDS,self.targets)
+
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards)
       
-        self.observation_space = self.observation_space_container.get_space_box3()        
+        self.observation_space = self.observation_space_container.get_space_box()        
 
         self.seed()
         self.viewer = None
@@ -167,6 +180,10 @@ class DrillEnv(gym.Env):
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.radius)
+        for hazard in self.observation_space_container.hazards:
+            state_list.append(hazard.center.x)
+            state_list.append(hazard.center.y)
+            state_list.append(hazard.radius)
 
         return tuple(state_list)        
 
@@ -284,6 +301,27 @@ class DrillEnv(gym.Env):
         plt.show()
 
 
+# Returns an ordered list of randomly generated targets within the bounds given. 
+def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
+    all_targets = []
+
+    for t in range(num_targets):
+        target = _create_unique_random_target(start_location,x_bound,y_bound,r_bound,all_targets)
+        all_targets.append(target)        
+    
+    all_targets = _orderTargets(start_location,all_targets)
+
+    return all_targets
+
+def _init_hazards(num_hazards,x_bound,y_bound,r_bound,start_pos,existing_targets):
+    all_hazards = []
+    for h in range(num_hazards):
+        avoid = existing_targets + all_hazards
+        hazard = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,avoid)
+        all_hazards.append(hazard)
+
+    return all_hazards
+
 # Finds nearest between 1 point and a list of candidate points
 # startlocation is type Coordinate, and candidates is list of types Targets
 def _findNearest(start_location,candidates):
@@ -322,34 +360,102 @@ def _orderTargets(start_location,all_targets):
 
     return target_order
 
-# Returns an ordered list of randomly generated targets within the bounds given. 
-def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
-    all_targets = []
-
-    for t in range(num_targets):
-        target = _create_unique_random_target(x_bound,y_bound,r_bound,all_targets)
-        all_targets.append(target)        
-    
-    all_targets = _orderTargets(start_location,all_targets)
-
-    return all_targets
-
-# Returns True if t1 or t2 overlap 
+# Returns True if t1 or t2 overlap. Works for both Hazards and Targets
 def _is_overlapping(t1,t2):
     total_radii = t1.radius + t2.radius
     distance = Coordinate.getEuclideanDistance(t1.center,t2.center)
     return  distance < total_radii
 
 # Creates a uniqe target that does not overlap with any targets in existing_targets
-def _create_unique_random_target(x_bound,y_bound,r_bound,existing_targets):
+def _create_unique_random_target(start_pos,x_bound,y_bound,r_bound,existing_targets):
     target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
     target_radius = np.random.uniform(r_bound[0],r_bound[1])
     target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
 
     for target in existing_targets:
-        if _is_overlapping(target,target_candidate):
-            target_candidate =_create_unique_random_target(x_bound,y_bound,r_bound,existing_targets)
+        if _is_overlapping(target,target_candidate) or _isWithin(start_pos,target_center,target_radius):
+            target_candidate =_create_unique_random_target(start_pos,x_bound,y_bound,r_bound,existing_targets)
             break
 
     return target_candidate
 
+# Creates a uniqe hazard that does not overlad with any obstacles in existing_obstacles
+def _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles):
+    hazard_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
+    hazard_radius = np.random.uniform(r_bound[0],r_bound[1])
+    hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)  
+    
+    for obstacle in existing_obstacles:
+        if _is_overlapping(obstacle,hazard_candidate) or _isWithin(start_pos,hazard_center,hazard_radius):
+            hazard_candidate = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles)
+            break
+    
+    return hazard_candidate
+
+def _isWithin(bitPosition,targetPosition,targetRadius):
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
+
+if __name__ == '__main__':
+    print("Testing init of targets and hazards")    
+    startpos = Coordinate(100,400)
+
+    print("Creating targets")
+    t = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startpos)
+    for _ in t:
+        print(_)
+    
+    print("Creating Hazards")    
+    h = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startpos,t)
+    for eden_hazard in h:
+        print(eden_hazard)
+    
+    # Plot circles from targetballs, colors just to verify the order of the balls
+    theta = np.linspace(0, 2*np.pi, 100)
+    colors_order = {
+        1:"b",
+        2:"g",
+        3:"r",
+        4:"c",
+        5:"m",
+        6:"y",        
+        }
+    cnt = 1
+    for target in t:
+        center = target.center
+        radius = target.radius          
+                           
+        x = center.x + radius*np.cos(theta)
+        y = center.y + radius*np.sin(theta)
+
+        plt.plot(x,y,colors_order[cnt])
+        cnt += 1
+    for hazard in h:
+        h_center = hazard.center
+        h_radius = hazard.radius
+        h_x = h_center.x + h_radius*np.cos(theta)                
+        h_y = h_center.y + h_radius*np.sin(theta)
+        plt.plot(h_x,h_y,"k")
+
+    # Set axis 
+    axes = plt.gca()
+    axes.set_xlim(0,SCREEN_X)
+    axes.set_ylim(0,SCREEN_Y)
+    
+    plt.title("Test random generated hazard and targets")
+    plt.show()
+    
+    print("Verify Environemnt")
+    import random
+    BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
+
+    env = DrillEnv(startpos,BIT_INITIALIZATION)
+
+    action_size = env.action_space.n
+    action = random.choice(range(action_size))
+    env.step(action)
+    print("I took one step, this is what the current state is:")
+    print(env.state)
+    print(len(env.state))
+    print(env.observation_space)
+
+   

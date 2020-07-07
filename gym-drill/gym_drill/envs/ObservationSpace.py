@@ -1,21 +1,15 @@
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.Target import TargetBall
+from gym_drill.envs.Hazard import Hazard
+
 import numpy as np
 import gym
 from gym import spaces
 
-SCREEN_X = 600
-SCREEN_Y = 600
-
 TARGET_WINDOW_SIZE = 3
 
-# Used in space_box3. If needed they should be plart of arguments to init function
-TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
-TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
-TARGET_RADII_BOUND = [20,50]
-
 class ObservationSpace:
-    def __init__(self,space_bounds,bit_bounds,targets):
+    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,targets,hazards):
         # Spacial
         self.lower_x = space_bounds[0]
         self.upper_x = space_bounds[1]
@@ -33,7 +27,16 @@ class ObservationSpace:
         # Target related
         self.target_window = targets[:TARGET_WINDOW_SIZE]
         self.remaining_targets = targets[1:]
-    
+        self.target_bound_x = target_bounds[0]
+        self.target_bound_y = target_bounds[1]
+        self.target_bound_r = target_bounds[2]
+
+        # Hazard related
+        self.hazards = hazards
+        self.hazard_bound_x = hazard_bounds[0]
+        self.hazard_bound_y = hazard_bounds[1]
+        self.hazard_bound_r = hazard_bounds[2]
+            
     # To print the obs_space. Can be nice for debugging purposes
     def __str__(self):
         text = "The observation space looks like this: \n \n" + "Spacial bounds: " \
@@ -44,9 +47,17 @@ class ObservationSpace:
         + "Angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
         + "Angular acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
         + "There are " + str(TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" + str(self.target_window) + "\n \n" \
-        + "The remaining targets are:" + str(self.remaining_targets)
-    
-        return text       
+        + "There are " + str(len(self.remaining_targets))+  " remaining targets. These are:" + str(self.remaining_targets) + "\n" \
+        + "Target bounds are: \n" + "x: " + str(self.target_bound_x) + "\n" \
+        + "y: " + str(self.target_bound_y) + "\n" \
+        + "r: " + str(self.target_bound_r) + "\n" \
+        + "Hazard bounds are : \n" + "x: " + str(self.hazard_bound_x) + "\n" \
+        + "y: " + str(self.hazard_bound_y) + "\n" \
+        + "r: " + str(self.hazard_bound_r) + "\n" \
+        + "There are " + str(len(self.hazards))+ " hazards, these are located at \n" + str(self.hazards)  
+        
+            
+        return text      
             
 
     # Shifts window. The last target will be loaded 3 times (fill the entire window)
@@ -63,51 +74,22 @@ class ObservationSpace:
                 # Add the last element of target_window, until window is big enough
                 self.target_window.append(self.target_window[-1:][0])
         else:
-            print("No more targets to add to window, we are done!") 
-
-    # Returns the environment
-    def get_space_box0(self):
-        lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
-        upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
-
-        # We append the targets as a list with targetball types (like an actual window)
-        lower = np.append(lower,self.target_window)
-        upper = np.append(upper,self.target_window)
-        
-        return spaces.Box(lower,upper,dtype=np.float64)   
+            print("No more targets to add to window, we are done!")    
     
-    def get_space_box1(self):
-        lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
-        upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
-
-        # We append the targets as type TargetBall to the observation space. Lower == Upper when it comes to targets
-        for target in self.target_window:
-            lower = np.append(lower,target)
-            upper = np.append(upper,target)    
-        
-        return spaces.Box(lower,upper,dtype=np.float64)                    
-    
-    def get_space_box2(self):
-        lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
-        upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
-
-        # We append the actual int values of the targets position and radius
-        for t in self.target_window:
-            lower = np.append(lower,[t.center.x,t.center.y,t.radius])
-            lower = np.append(upper,[t.center.x,t.center.y,t.radius])
-
-        return spaces.Box(lower,upper,dtype=np.float64)        
-    
-    def get_space_box3(self):
+    def get_space_box(self):
         lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
         upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
 
         # We append the upper and lower boundaries of where the target can exist. This is like we did before
         # This is the only case where we have an interval
         for t in self.target_window:
-            lower = np.append(lower,[TARGET_BOUND_X[0],TARGET_BOUND_Y[0],TARGET_RADII_BOUND[0]])
-            upper = np.append(upper,[TARGET_BOUND_X[1],TARGET_BOUND_Y[1],TARGET_RADII_BOUND[1]])
+            lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_r[0]])
+            upper = np.append(upper,[self.target_bound_x[1],self.target_bound_y[1],self.target_bound_r[1]])
 
+        for h in self.hazards:
+            lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_r[0]])
+            upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_r[1]])       
+        
         print("Lower bounds have length: ",str(len(lower))," and look like this")
         print(lower)
         print("Upper bounds have length: ",str(len(upper))," and look like this:")
@@ -115,14 +97,52 @@ class ObservationSpace:
 
         return spaces.Box(lower,upper,dtype=np.float64)    
 
-
-
+""" 
+1. Do we need to have the radius bound for targets and hazard in the obs space?"
+2. Do we need test to check that all targets and hazards that are passed to the obs_space are witin bounds
 """
-Possible problems:
-    1. Not compatible with open AI gym or other packages 
-       that might expect something specific when looking for the
-       "observation_space variable". However I dont think so (we could probably
-       rename the observations_space name to potato and it still works and in that
-       case, there cannot be anything that looks for the name "observation_space")
-       After some googling I now think that it needs to be called observation_space
-"""
+
+if __name__ == '__main__':
+    # Test basic functionality
+    SCREEN_X = 600
+    SCREEN_Y = 600
+
+    SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
+    BIT_BOUNDS = [0,2*np.pi,-0.05,0.05,-0.1,0.1] #
+
+    TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
+    TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
+    TARGET_RADII_BOUND = [20,50]
+    TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
+
+    HAZARD_BOUND_X = [0,SCREEN_X]
+    HAZARD_BOUND_Y = [0,SCREEN_Y]
+    HAZARD_RADII_BOUND = [20,50]
+    HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
+    
+    targets = []
+    for _ in range(4):
+        target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
+        target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
+        target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
+        targets.append(target_candidate)
+    
+    hazards = []
+    for _ in range(4):
+        hazard_center = Coordinate(np.random.uniform(HAZARD_BOUND_X[0],HAZARD_BOUND_X[1]),(np.random.uniform(HAZARD_BOUND_Y[0],HAZARD_BOUND_Y[1] )))
+        hazard_radius = np.random.uniform(HAZARD_RADII_BOUND[0],HAZARD_RADII_BOUND[1])
+        hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)
+        hazards.append(hazard_candidate)    
+    
+    print("Here are the targets")
+    print(targets)
+    print("here are the hazards")
+    print(hazards)
+
+    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,targets,hazards)
+    print(obs_space)
+
+    box = obs_space.get_space_box()
+    print(box)
+    print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards))
+
