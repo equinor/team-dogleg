@@ -3,12 +3,16 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
+import environment_support
 
 # Our own libs
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
 import gym_drill.envs.environment_support as es
+from gym_drill.envs.environment_support import *
+
+
 
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0 # issue1: In the obs space we set this to 360 deg
@@ -69,7 +73,8 @@ class DrillEnv(gym.Env):
         self.observation_space = self.observation_space_container.get_space_box3()        
 
         self.seed()
-        self.viewer = None      
+        self.viewer = None
+        self.state = self.get_state()      
   
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -92,7 +97,6 @@ class DrillEnv(gym.Env):
             reward  -=1000.0
             done = True     
                 
-        self.state = self.get_state()
 
         # Find the values of the current target
         current_target_pos = np.array([self.state[5], self.state[6]])
@@ -104,7 +108,7 @@ class DrillEnv(gym.Env):
             # If target is hit, give reward.
             reward += 1000
             # If we don't have any more targets,
-            if len(self.targets) == 0:
+            if len(self.observation_space_container.remaining_targets) == 0:
                 # we are done.
                 done = True
 
@@ -113,6 +117,7 @@ class DrillEnv(gym.Env):
                 # we must shift the targets.
                 self.observation_space_container.shift_window()
 
+        
         else:
             # If target is not hit, then we give a reward if drill is approaching it.
             # Find the vector that points from drill and to target
@@ -131,6 +136,8 @@ class DrillEnv(gym.Env):
             reward_factor = np.cos(angle_between_vectors)
             reward += reward_factor * 7       
 
+        self.state = self.get_state()
+        
         return np.array(self.state), reward, done, {}
     
     # For encapsulation. Updates the bit according to the action
