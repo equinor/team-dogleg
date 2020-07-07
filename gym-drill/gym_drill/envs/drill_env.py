@@ -94,6 +94,43 @@ class DrillEnv(gym.Env):
                 
         self.state = self.get_state()
 
+        # Find the values of the current target
+        current_target_pos = np.array([self.state[5], self.state[6]])
+        current_target_rad = self.state[7]
+        drill_pos = np.array([self.bitLocation.x, self.bitLocation.y])
+
+        # Check if target is hit
+        if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
+            # If target is hit, give reward.
+            reward += 1000
+            # If we don't have any more targets,
+            if len(self.targets) == 0:
+                # we are done.
+                done = True
+
+            # But if we do have more targets,
+            else:
+                # we must shift the targets.
+                self.observation_space_container.shift_window()
+
+        else:
+            # If target is not hit, then we give a reward if drill is approaching it.
+            # Find the vector that points from drill and to target
+            # We also have the heading vector
+            # The angle between these two vectors decides the reward
+
+            # The reward is multiplied by 0 if angle is pi
+            # 1 if 0*pi
+            # -1 if -1*pi degree
+
+            # Approach vector
+            appr_vec = current_target_pos - drill_pos
+            # Heading vector.
+            head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+            angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+            reward_factor = np.cos(angle_between_vectors)
+            reward += reward_factor * 7       
+
         return np.array(self.state), reward, done, {}
     
     # For encapsulation. Updates the bit according to the action
