@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
-from gym_drill.envs.customAdditions import *
+#import gym_drill.envs.environment_support as es
+#from gym_drill.envs.environment_support import *
+
+
 
 # Max values for angular velocity and acceleration
 MAX_HEADING = 3.0 # issue1: In the obs space we set this to 360 deg
@@ -69,7 +72,8 @@ class DrillEnv(gym.Env):
         self.observation_space = self.observation_space_container.get_space_box3()        
 
         self.seed()
-        self.viewer = None      
+        self.viewer = None
+        self.state = self.get_state()      
   
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -92,8 +96,47 @@ class DrillEnv(gym.Env):
             reward  -=1000.0
             done = True     
                 
-        self.state = self.get_state()
 
+        # Find the values of the current target
+        current_target_pos = np.array([self.state[5], self.state[6]])
+        current_target_rad = self.state[7]
+        drill_pos = np.array([self.bitLocation.x, self.bitLocation.y])
+
+        # Check if target is hit
+        if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
+            # If target is hit, give reward.
+            reward += 1000
+            # If we don't have any more targets,
+            if len(self.observation_space_container.remaining_targets) == 0:
+                # we are done.
+                done = True
+
+            # But if we do have more targets,
+            else:
+                # we must shift the targets.
+                self.observation_space_container.shift_window()
+
+        
+        else:
+            # If target is not hit, then we give a reward if drill is approaching it.
+            # Find the vector that points from drill and to target
+            # We also have the heading vector
+            # The angle between these two vectors decides the reward
+
+            # The reward is multiplied by 0 if angle is pi
+            # 1 if 0*pi
+            # -1 if -1*pi degree
+
+            # Approach vector
+            appr_vec = current_target_pos - drill_pos
+            # Heading vector.
+            head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+            angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+            reward_factor = np.cos(angle_between_vectors)
+            reward += reward_factor * 7       
+
+        self.state = self.get_state()
+        
         return np.array(self.state), reward, done, {}
     
     # For encapsulation. Updates the bit according to the action
@@ -208,7 +251,7 @@ class DrillEnv(gym.Env):
             y_positions.append(position[1])       
 
         
-        # Plot circles from targetballs, just to verify the order of the balls
+        # Plot circles from targetballs, colors just to verify the order of the balls
         theta = np.linspace(0, 2*np.pi, 100)
         colors_order = {
             1:"b",
@@ -220,16 +263,10 @@ class DrillEnv(gym.Env):
             7:"k"
             }
         cnt = 1
-        t = 0
         for target in self.targets:
-            t += 1
             center = target.center
-            radius = target.radius
-            
-            d = Coordinate.getEuclideanDistance(Coordinate(x_positions[0],y_positions[0]),target.center)
-            print("Distance from start to target #",t, "is: ",d)         
-
-
+            radius = target.radius          
+                           
             x = center.x + radius*np.cos(theta)
             y = center.y + radius*np.sin(theta)
 
@@ -246,34 +283,24 @@ class DrillEnv(gym.Env):
 
         plt.show()
 
-# These could possibly be moved to another file
 
 # Finds nearest between 1 point and a list of candidate points
 # startlocation is type Coordinate, and candidates is list of types Targets
 def _findNearest(start_location,candidates):
-    print("Starting find_nearest")
     current_shortest_distance = -1 # Init with an impossible distance
     current_closest_target_index = 0
     for candidate_index in range(len(candidates)):        
         candidate = candidates[candidate_index]     
         distance = Coordinate.getEuclideanDistance(candidate.center,start_location)
-        print("Currently the shortest distance is: ",current_shortest_distance)
-        print("The distance between start and ", str(candidate.name), " is: ", distance)
-        if distance < current_shortest_distance or current_shortest_distance == -1:
-            #print("got in, my index is ", candidate_index)
-            print("Im updating the current shortest distance from ", current_shortest_distance, " to ", distance)
+        
+        if distance < current_shortest_distance or current_shortest_distance == -1:           
             current_shortest_distance = distance
             current_closest_target_index = candidate_index
-        else:
-            print("Im not going to update the shortest distance for now")
-        print()
-    
-    print("find_nearest is done for now")
-    print()
+        
     return current_closest_target_index
 
 # Orders the target based upon a given start location
-# start_location is type Coordiante, all_targets is list of type targets
+# start_location is type Coordinate, all_targets is list of type targets
 def _orderTargets(start_location,all_targets):
     #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
     target_order = [] 
@@ -307,12 +334,13 @@ def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
 
     return all_targets
 
+# Returns True if t1 or t2 overlap 
 def _is_overlapping(t1,t2):
     total_radii = t1.radius + t2.radius
     distance = Coordinate.getEuclideanDistance(t1.center,t2.center)
     return  distance < total_radii
 
-# I'm a bit worried that the recursion might have messed this up..?
+# Creates a uniqe target that does not overlap with any targets in existing_targets
 def _create_unique_random_target(x_bound,y_bound,r_bound,existing_targets):
     target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
     target_radius = np.random.uniform(r_bound[0],r_bound[1])
@@ -324,34 +352,4 @@ def _create_unique_random_target(x_bound,y_bound,r_bound,existing_targets):
             break
 
     return target_candidate
-
-
-def test_order():
-    start = Coordinate(0,0)
-    t1 = TargetBall(1,0,2)
-    t2 = TargetBall(2,0,2)
-    t3 = TargetBall(3,0,2)
-    t4 = TargetBall(4,0,2)
-    t5 = TargetBall(5,0,2)
-    t6 = TargetBall(6,0,2)
-    
-    t1.set_name("Im first")
-    t2.set_name("second")
-    t3.set_name("third")
-    t4.set_name("fourth")
-    t5.set_name("fifth")
-    t6.set_name("sixth")
-
-    target_list = [t4,t2,t5,t1,t3,t6]
-
-    n = _findNearest(start,target_list)
-    print(target_list[n].name)
-    target_list = _orderTargets(start,target_list)
-    print("After ordering it looks like this")
-    for t in target_list:
-        print(t.name)
-
-
-if __name__ == '__main__':
-    test_order()
 
