@@ -69,8 +69,8 @@ class DrillEnv(gym.Env):
 
         # Init targets. See _init_targets function
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
-        
-        if activate_hazards:
+        self.activate_hazards = activate_hazards
+        if self.activate_hazards:
             print("Initiating environment with hazards")
             self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
@@ -197,7 +197,20 @@ class DrillEnv(gym.Env):
 
         # Need to init new targets
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
+        
+        # Init new hazards
+        if self.activate_hazards:
+            print("Initiating environment with hazards")
+            self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+        else:
+            print("Initiating environment without hazards")
+            self.hazards = []
 
+        # Re-configure the observation space
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards)
+      
+        self.observation_space = self.observation_space_container.get_space_box()        
+        
         self.state = self.get_state()
 
         return np.array(self.state)
