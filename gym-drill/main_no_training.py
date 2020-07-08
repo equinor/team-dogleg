@@ -3,13 +3,13 @@ import gym_drill
 import random
 import numpy as np 
 
-from gym_drill.envs.customAdditions import Coordinate
+from gym_drill.envs.Coordinate import Coordinate
 
 STARTLOCATION = Coordinate(100,300)
 BIT_INITIALIZATION = [3*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
-env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
+env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION,activate_hazards=True)
 
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
