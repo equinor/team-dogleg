@@ -14,9 +14,8 @@ from gym_drill.envs.Target import TargetBall
 
 
 # Max values for angular velocity and acceleration
-MAX_HEADING = 3.0 # issue1: In the obs space we set this to 360 deg
-MAX_ANGVEL = 0.05
-MAX_ANGACC = 0.1
+MAX_ANGVEL = 0.1
+MAX_ANGACC = 0.05
 
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
@@ -151,9 +150,8 @@ class DrillEnv(gym.Env):
         if abs(self.angVel + self.angAcc) < MAX_ANGVEL:
             self.angVel += self.angAcc
 
-        # Update heading, if within limits
-        if abs(self.heading + self.angVel) < MAX_HEADING: # issue1
-            self.heading += self.angVel
+        # Update heading.
+        self.heading = (self.heading + self.angVel) % (2 * np.pi)
 
         # Update position
         self.bitLocation.x += DRILL_SPEED * np.sin(self.heading)
