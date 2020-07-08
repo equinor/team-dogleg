@@ -8,7 +8,8 @@ from gym_drill.envs.Coordinate import Coordinate
 
 from stable_baselines.common import make_vec_env
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy#, LnMlpPolicy
+from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy
+from stable_baselines.deepq.policies import LnMlpPolicy 
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines import DQN
 from stable_baselines import PPO2
@@ -23,7 +24,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100.0,400.0)
+STARTLOCATION = Coordinate(50.0,500.0)
 BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
@@ -39,12 +40,12 @@ print("action space", env.action_space)
 
 model_name = "DQN_drill_model"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(DQN_MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
-#model = DQN.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                   #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.5, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
+#model = DQN.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                   					   #2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=200000, tb_log_name = "DQN") #Where the learning happens
+model.learn(total_timesteps=50000, tb_log_name = "DQN") #Where the learning happens
 model.save(model_name) #Saving the wisdom for later 
-
+"""
 #PPO2-approach
 
 model_name = "PP02_drill_model"
@@ -64,7 +65,7 @@ model = A2C(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_
 print("A2C: I start training now")
 model.learn(total_timesteps=200000, tb_log_name = "A2C") #Where the learning happens
 model.save(model_name) #Saving the wisdom for later 
-
+"""
 """
 #ACER-approach [NOT SURE ABOUT THIS ONE]
 
@@ -101,11 +102,11 @@ for episode in range(10):
 
 	env.display_environment()
 """
-"""
+
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (10):
+for episode in range (5):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)
@@ -116,4 +117,3 @@ for episode in range (10):
 	env.close()
 
 print("done")
-"""
