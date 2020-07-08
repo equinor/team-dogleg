@@ -106,11 +106,12 @@ class ObservationSpace:
             lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_r[0]])
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_r[1]])       
         
+        """
         print("Lower bounds have length: ",str(len(lower))," and look like this")
         print(lower)
         print("Upper bounds have length: ",str(len(upper))," and look like this:")
         print(upper)
-
+        """
         return spaces.Box(lower,upper,dtype=np.float64)    
 
 """ 
