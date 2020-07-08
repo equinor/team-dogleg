@@ -127,7 +127,6 @@ class DrillEnv(gym.Env):
             else:
                 # we must shift the targets.
                 self.observation_space_container.shift_window()
-
         
         else:
             # If target is not hit, then we give a reward if drill is approaching it.
@@ -263,7 +262,7 @@ class DrillEnv(gym.Env):
         y_positions = []
         for position in self.step_history:
             x_positions.append(position[0])
-            y_positions.append(position[1])       
+            y_positions.append(position[1])      
 
         
         # Plot circles from targetballs, colors just to verify the order of the balls
@@ -284,10 +283,22 @@ class DrillEnv(gym.Env):
                            
             x = center.x + radius*np.cos(theta)
             y = center.y + radius*np.sin(theta)
+            label = "Target #" + str(cnt)
+            plt.plot(x,y,colors_order[cnt],label=label)
+            cnt += 1
 
-            plt.plot(x,y,colors_order[cnt])
-            cnt += 1                
-        
+        firsttime = True # To ensure hazard label only appears once
+        for hazard in self.hazards:
+            h_center = hazard.center
+            h_radius = hazard.radius
+            h_x = h_center.x + h_radius*np.cos(theta)                
+            h_y = h_center.y + h_radius*np.sin(theta)
+            if firsttime:
+                plt.plot(h_x,h_y,"k",label="Hazards")
+                firsttime = False
+            else:
+                plt.plot(h_x,h_y,"k")
+
         # Set axis 
         axes = plt.gca()
         axes.set_xlim(0,SCREEN_X)
@@ -295,7 +306,7 @@ class DrillEnv(gym.Env):
 
         plt.plot(x_positions,y_positions,"b")
         plt.title("Well trajectory path")
-
+        plt.legend()
         plt.show()
 
 
