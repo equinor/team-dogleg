@@ -105,18 +105,10 @@ class ObservationSpace:
         for h in self.hazards:
             lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_r[0]])
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_r[1]])       
-        """
-        print("Lower bounds have length: ",str(len(lower))," and look like this")
-        print(lower)
-        print("Upper bounds have length: ",str(len(upper))," and look like this:")
-        print(upper)
-        """
+        
+       
         return spaces.Box(lower,upper,dtype=np.float64)    
 
-""" 
-1. Do we need to have the radius bound for targets and hazard in the obs space?"
-2. Do we need test to check that all targets and hazards that are passed to the obs_space are witin bounds
-"""
 
 if __name__ == '__main__':
     # Test basic functionality
@@ -164,7 +156,7 @@ if __name__ == '__main__':
     obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,targets,hazards)
     print(obs_space)
     
-    """
+    
     box = obs_space.get_space_box()
     print(box)
     print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards))
@@ -194,7 +186,7 @@ if __name__ == '__main__':
     obs_space.display_targets()
 
     print("im done")
-
+    """
     
 
 
