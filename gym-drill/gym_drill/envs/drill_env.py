@@ -28,8 +28,13 @@ TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
 TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 4
+NUM_TARGETS = 3
 TARGET_WINDOW_SIZE = 3
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.5
+
+# Rewards
+
+FINISHED_EARLY_FACTOR = 10 # Point per unused step
 
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -102,9 +107,13 @@ class DrillEnv(gym.Env):
         self.update_bit(action)
         reward = -1.0 #step-penalty
 
+        if len(self.step_history)>NUM_MAX_STEPS:
+            done=True
+
+
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
-            reward -= 1.0 #angAcc-penalty
+            reward -= 0.5 #angAcc-penalty
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
@@ -124,6 +133,7 @@ class DrillEnv(gym.Env):
             # If we don't have any more targets,
             if len(self.observation_space_container.remaining_targets) == 0:
                 # we are done.
+                reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
                 done = True
 
             # But if we do have more targets,
