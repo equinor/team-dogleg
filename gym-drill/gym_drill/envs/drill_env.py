@@ -164,13 +164,26 @@ class DrillEnv(gym.Env):
 
             # Approach vector
             appr_vec = current_target_pos - drill_pos
+
             # Heading vector.
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors)
             reward += reward_factor * 7
 
-        return reward, done   
+        return reward, done
+    def get_angle_relative_to_target(self):
+        current_target = self.observation_space_container.target_window[0]
+                
+        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y])
+
+        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
+        appr_vec = curr_target_pos_vector - curr_drill_pos_vector
+
+        head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+
+        return angle_between_vectors
 
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
@@ -208,8 +221,10 @@ class DrillEnv(gym.Env):
             state_list.append(hazard.radius)
         # Extra data
         current_target = self.observation_space_container.target_window[0]
-        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation) 
+        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)
+        relative_angle = self.get_angle_relative_to_target() 
 
+        state_list =  state_list + [distance_to_target,relative_angle]
         return tuple(state_list)        
 
     def reset(self):
