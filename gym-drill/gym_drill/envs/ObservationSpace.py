@@ -7,7 +7,7 @@ import gym
 from gym import spaces
 
 TARGET_WINDOW_SIZE = 3
-
+# Targets are assumed to be ordered
 class ObservationSpace:
     def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,targets,hazards):
         # Spacial
@@ -36,6 +36,14 @@ class ObservationSpace:
         self.hazard_bound_x = hazard_bounds[0]
         self.hazard_bound_y = hazard_bounds[1]
         self.hazard_bound_r = hazard_bounds[2]
+
+    def display_targets(self):
+        print("The current window looks like this:")
+        for w in self.target_window:
+            print(w)
+        print("The remaining targets are:")
+        for t in self.remaining_targets:
+            print(t)
             
     # To print the obs_space. Can be nice for debugging purposes
     def __str__(self):
@@ -46,17 +54,25 @@ class ObservationSpace:
         + str(self.upper_heading) + "] \n" \
         + "Angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
         + "Angular acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
-        + "There are " + str(TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" + str(self.target_window) + "\n \n" \
-        + "There are " + str(len(self.remaining_targets))+  " remaining targets. These are:" + str(self.remaining_targets) + "\n" \
-        + "Target bounds are: \n" + "x: " + str(self.target_bound_x) + "\n" \
+        + "There are " + str(TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" 
+        
+        for t in self.target_window:
+            text = text + str(t) + "\n"
+                
+        text = text + "There are " + str(len(self.remaining_targets))+  " remaining targets. These are: \n" 
+        for t in self.remaining_targets:
+            text = text + str(t) + "\n"       
+                
+        text = text + "Target bounds are: \n" + "x: " + str(self.target_bound_x) + "\n" \
         + "y: " + str(self.target_bound_y) + "\n" \
         + "r: " + str(self.target_bound_r) + "\n" \
         + "Hazard bounds are : \n" + "x: " + str(self.hazard_bound_x) + "\n" \
         + "y: " + str(self.hazard_bound_y) + "\n" \
         + "r: " + str(self.hazard_bound_r) + "\n" \
-        + "There are " + str(len(self.hazards))+ " hazards, these are located at \n" + str(self.hazards)  
+        + "There are " + str(len(self.hazards))+ " hazards, these are \n" 
+        for h in self.hazards:
+            text = text + str(h) + "\n"       
         
-            
         return text      
             
 
@@ -128,21 +144,59 @@ if __name__ == '__main__':
         targets.append(target_candidate)
     
     hazards = []
+    """
     for _ in range(4):
         hazard_center = Coordinate(np.random.uniform(HAZARD_BOUND_X[0],HAZARD_BOUND_X[1]),(np.random.uniform(HAZARD_BOUND_Y[0],HAZARD_BOUND_Y[1] )))
         hazard_radius = np.random.uniform(HAZARD_RADII_BOUND[0],HAZARD_RADII_BOUND[1])
         hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)
-        hazards.append(hazard_candidate)    
+        hazards.append(hazard_candidate)
+    """    
     
     print("Here are the targets")
-    print(targets)
+    for _ in targets:
+        print(_)
     print("here are the hazards")
-    print(hazards)
+    for _ in hazards:
+        print(_)
 
+    print("Creating obs_space")
+    print()
     obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,targets,hazards)
     print(obs_space)
-
+    
+    """
     box = obs_space.get_space_box()
     print(box)
     print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards))
+    """
+    print("Test shifting of window")
+    print("State before shifting")
+    obs_space.display_targets()
+    print("-----------------------------------------------------------------------")
+    print("First shift")
+    obs_space.shift_window()
+    obs_space.display_targets()
+    print("-----------------------------------------------------------------------")
+    print("Second shift")
+    obs_space.shift_window()
+    obs_space.display_targets()
+    print("-----------------------------------------------------------------------")
+    print("Third shift")
+    obs_space.shift_window()
+    obs_space.display_targets()
+    print("-----------------------------------------------------------------------")
+    print("Fourth shift")
+    obs_space.shift_window()
+    obs_space.display_targets()
+    print("-----------------------------------------------------------------------")
+    print("Fifth shift")
+    obs_space.shift_window()
+    obs_space.display_targets()
+
+    print("im done")
+
+    
+
+
+
 
