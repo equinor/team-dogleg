@@ -32,7 +32,6 @@ TARGET_WINDOW_SIZE = 3
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.5
 
 # Rewards
-
 FINISHED_EARLY_FACTOR = 10 # Point per unused step
 
 # Hazard specs. Can be in entire screen
@@ -47,6 +46,12 @@ SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
 BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
 HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
 TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
+
+# Additional data
+DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2)
+TARGET_DISTANCE_BOUND = [0,DIAGONAL]
+RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
+EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -84,7 +89,7 @@ class DrillEnv(gym.Env):
 
         self.action_space = spaces.Discrete(3)        
 
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -152,6 +157,7 @@ class DrillEnv(gym.Env):
             appr_vec = current_target_pos - drill_pos
             # Heading vector.
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+            # atan2 returns angle between -pi -> pi
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors)
             reward += reward_factor * 7       
@@ -182,15 +188,21 @@ class DrillEnv(gym.Env):
 
     # Returns tuple of current state
     def get_state(self):
+        # Core bit data
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
+        # Target data that are inside the window
         for target in self.observation_space_container.target_window: # This will cause bug
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.radius)
+        # Get all hazards
         for hazard in self.observation_space_container.hazards:
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
             state_list.append(hazard.radius)
+        # Extra data
+        current_target = self.observation_space_container.target_window[0]
+        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation) 
 
         return tuple(state_list)        
 

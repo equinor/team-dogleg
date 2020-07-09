@@ -9,7 +9,7 @@ from gym import spaces
 TARGET_WINDOW_SIZE = 3
 # Targets are assumed to be ordered
 class ObservationSpace:
-    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,targets,hazards):
+    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,extra_data,targets,hazards):
         # Spacial
         self.lower_x = space_bounds[0]
         self.upper_x = space_bounds[1]
@@ -36,6 +36,10 @@ class ObservationSpace:
         self.hazard_bound_x = hazard_bounds[0]
         self.hazard_bound_y = hazard_bounds[1]
         self.hazard_bound_r = hazard_bounds[2]
+
+        # Extra data
+        self.target_distance_bound = extra_data[0]
+        self.relative_angle_bound = extra_data[1]
 
     def display_targets(self):
         print("The current window looks like this:")
@@ -71,7 +75,11 @@ class ObservationSpace:
         + "r: " + str(self.hazard_bound_r) + "\n" \
         + "There are " + str(len(self.hazards))+ " hazards, these are \n" 
         for h in self.hazards:
-            text = text + str(h) + "\n"       
+            text = text + str(h) + "\n"    
+
+        text = text + "The extra data bounds are: \n" \
+        + "Target distance: " + str(self.target_distance_bound) +"\n" \
+        + "Relative angle " + str(self.relative_angle_bound)    
         
         return text      
             
@@ -96,8 +104,6 @@ class ObservationSpace:
         lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
         upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
 
-        # We append the upper and lower boundaries of where the target can exist. This is like we did before
-        # This is the only case where we have an interval
         for t in self.target_window:
             lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_r[0]])
             upper = np.append(upper,[self.target_bound_x[1],self.target_bound_y[1],self.target_bound_r[1]])
@@ -105,18 +111,13 @@ class ObservationSpace:
         for h in self.hazards:
             lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_r[0]])
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_r[1]])       
-        """
-        print("Lower bounds have length: ",str(len(lower))," and look like this")
-        print(lower)
-        print("Upper bounds have length: ",str(len(upper))," and look like this:")
-        print(upper)
-        """
+        
+        # Add extra data
+        lower = np.append(lower,[self.target_distance_bound[0],self.relative_angle_bound[0]])
+        upper = np.append(upper,[self.target_distance_bound[1],self.relative_angle_bound[1]])
+        
         return spaces.Box(lower,upper,dtype=np.float64)    
 
-""" 
-1. Do we need to have the radius bound for targets and hazard in the obs space?"
-2. Do we need test to check that all targets and hazards that are passed to the obs_space are witin bounds
-"""
 
 if __name__ == '__main__':
     # Test basic functionality
@@ -144,6 +145,12 @@ if __name__ == '__main__':
         targets.append(target_candidate)
     
     hazards = []
+    # Additional data
+    DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2)
+    TARGET_DISTANCE_BOUND = [0,DIAGONAL]
+    RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
+    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+
     """
     for _ in range(4):
         hazard_center = Coordinate(np.random.uniform(HAZARD_BOUND_X[0],HAZARD_BOUND_X[1]),(np.random.uniform(HAZARD_BOUND_Y[0],HAZARD_BOUND_Y[1] )))
@@ -161,13 +168,13 @@ if __name__ == '__main__':
 
     print("Creating obs_space")
     print()
-    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,targets,hazards)
+    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,targets,hazards)
     print(obs_space)
     
-    """
+    
     box = obs_space.get_space_box()
     print(box)
-    print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards))
+    print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards) + 2) # Only 2 extra data
     """
     print("Test shifting of window")
     print("State before shifting")
@@ -195,7 +202,7 @@ if __name__ == '__main__':
 
     print("im done")
 
-    
+    """
 
 
 
