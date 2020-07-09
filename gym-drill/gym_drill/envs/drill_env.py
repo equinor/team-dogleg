@@ -100,18 +100,19 @@ class DrillEnv(gym.Env):
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
-    
-    def step(self, action):
-
-        done = False        
-
+        
+    def step(self, action):    
         self.update_bit(action)
+        reward, done = self.get_reward_and_done_signal()           
 
+        self.state = self.get_state()
+        
+        return np.array(self.state), reward, done, {}
+    
+    # Returns the reward for the step and if episode is over
+    def get_reward_and_done_signal(self):
+        done = False      
         reward = -1.0 #step-penalty
-
-        if len(self.step_history)>NUM_MAX_STEPS:
-            done=True
-
 
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
@@ -121,7 +122,16 @@ class DrillEnv(gym.Env):
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
             reward  -=1000.0
             done = True     
-                
+        
+        """
+        # Check if we hit a hazard
+        for h in self.hazards:
+            if _is_within(self.bitLocation,h.center,h.radius):
+                reward -= 1000.0
+        """
+
+        if len(self.step_history)>NUM_MAX_STEPS:
+            done= True                        
 
         # Find the values of the current target
         current_target_pos = np.array([self.state[5], self.state[6]])
@@ -137,7 +147,6 @@ class DrillEnv(gym.Env):
                 # we are done.
                 reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
                 done = True
-
             # But if we do have more targets,
             else:
                 # we must shift the targets.
@@ -157,15 +166,12 @@ class DrillEnv(gym.Env):
             appr_vec = current_target_pos - drill_pos
             # Heading vector.
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
-            # atan2 returns angle between -pi -> pi
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors)
-            reward += reward_factor * 7       
+            reward += reward_factor * 7
 
-        self.state = self.get_state()
-        
-        return np.array(self.state), reward, done, {}
-    
+        return reward, done   
+
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         # Update angular acceleration, if within limits
@@ -229,7 +235,7 @@ class DrillEnv(gym.Env):
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
