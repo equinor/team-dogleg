@@ -72,10 +72,10 @@ class DrillEnv(gym.Env):
         self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
         self.activate_hazards = activate_hazards
         if self.activate_hazards:
-            print("Initiating environment with hazards")
+            #print("Initiating environment with hazards")
             self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
-            print("Initiating environment without hazards")
+            #print("Initiating environment without hazards")
             self.hazards = []
 
         self.action_space = spaces.Discrete(3)        
@@ -208,10 +208,10 @@ class DrillEnv(gym.Env):
         
         # Init new hazards
         if self.activate_hazards:
-            print("Initiating environment with hazards")
+            #print("Initiating environment with hazards")
             self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
-            print("Initiating environment without hazards")
+            #print("Initiating environment without hazards")
             self.hazards = []
 
         # Re-configure the observation space
@@ -230,7 +230,7 @@ class DrillEnv(gym.Env):
         
         f.write(text)
         f.close()
-        print("Log updated!")
+        #print("Log updated!")
    
     def close(self):
         if self.viewer:
@@ -344,7 +344,7 @@ def _init_log(*,filename="drill_log.txt"):
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)
     f.close()
-    print("Log created!")
+    #print("Log created!")
 
 
 # Returns an ordered list of randomly generated targets within the bounds given. 
