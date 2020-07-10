@@ -455,6 +455,10 @@ def _orderTargets(start_location,all_targets):
 
     return target_order
 
+def _is_within(bitPosition,targetPosition,targetRadius):
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
+
+
 # Returns True if t1 or t2 overlap. Works for both Hazards and Targets
 def _is_overlapping(t1,t2):
     total_radii = t1.radius + t2.radius
