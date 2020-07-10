@@ -3,6 +3,7 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 # Our own libs
 from gym_drill.envs.Coordinate import Coordinate
@@ -95,8 +96,13 @@ class DrillEnv(gym.Env):
 
         self.seed()
         self.viewer = None
-        self.state = self.get_state()      
-  
+        self.state = self.get_state()
+
+        # Log related
+        self.episode_counter = 0 # Used to write to log
+        self.total_reward = 0      
+        _init_log()
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -106,8 +112,9 @@ class DrillEnv(gym.Env):
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
-        
+        self.total_reward += reward
         return np.array(self.state), reward, done, {}
+
     
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
@@ -185,6 +192,8 @@ class DrillEnv(gym.Env):
 
         return angle_between_vectors
 
+
+    
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         # Update angular acceleration, if within limits
@@ -228,6 +237,11 @@ class DrillEnv(gym.Env):
         return tuple(state_list)        
 
     def reset(self):
+        # Save previous run to log
+        self.write_to_log()
+        self.episode_counter += 1
+        self.total_reward = 0
+        
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
 
@@ -255,58 +269,18 @@ class DrillEnv(gym.Env):
         self.observation_space = self.observation_space_container.get_space_box()        
         
         self.state = self.get_state()
-
+        
         return np.array(self.state)
-
     
-    """
-    def render(self, mode='human'):
-        screen_width = SCREEN_X
-        screen_height = SCREEN_Y
-        from gym.envs.classic_control import rendering
-
-        if self.viewer is None:
-            #from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(screen_width, screen_height)
-
-            # Create drill bit
-            self.bittrans = rendering.Transform()
-
-            self.dbit = rendering.make_circle(6)
-            self.dbit.set_color(0.5, 0.5, 0.5)
-            self.dbit.add_attr(self.bittrans)
-            self.viewer.add_geom(self.dbit)
-
-            # Draw target ball
-            for target in self.targets:
-                targetCenter = target[0]
-                targetRadius = target[1]
-
-                self.tballtrans = rendering.Transform()
-
-                self.tball = rendering.make_circle(targetRadius)
-                self.tball.set_color(0, 0, 0)
-                self.tball.add_attr(self.tballtrans)
-                self.viewer.add_geom(self.tball)
-                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
-
-        # Update position of drill on screen
-        this_state = self.state
-        self.bittrans.set_translation(this_state[0], this_state[1])
-
-        # Every iteration add a new tracing point
-        self.new_trans = rendering.Transform()
-        self.new_trans.set_translation(this_state[0], this_state[1])
-
-        self.new_point = rendering.make_circle(2)
-        self.new_point.set_color(0.5, 0.5, 0.5)
-        self.new_point.add_attr(self.new_trans)
-
-        self.viewer.add_geom(self.new_point)
-
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
-    """
-
+    
+    def write_to_log(self,*,filename="drill_log.txt"):
+        f = open(filename,"a")
+        text = "Episode nr: " +str(self.episode_counter) + " lasted for " + str(len(self.step_history)) + " steps. My total reward was: " + str(self.total_reward)  +"\n"
+        
+        f.write(text)
+        f.close()
+        #print("Log updated!")
+   
     def close(self):
         if self.viewer:
             self.viewer.close()
@@ -364,6 +338,62 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path")
         plt.legend()
         plt.show()
+    
+    
+    """
+    def render(self, mode='human'):
+        screen_width = SCREEN_X
+        screen_height = SCREEN_Y
+        from gym.envs.classic_control import rendering
+
+        if self.viewer is None:
+            #from gym.envs.classic_control import rendering
+            self.viewer = rendering.Viewer(screen_width, screen_height)
+
+            # Create drill bit
+            self.bittrans = rendering.Transform()
+
+            self.dbit = rendering.make_circle(6)
+            self.dbit.set_color(0.5, 0.5, 0.5)
+            self.dbit.add_attr(self.bittrans)
+            self.viewer.add_geom(self.dbit)
+
+            # Draw target ball
+            for target in self.targets:
+                targetCenter = target[0]
+                targetRadius = target[1]
+
+                self.tballtrans = rendering.Transform()
+
+                self.tball = rendering.make_circle(targetRadius)
+                self.tball.set_color(0, 0, 0)
+                self.tball.add_attr(self.tballtrans)
+                self.viewer.add_geom(self.tball)
+                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
+
+        # Update position of drill on screen
+        this_state = self.state
+        self.bittrans.set_translation(this_state[0], this_state[1])
+
+        # Every iteration add a new tracing point
+        self.new_trans = rendering.Transform()
+        self.new_trans.set_translation(this_state[0], this_state[1])
+
+        self.new_point = rendering.make_circle(2)
+        self.new_point.set_color(0.5, 0.5, 0.5)
+        self.new_point.add_attr(self.new_trans)
+
+        self.viewer.add_geom(self.new_point)
+
+        return self.viewer.render(return_rgb_array = mode=='rgb_array')
+    """
+
+def _init_log(*,filename="drill_log.txt"):
+    f = open(filename,"w")
+    init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
+    f.write(init_msg)
+    f.close()
+    #print("Log created!")
 
 
 # Returns an ordered list of randomly generated targets within the bounds given. 

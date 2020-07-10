@@ -24,7 +24,7 @@ class Agent():
 		return action
 
 agent = Agent(env)
-state = env.reset()
+#state = env.reset()
 
 for episode in range(10):
 	done= False

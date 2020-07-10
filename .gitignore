@@ -4,3 +4,4 @@ __pycache__/
 /gym-drill/gym_drill.egg-info
 *.pyc
 videos/
+*.txt
