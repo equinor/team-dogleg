@@ -24,8 +24,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(50.0,500.0)
-BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
+STARTLOCATION = Coordinate(100,500.0)
+BIT_INITIALIZATION = [3.8*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
 env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
@@ -38,12 +38,12 @@ print("action space", env.action_space)
 
 #DQN-approach
 
-model_name = "DQN_drill_model"
+model_name = "DQN_drill_model_(new rewards, bigger screen))"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.5, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
-#model = DQN.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                   					   #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
+#model = DQN.load("DQN_drill_model_expanded-ObsSpace", env, tensorboard_log="./algorithm_performance_comparison/")                   					   #2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=50000, tb_log_name = "DQN") #Where the learning happens
+model.learn(total_timesteps=200000, tb_log_name = "DQN_(new rewards, bigger screen)") #Where the learning happens
 model.save(model_name) #Saving the wisdom for later 
 """
 #PPO2-approach
@@ -102,18 +102,24 @@ for episode in range(10):
 
 	env.display_environment()
 """
-
+"""
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (5):
+for episode in range (10):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
 		#env.render()
+		#print('x: ',obs[5], '   y: ', obs[6])
+		#env.observation_space_container.display_targets()
+		#print(rewards)
 	env.display_environment()
 	state = env.reset()
+	
 	env.close()
+	print('[EPISODE ENDED]')
 
 print("done")
+"""

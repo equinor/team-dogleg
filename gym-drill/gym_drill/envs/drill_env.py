@@ -10,6 +10,7 @@ from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
+from gym_drill.envs import environment_support as es
 
 # Max values for angular velocity and acceleration
 MAX_ANGVEL = 0.1
@@ -20,21 +21,20 @@ ANGACC_INCREMENT = 0.01
 DRILL_SPEED = 5.0
 
 # Screen size, environment should be square
-SCREEN_X = 600
-SCREEN_Y = 600
+SCREEN_X = 1000
+SCREEN_Y = 1000
 
 # Target specs
-TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
-TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
+TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
+TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
 NUM_TARGETS = 3
 TARGET_WINDOW_SIZE = 3
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.5
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)
 
 # Rewards
-
-FINISHED_EARLY_FACTOR = 10 # Point per unused step
+FINISHED_EARLY_FACTOR = 5 # Point per unused step
 
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -48,6 +48,12 @@ SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
 BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
 HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
 TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
+
+# Additional data
+DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2)
+TARGET_DISTANCE_BOUND = [0,DIAGONAL]
+RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
+EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -74,18 +80,18 @@ class DrillEnv(gym.Env):
         self.initialAngAcc = bitInitialization[2]
 
         # Init targets. See _init_targets function
-        self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
+        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
         self.activate_hazards = activate_hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
+            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
 
         self.action_space = spaces.Discrete(3)        
 
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -96,30 +102,45 @@ class DrillEnv(gym.Env):
         # Log related
         self.episode_counter = 0 # Used to write to log
         self.total_reward = 0      
-        _init_log()
+        es._init_log()
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
-    
-    def step(self, action):
-        done = False       
+        
+    def step(self, action):    
         self.update_bit(action)
-        reward = -1.0 #step-penalty
+        reward, done = self.get_reward_and_done_signal()           
 
-        if len(self.step_history)>NUM_MAX_STEPS:
-            done=True
+        self.state = self.get_state()
+        self.total_reward += reward
+        return np.array(self.state), reward, done, {}
 
+    
+    # Returns the reward for the step and if episode is over
+    def get_reward_and_done_signal(self):
+        done = False      
+        reward = 0.0 #step-penalty
 
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
-            reward -= 0.5 #angAcc-penalty
+            reward -= 2.0 #angAcc-penalty
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward  -=1000.0
-            done = True     
-                
+            reward  -=30
+            done = True   
+        
+        
+        # Check if we hit a hazard
+        for h in self.hazards:
+            if es._is_within(self.bitLocation,h.center,h.radius):
+                reward -= 100.0
+                done = True
+                print("Hazard hit, I will stop")        
+
+        if len(self.step_history)>NUM_MAX_STEPS:
+            done= True                        
 
         # Find the values of the current target
         current_target_pos = np.array([self.state[5], self.state[6]])
@@ -129,13 +150,12 @@ class DrillEnv(gym.Env):
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
             # If target is hit, give reward.
-            reward += 1000
+            reward += 100
             # If we don't have any more targets,
             if len(self.observation_space_container.remaining_targets) == 0:
                 # we are done.
                 reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
                 done = True
-
             # But if we do have more targets,
             else:
                 # we must shift the targets.
@@ -153,15 +173,26 @@ class DrillEnv(gym.Env):
 
             # Approach vector
             appr_vec = current_target_pos - drill_pos
+
             # Heading vector.
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors)
-            reward += reward_factor * 7       
+            reward += reward_factor * 4
 
-        self.state = self.get_state()
-        self.total_reward += reward
-        return np.array(self.state), reward, done, {}
+        return reward, done
+    def get_angle_relative_to_target(self):
+        current_target = self.observation_space_container.target_window[0]
+                
+        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y])
+
+        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
+        appr_vec = curr_target_pos_vector - curr_drill_pos_vector
+
+        head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+
+        return angle_between_vectors
     
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
@@ -185,16 +216,24 @@ class DrillEnv(gym.Env):
 
     # Returns tuple of current state
     def get_state(self):
+        # Core bit data
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
+        # Target data that are inside the window
         for target in self.observation_space_container.target_window: # This will cause bug
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.radius)
+        # Get all hazards
         for hazard in self.observation_space_container.hazards:
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
             state_list.append(hazard.radius)
+        # Extra data
+        current_target = self.observation_space_container.target_window[0]
+        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)-current_target.radius
+        relative_angle = self.get_angle_relative_to_target() 
 
+        state_list =  state_list + [distance_to_target,relative_angle]
         return tuple(state_list)        
 
     def reset(self):
@@ -214,18 +253,18 @@ class DrillEnv(gym.Env):
         self.step_history = [[self.start_x,self.start_y]]       
 
         # Need to init new targets
-        self.targets = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
+        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
         
         # Init new hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -349,123 +388,22 @@ class DrillEnv(gym.Env):
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
     """
 
-def _init_log(*,filename="drill_log.txt"):
-    f = open(filename,"w")
-    init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
-    f.write(init_msg)
-    f.close()
-    #print("Log created!")
-
-
-# Returns an ordered list of randomly generated targets within the bounds given. 
-def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
-    all_targets = []
-
-    for t in range(num_targets):
-        target = _create_unique_random_target(start_location,x_bound,y_bound,r_bound,all_targets)
-        all_targets.append(target)        
-    
-    all_targets = _orderTargets(start_location,all_targets)
-
-    return all_targets
-
-def _init_hazards(num_hazards,x_bound,y_bound,r_bound,start_pos,existing_targets):
-    all_hazards = []
-    for h in range(num_hazards):
-        avoid = existing_targets + all_hazards
-        hazard = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,avoid)
-        all_hazards.append(hazard)
-
-    return all_hazards
-
-# Finds nearest between 1 point and a list of candidate points
-# startlocation is type Coordinate, and candidates is list of types Targets
-def _findNearest(start_location,candidates):
-    current_shortest_distance = -1 # Init with an impossible distance
-    current_closest_target_index = 0
-    for candidate_index in range(len(candidates)):        
-        candidate = candidates[candidate_index]     
-        distance = Coordinate.getEuclideanDistance(candidate.center,start_location)
-        
-        if distance < current_shortest_distance or current_shortest_distance == -1:           
-            current_shortest_distance = distance
-            current_closest_target_index = candidate_index
-        
-    return current_closest_target_index
-
-# Orders the target based upon a given start location
-# start_location is type Coordinate, all_targets is list of type targets
-def _orderTargets(start_location,all_targets):
-    #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
-    target_order = [] 
-    loop_counter = 0    
-
-    while len(all_targets) != 0:
-        if loop_counter == 0:
-            next_in_line_index = _findNearest(start_location,all_targets)
-            next_in_line_target = all_targets[next_in_line_index]
-            target_order.append(next_in_line_target)
-            all_targets.pop(next_in_line_index)
-        else:
-            next_in_line_index = _findNearest(target_order[loop_counter-1].center,all_targets)
-            next_in_line_target = all_targets[next_in_line_index]
-            target_order.append(next_in_line_target)
-            all_targets.pop(next_in_line_index)  
-
-        loop_counter += 1  
-
-    return target_order
-
-# Returns True if t1 or t2 overlap. Works for both Hazards and Targets
-def _is_overlapping(t1,t2):
-    total_radii = t1.radius + t2.radius
-    distance = Coordinate.getEuclideanDistance(t1.center,t2.center)
-    return  distance < total_radii
-
-# Creates a uniqe target that does not overlap with any targets in existing_targets
-def _create_unique_random_target(start_pos,x_bound,y_bound,r_bound,existing_targets):
-    target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
-    target_radius = np.random.uniform(r_bound[0],r_bound[1])
-    target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
-
-    for target in existing_targets:
-        if _is_overlapping(target,target_candidate) or _isWithin(start_pos,target_center,target_radius):
-            target_candidate =_create_unique_random_target(start_pos,x_bound,y_bound,r_bound,existing_targets)
-            break
-
-    return target_candidate
-
-# Creates a uniqe hazard that does not overlad with any obstacles in existing_obstacles
-def _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles):
-    hazard_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
-    hazard_radius = np.random.uniform(r_bound[0],r_bound[1])
-    hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)  
-    
-    for obstacle in existing_obstacles:
-        if _is_overlapping(obstacle,hazard_candidate) or _isWithin(start_pos,hazard_center,hazard_radius):
-            hazard_candidate = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles)
-            break
-    
-    return hazard_candidate
-
-def _isWithin(bitPosition,targetPosition,targetRadius):
-    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
 
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
     startpos = Coordinate(100,400)
 
     print("Creating targets")
-    t = _init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startpos)
+    t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startpos)
     for _ in t:
         print(_)
     
     print("Creating Hazards")    
-    h = _init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startpos,t)
+    h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startpos,t)
     for eden_hazard in h:
         print(eden_hazard)
     
-    # Plot circles from targetballs, colors just to verify the order of the balls
+    # plot circles from targetballs, colors just to verify the order of the balls
     theta = np.linspace(0, 2*np.pi, 100)
     colors_order = {
         1:"b",
