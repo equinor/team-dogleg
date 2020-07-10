@@ -108,4 +108,4 @@ def _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obst
     return hazard_candidate
 
 def _is_within(bitPosition,targetPosition,targetRadius):
-    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
