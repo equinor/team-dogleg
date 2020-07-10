@@ -112,7 +112,7 @@ class DrillEnv(gym.Env):
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
         done = False      
-        reward = -1.0 #step-penalty
+        reward = 0.0 #step-penalty
 
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
@@ -120,7 +120,7 @@ class DrillEnv(gym.Env):
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward  -=1000.0
+            reward  -=10
             done = True     
         
         """
@@ -141,7 +141,7 @@ class DrillEnv(gym.Env):
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
             # If target is hit, give reward.
-            reward += 1000
+            reward += 100
             # If we don't have any more targets,
             if len(self.observation_space_container.remaining_targets) == 0:
                 # we are done.
@@ -221,7 +221,7 @@ class DrillEnv(gym.Env):
             state_list.append(hazard.radius)
         # Extra data
         current_target = self.observation_space_container.target_window[0]
-        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)
+        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)-current_target.radius
         relative_angle = self.get_angle_relative_to_target() 
 
         state_list =  state_list + [distance_to_target,relative_angle]
