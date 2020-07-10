@@ -20,12 +20,12 @@ ANGACC_INCREMENT = 0.01
 DRILL_SPEED = 5.0
 
 # Screen size, environment should be square
-SCREEN_X = 600
-SCREEN_Y = 600
+SCREEN_X = 1000
+SCREEN_Y = 1000
 
 # Target specs
-TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
-TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
+TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
+TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
 NUM_TARGETS = 3
@@ -33,7 +33,7 @@ TARGET_WINDOW_SIZE = 3
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.5
 
 # Rewards
-FINISHED_EARLY_FACTOR = 10 # Point per unused step
+FINISHED_EARLY_FACTOR = 5 # Point per unused step
 
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -123,11 +123,11 @@ class DrillEnv(gym.Env):
 
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
-            reward -= 0.5 #angAcc-penalty
+            reward -= 2.0 #angAcc-penalty
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward  -=10
+            reward  -=30
             done = True     
         
         """
@@ -176,7 +176,7 @@ class DrillEnv(gym.Env):
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors)
-            reward += reward_factor * 7
+            reward += reward_factor * 4
 
         return reward, done
     def get_angle_relative_to_target(self):

@@ -38,13 +38,13 @@ print("action space", env.action_space)
 
 #DQN-approach
 
-model_name = "DQN_drill_model_(expanded ObsSpace, 1.2M steps, maxstep x2)"
+model_name = "DQN_drill_model_(new rewards, bigger screen))"
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
-model = DQN.load("DQN_drill_model_expanded-ObsSpace", env, tensorboard_log="./algorithm_performance_comparison/")                   					   #2) Load an existing one from your own files
-#print("DQN: I start training now")
-#model.learn(total_timesteps=1000000, tb_log_name = "DQN_(expanded ObsSpace, 1M steps, maxstep x2)") #Where the learning happens
-#model.save(model_name) #Saving the wisdom for later 
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
+#model = DQN.load("DQN_drill_model_expanded-ObsSpace", env, tensorboard_log="./algorithm_performance_comparison/")                   					   #2) Load an existing one from your own files
+print("DQN: I start training now")
+model.learn(total_timesteps=200000, tb_log_name = "DQN_(new rewards, bigger screen)") #Where the learning happens
+model.save(model_name) #Saving the wisdom for later 
 """
 #PPO2-approach
 
@@ -102,7 +102,7 @@ for episode in range(10):
 
 	env.display_environment()
 """
-
+"""
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
@@ -114,6 +114,7 @@ for episode in range (10):
 		#env.render()
 		#print('x: ',obs[5], '   y: ', obs[6])
 		#env.observation_space_container.display_targets()
+		#print(rewards)
 	env.display_environment()
 	state = env.reset()
 	
@@ -121,3 +122,4 @@ for episode in range (10):
 	print('[EPISODE ENDED]')
 
 print("done")
+"""
