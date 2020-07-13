@@ -36,15 +36,15 @@ print("action space", env.action_space)
 #DQN-approach
 
 model_to_load = "DQN_drill_model_2M"
-save_as = "DQN_drill_model_4M"
+save_as = "DQN_drill_model_(2M plus low LR)"
 tensorboard_folder = "./algorithm_performance_comparison_v0.3/"
-tensorboard_run_name = "DQN_run4_try2"
+tensorboard_run_name = "DQN_(2M plus low LR)"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0001, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 #print("DQN: I start training now")
-model.learn(total_timesteps=1200000, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
+model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
 
 """
 #PPO2-approach
