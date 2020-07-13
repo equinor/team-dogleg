@@ -11,11 +11,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy
 from stable_baselines.deepq.policies import LnMlpPolicy 
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines import DQN
-from stable_baselines import PPO2
-from stable_baselines import A2C
-from stable_baselines import ACER
-from stable_baselines import ACKTR
+from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR
 
 
 # Ignore the crazy amount of warnings
