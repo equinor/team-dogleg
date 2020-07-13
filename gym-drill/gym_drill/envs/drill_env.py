@@ -28,12 +28,12 @@ TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 3
-TARGET_WINDOW_SIZE = 3
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)
+NUM_TARGETS = 7
+TARGET_WINDOW_SIZE = 2
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
 
 # Rewards
-FINISHED_EARLY_FACTOR = 5 # Point per unused step
+FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -101,7 +101,7 @@ class DrillEnv(gym.Env):
         # Log related
         self.episode_counter = 0 # Used to write to log
         self.total_reward = 0      
-        _init_log()
+        #_init_log()
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -125,10 +125,15 @@ class DrillEnv(gym.Env):
         if self.angAcc != 0:
             reward -= 2.0 #angAcc-penalty
 
+        if self.angVel != 0:
+            reward -= 1.0 #angAcc-penalty
+
+
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
             reward  -=30
-            done = True     
+            done = True   
+
         
         """
         # Check if we hit a hazard
@@ -175,8 +180,11 @@ class DrillEnv(gym.Env):
             # Heading vector.
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-            reward_factor = np.cos(angle_between_vectors)
-            reward += reward_factor * 4
+            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
+            #adjustment =(1-abs(10*self.angVel))**3
+            # adjustment = 0 if angVel = +-MAX      #adjustment = 1 if angVel = 0
+            reward += reward_factor*4# * adjustment 
+        
 
         return reward, done
     def get_angle_relative_to_target(self):
@@ -238,7 +246,7 @@ class DrillEnv(gym.Env):
 
     def reset(self):
         # Save previous run to log
-        self.write_to_log()
+        #self.write_to_log()
         self.episode_counter += 1
         self.total_reward = 0
         
@@ -387,14 +395,14 @@ class DrillEnv(gym.Env):
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
     """
-
+"""
 def _init_log(*,filename="drill_log.txt"):
     f = open(filename,"w")
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)
     f.close()
     #print("Log created!")
-
+"""
 
 # Returns an ordered list of randomly generated targets within the bounds given. 
 def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):

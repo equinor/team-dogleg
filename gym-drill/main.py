@@ -15,6 +15,7 @@ from stable_baselines import DQN
 from stable_baselines import PPO2
 from stable_baselines import A2C
 from stable_baselines import ACER
+from stable_baselines import ACKTR
 
 
 # Ignore the crazy amount of warnings
@@ -24,7 +25,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,500.0)
+STARTLOCATION = Coordinate(100,900.0)
 BIT_INITIALIZATION = [3.8*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
@@ -38,19 +39,23 @@ print("action space", env.action_space)
 
 #DQN-approach
 
-model_name = "DQN_drill_model_(new rewards, bigger screen))"
+model_to_load = "DQN_drill_model_2M"
+save_as = "DQN_drill_model_4M"
+tensorboard_folder = "./algorithm_performance_comparison_v0.3/"
+tensorboard_run_name = "DQN_run4_try2"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")           #1) Make a new model
-#model = DQN.load("DQN_drill_model_expanded-ObsSpace", env, tensorboard_log="./algorithm_performance_comparison/")                   					   #2) Load an existing one from your own files
-print("DQN: I start training now")
-model.learn(total_timesteps=200000, tb_log_name = "DQN_(new rewards, bigger screen)") #Where the learning happens
-model.save(model_name) #Saving the wisdom for later 
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+#print("DQN: I start training now")
+model.learn(total_timesteps=1200000, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.save(save_as) #Saving the wisdom for later 
+
 """
 #PPO2-approach
 
 model_name = "PP02_drill_model"
 #Chose one of the two lines below (#1 or #2):
-model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")              #1) Make a new model
+model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison_v0.2/")              #1) Make a new model
 #model = PPO2.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                  #2) Load an existing one from your own files
 print("PPO2: I start training now")
 model.learn(total_timesteps=200000, tb_log_name = "PPO2") #Where the learning happens
@@ -60,7 +65,7 @@ model.save(model_name) #Saving the wisdom for later
 
 model_name = "A2C_drill_model"
 #Chose one of the two lines below (#1 or #2):
-model = A2C(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")               #1) Make a new model
+model = A2C(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison_v0.2/")               #1) Make a new model
 #model = A2C.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                   #2) Load an existing one from your own files
 print("A2C: I start training now")
 model.learn(total_timesteps=200000, tb_log_name = "A2C") #Where the learning happens
@@ -72,23 +77,22 @@ model.save(model_name) #Saving the wisdom for later
 env = make_vec_env(env_name,n_envs=4) #Problem?
 model_name = "ACER_drill_model"
 #Chose one of the two lines below (#1 or #2):
-model = ACER(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")              #1) Make a new model
+model = ACER(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison_v0.2/")              #1) Make a new model
 #model = ACER.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                  #2) Load an existing one from your own files
 print("I start training now")
 model.learn(total_timesteps=200000, tb_log_name = "ACER_1") #Where the learning happens
 model.save(model_name) #Saving the wisdom for later 
-
-#ACKTR-approach [NOT SURE ABOUT THIS ONE]
-
-env = make_vec_env(env_name,n_envs=4) #Problem?
+"""
+#ACKTR-approach
+"""
+env = make_vec_env(env_name,n_envs=4)
 model_name = "ACKTR_drill_model"
 #Chose one of the two lines below (#1 or #2):
-model = ACKTR(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison/")             #1) Make a new model
+model = ACKTR(MlpPolicy, env, verbose=1, tensorboard_log="./algorithm_performance_comparison_v0.2/")             #1) Make a new model
 #model = ACKTR.load(model_name, env, tensorboard_log="./algorithm_performance_comparison/")                 #2) Load an existing one from your own files
 print("I start training now")
-model.learn(total_timesteps=200000, tb_log_name = "ACKTR_1") #Where the learning happens
+model.learn(total_timesteps=200000, tb_log_name = "ACKTR") #Where the learning happens
 model.save(model_name) #Saving the wisdom for later 
-
 """
 
 """
@@ -102,7 +106,7 @@ for episode in range(10):
 
 	env.display_environment()
 """
-"""
+
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
@@ -112,9 +116,10 @@ for episode in range (10):
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
 		#env.render()
-		#print('x: ',obs[5], '   y: ', obs[6])
+		#print('distance: ',obs[8], '   direction: ', obs[9])
 		#env.observation_space_container.display_targets()
 		#print(rewards)
+		#print(obs)
 	env.display_environment()
 	state = env.reset()
 	
@@ -122,4 +127,3 @@ for episode in range (10):
 	print('[EPISODE ENDED]')
 
 print("done")
-"""
