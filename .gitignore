@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 videos/
 *.txt
+/algorithm_performance_comparison_v0.1

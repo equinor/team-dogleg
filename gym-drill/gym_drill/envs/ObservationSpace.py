@@ -6,7 +6,7 @@ import numpy as np
 import gym
 from gym import spaces
 
-TARGET_WINDOW_SIZE = 3
+TARGET_WINDOW_SIZE = 2
 # Targets are assumed to be ordered
 class ObservationSpace:
     def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,extra_data,targets,hazards):
@@ -175,7 +175,7 @@ if __name__ == '__main__':
     box = obs_space.get_space_box()
     print(box)
     print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards) + 2) # Only 2 extra data
-    """
+    
     print("Test shifting of window")
     print("State before shifting")
     obs_space.display_targets()
@@ -202,7 +202,7 @@ if __name__ == '__main__':
 
     print("im done")
 
-    """
+    
 
 
 

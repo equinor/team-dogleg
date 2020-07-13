@@ -29,12 +29,12 @@ TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 3
-TARGET_WINDOW_SIZE = 3
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)
+NUM_TARGETS = 11
+TARGET_WINDOW_SIZE = 2
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
 
 # Rewards
-FINISHED_EARLY_FACTOR = 5 # Point per unused step
+FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -100,9 +100,11 @@ class DrillEnv(gym.Env):
         self.state = self.get_state()
 
         # Log related
+        """
         self.episode_counter = 0 # Used to write to log
         self.total_reward = 0      
         es._init_log()
+        """
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -113,7 +115,7 @@ class DrillEnv(gym.Env):
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
-        self.total_reward += reward
+        #self.total_reward += reward
         return np.array(self.state), reward, done, {}
 
     
@@ -126,11 +128,14 @@ class DrillEnv(gym.Env):
         if self.angAcc != 0:
             reward -= 2.0 #angAcc-penalty
 
+        if self.angVel != 0:
+            reward -= 1.0 #angAcc-penalty
+
+
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
             reward  -=30
             done = True   
-        
         
         # Check if we hit a hazard
         for h in self.hazards:
@@ -177,8 +182,11 @@ class DrillEnv(gym.Env):
             # Heading vector.
             head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-            reward_factor = np.cos(angle_between_vectors)
-            reward += reward_factor * 4
+            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
+            #adjustment =(1-abs(10*self.angVel))**3
+            # adjustment = 0 if angVel = +-MAX      #adjustment = 1 if angVel = 0
+            reward += reward_factor*4# * adjustment 
+        
 
         return reward, done
     def get_angle_relative_to_target(self):
@@ -238,8 +246,8 @@ class DrillEnv(gym.Env):
 
     def reset(self):
         # Save previous run to log
-        self.write_to_log()
-        self.episode_counter += 1
+        #self.write_to_log()
+        #self.episode_counter += 1
         self.total_reward = 0
         
         self.bitLocation.x = self.start_x
@@ -272,7 +280,7 @@ class DrillEnv(gym.Env):
         
         return np.array(self.state)
     
-    
+    """
     def write_to_log(self,*,filename="drill_log.txt"):
         f = open(filename,"a")
         text = "Episode nr: " +str(self.episode_counter) + " lasted for " + str(len(self.step_history)) + " steps. My total reward was: " + str(self.total_reward)  +"\n"
@@ -280,6 +288,7 @@ class DrillEnv(gym.Env):
         f.write(text)
         f.close()
         #print("Log updated!")
+        """
    
     def close(self):
         if self.viewer:
@@ -304,7 +313,11 @@ class DrillEnv(gym.Env):
             4:"c",
             5:"m",
             6:"y",
-            7:"k"
+            7:"palevioletred",
+            8:"pink",
+            9:"coral",
+            10:"orange",
+            11:"saddlebrown"
             }
         cnt = 1
         for target in self.targets:
@@ -334,7 +347,7 @@ class DrillEnv(gym.Env):
         axes.set_xlim(0,SCREEN_X)
         axes.set_ylim(0,SCREEN_Y)
 
-        plt.plot(x_positions,y_positions,"b")
+        plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path")
         plt.legend()
         plt.show()
@@ -387,8 +400,7 @@ class DrillEnv(gym.Env):
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
     """
-
-
+    
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
     startpos = Coordinate(100,400)
@@ -411,7 +423,12 @@ if __name__ == '__main__':
         3:"r",
         4:"c",
         5:"m",
-        6:"y",        
+        6:"y",
+        7:"palevioletred",
+        8:"pink",
+        9:"coral",
+        10:"orange",
+        11:"saddlebrown"        
         }
     cnt = 1
     for target in t:
