@@ -29,7 +29,7 @@ TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 7
+NUM_TARGETS = 11
 TARGET_WINDOW_SIZE = 2
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
 
@@ -115,7 +115,7 @@ class DrillEnv(gym.Env):
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
-        self.total_reward += reward
+        #self.total_reward += reward
         return np.array(self.state), reward, done, {}
 
     
@@ -247,7 +247,7 @@ class DrillEnv(gym.Env):
     def reset(self):
         # Save previous run to log
         #self.write_to_log()
-        self.episode_counter += 1
+        #self.episode_counter += 1
         self.total_reward = 0
         
         self.bitLocation.x = self.start_x
@@ -280,7 +280,7 @@ class DrillEnv(gym.Env):
         
         return np.array(self.state)
     
-    
+    """
     def write_to_log(self,*,filename="drill_log.txt"):
         f = open(filename,"a")
         text = "Episode nr: " +str(self.episode_counter) + " lasted for " + str(len(self.step_history)) + " steps. My total reward was: " + str(self.total_reward)  +"\n"
@@ -288,6 +288,7 @@ class DrillEnv(gym.Env):
         f.write(text)
         f.close()
         #print("Log updated!")
+        """
    
     def close(self):
         if self.viewer:
@@ -312,7 +313,11 @@ class DrillEnv(gym.Env):
             4:"c",
             5:"m",
             6:"y",
-            7:"k"
+            7:"palevioletred",
+            8:"pink",
+            9:"coral",
+            10:"orange",
+            11:"saddlebrown"
             }
         cnt = 1
         for target in self.targets:
@@ -342,7 +347,7 @@ class DrillEnv(gym.Env):
         axes.set_xlim(0,SCREEN_X)
         axes.set_ylim(0,SCREEN_Y)
 
-        plt.plot(x_positions,y_positions,"b")
+        plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path")
         plt.legend()
         plt.show()
@@ -418,7 +423,12 @@ if __name__ == '__main__':
         3:"r",
         4:"c",
         5:"m",
-        6:"y",        
+        6:"y",
+        7:"palevioletred",
+        8:"pink",
+        9:"coral",
+        10:"orange",
+        11:"saddlebrown"        
         }
     cnt = 1
     for target in t:
