@@ -25,8 +25,7 @@ STARTLOCATION = Coordinate(100,900.0)
 BIT_INITIALIZATION = [3.8*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
-env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
-model_name = "deepq_gym-drill-two_random_targets_v0.0"
+env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION, activate_hazards_hazards=True)
 
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
@@ -35,15 +34,15 @@ print("action space", env.action_space)
 
 #DQN-approach
 
-model_to_load = "DQN_drill_model_2M"
-save_as = "DQN_drill_model_(2M plus low LR)"
-tensorboard_folder = "./algorithm_performance_comparison_v0.3/"
-tensorboard_run_name = "DQN_(2M plus low LR)"
+model_to_load = "DQN_drill_model_hazards"
+save_as = "DQN_drill_model_hazards"
+tensorboard_folder = "./algorithm_performance_comparison_hazards/"
+tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
-#print("DQN: I start training now")
-model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+print("DQN: I start training now")
+model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 """
