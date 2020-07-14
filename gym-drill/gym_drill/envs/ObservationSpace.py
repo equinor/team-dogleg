@@ -123,33 +123,37 @@ if __name__ == '__main__':
     # Test basic functionality
     SCREEN_X = 600
     SCREEN_Y = 600
+    SCREEN_Z = 600
 
     SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
     BIT_BOUNDS = [0,2*np.pi,-0.05,0.05,-0.1,0.1] #
 
     TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
     TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
+    TARGET_BOUND_Z = [0.5*SCREEN_Z,0.9*SCREEN_Z]
     TARGET_RADII_BOUND = [20,50]
     TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
 
     HAZARD_BOUND_X = [0,SCREEN_X]
     HAZARD_BOUND_Y = [0,SCREEN_Y]
+    HAZARD_BOUND_Z = [0,SCREEN_Z]
     HAZARD_RADII_BOUND = [20,50]
     HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
     
     targets = []
     for _ in range(4):
-        target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),(np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1] )))
+        target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1]),np.random.uniform(TARGET_BOUND_Z[0],TARGET_BOUND_Z[1]))
         target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
         target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
         targets.append(target_candidate)
     
     hazards = []
     # Additional data
-    DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2)
+    DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
     TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-    RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
-    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+    RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
+    RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
+    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND, RELATIVE_VERTICAL_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
     """
     for _ in range(4):

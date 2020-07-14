@@ -106,15 +106,15 @@ model.save(save_as) #Saving the wisdom for later
 #TRPO-approach 
 
 model_to_load = "TRPO_drill_model"
-save_as = "TRPO_drill_model"
-tensorboard_folder = "./algorithm_performance_comparison/"
+save_as = "TRPO_drill_model_v0.1"
+tensorboard_folder = "./TB_hazards_2000x2000/"
 tensorboard_run_name = "TRPO"
 #Chose one of the two lines below (#1 or #2):
 #model = TRPO(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
 model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
 print("TRPO: I start training now")
-#model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
+model.learn(total_timesteps=500000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
 """
 for episode in range(10):
     	done= False
@@ -130,7 +130,7 @@ for episode in range(10):
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (3):
+for episode in range (10):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)

@@ -17,22 +17,22 @@ def _init_log(*,filename="drill_log.txt"):
 
 
 # Returns an ordered list of randomly generated targets within the bounds given. 
-def _init_targets(num_targets,x_bound,y_bound,r_bound,start_location):
+def _init_targets(num_targets,x_bound,y_bound,z_bound,r_bound,start_location):
     all_targets = []
 
     for t in range(num_targets):
-        target = _create_unique_random_target(start_location,x_bound,y_bound,r_bound,all_targets)
+        target = _create_unique_random_target(start_location,x_bound,y_bound,z_bound,r_bound,all_targets)
         all_targets.append(target)        
     
     all_targets = _orderTargets(start_location,all_targets)
 
     return all_targets
 
-def _init_hazards(num_hazards,x_bound,y_bound,r_bound,start_pos,existing_targets):
+def _init_hazards(num_hazards,x_bound,y_bound,z_bound,r_bound,start_pos,existing_targets):
     all_hazards = []
     for h in range(num_hazards):
         avoid = existing_targets + all_hazards
-        hazard = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,avoid)
+        hazard = _create_unique_random_hazard(start_pos,x_bound,y_bound, z_bound,r_bound,avoid)
         all_hazards.append(hazard)
 
     return all_hazards
@@ -82,30 +82,30 @@ def _is_overlapping(t1,t2):
     return  distance < total_radii
 
 # Creates a uniqe target that does not overlap with any targets in existing_targets
-def _create_unique_random_target(start_pos,x_bound,y_bound,r_bound,existing_targets):
-    target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
+def _create_unique_random_target(start_pos,x_bound,y_bound, z_bound,r_bound,existing_targets):
+    target_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1])),(np.random.uniform(z_bound[0],z_bound[1])))
     target_radius = np.random.uniform(r_bound[0],r_bound[1])
-    target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
+    target_candidate = TargetBall(target_center.x,target_center.y,target_center.z,target_radius)
 
     for target in existing_targets:
         if _is_overlapping(target,target_candidate) or _is_within(start_pos,target_center,target_radius):
-            target_candidate =_create_unique_random_target(start_pos,x_bound,y_bound,r_bound,existing_targets)
+            target_candidate =_create_unique_random_target(start_pos,x_bound,y_bound,z_bound,r_bound,existing_targets)
             break
 
     return target_candidate
 
 # Creates a uniqe hazard that does not overlad with any obstacles in existing_obstacles
-def _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles):
-    hazard_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1] )))
+def _create_unique_random_hazard(start_pos,x_bound,y_bound,z_bound,r_bound,existing_obstacles):
+    hazard_center = Coordinate(np.random.uniform(x_bound[0],x_bound[1]),(np.random.uniform(y_bound[0],y_bound[1])),(np.random.uniform(z_bound[0],z_bound[1] )))
     hazard_radius = np.random.uniform(r_bound[0],r_bound[1])
-    hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)  
+    hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_center.z,hazard_radius)  
     
     for obstacle in existing_obstacles:
         if _is_overlapping(obstacle,hazard_candidate) or _is_within(start_pos,hazard_center,hazard_radius):
-            hazard_candidate = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles)
+            hazard_candidate = _create_unique_random_hazard(start_pos,x_bound,y_bound,z_bound,r_bound,existing_obstacles)
             break
     
     return hazard_candidate
 
 def _is_within(bitPosition,targetPosition,targetRadius):
-    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 < targetRadius**2
+    return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 +(bitPosition.z - targetPosition.z)**2 < targetRadius**2

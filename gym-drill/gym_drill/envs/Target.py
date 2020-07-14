@@ -3,8 +3,8 @@ from gym_drill.envs.Coordinate import Coordinate
 TARGET_REWARD = 100
 
 class TargetBall():
-    def __init__(self, x, y, rad):
-        self.center = Coordinate(x,y)
+    def __init__(self, x, y, z, rad):
+        self.center = Coordinate(x,y,z)
         self.radius = rad
         
         self.reached = False # Indicate that the target has been reached.

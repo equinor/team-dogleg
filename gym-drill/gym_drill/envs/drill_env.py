@@ -24,15 +24,17 @@ DRILL_SPEED = 5.0
 # Screen size, environment should be square
 SCREEN_X = 2000
 SCREEN_Y = 2000
+SCREEN_Z = 2000
 
 # Target specs
 TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
+TARGET_BOUND_Z = [0.25*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [20,50]
 
 NUM_TARGETS = 4
 TARGET_WINDOW_SIZE = 3
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
 
 # Rewards
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
@@ -40,6 +42,7 @@ FINISHED_EARLY_FACTOR = 1 # Point per unused step
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
+HAZARD_BOUND_Z = [0,SCREEN_Z]
 HAZARD_RADII_BOUND = [20,50]
 
 NUM_HAZARDS = 4
@@ -47,14 +50,16 @@ NUM_HAZARDS = 4
 # Observation space specs
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
 BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
-HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
-TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
+HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
+TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUND]
 
 # Additional data
-DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2)
+DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
 TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
-EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
+RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
+
+EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELATIVE_VERTICAL_ANGLE_BOUND ] # [Distance, angle between current direction and target direction]
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -65,27 +70,53 @@ class DrillEnv(gym.Env):
     def __init__(self,startLocation,bitInitialization,*,activate_hazards=False):
         self.start_x = startLocation.x
         self.start_y = startLocation.y
+        self.start_z = startLocation.z
         # Save the starting position as "first" step. Needed for plotting in matplotlib
-        self.step_history = [[self.start_x,self.start_y]]        
+        self.step_history = [[self.start_x,self.start_y,self.start_z]]        
 
         # We init parameters here        
         self.bitLocation = startLocation
-        self.heading = uniform(np.pi/2,np.pi)
-        self.angVel = bitInitialization[1]
-        self.angAcc = bitInitialization[2]
+        self.horizontal_heading = uniform(0,np.pi/2)
+        self.vertical_heading = uniform(np.pi/10,np.pi/2)
+
+            #self.angVel = bitInitialization[1]
+        self.horizontal_angVel = bitInitialization[2]
+        self.vertical_angVel =bitInitialization[3]
+
+            #self.angAcc = bitInitialization[2]
+        self.horizontal_angAcc = bitInitialization[4]
+        self.vertical_angAcc =bitInitialization[5]
+
+       
 
         # For resetting the environment
+        """
         self.initialBitLocation = startLocation
         self.initialHeading = bitInitialization[0]
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
+        """
+
+        self.initialBitLocation = startLocation
+        
+        self.initial_horizontal_heading = bitInitialization[0]
+        self.initial_vertical_heading = bitInitialization[1]
+        
+        self.initial_horizontal_angVel = bitInitialization[2]
+        self.initial_vertical_angVel = bitInitialization[3]
+
+        self.initial_horizontal_angAcc = bitInitialization[4]
+        self.initial_vertical_angAcc = bitInitialization[5]
+        
+
+
 
         # Init targets. See _init_targets function
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
+        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startLocation)
         self.activate_hazards = activate_hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
+            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
@@ -124,17 +155,18 @@ class DrillEnv(gym.Env):
     def get_reward_and_done_signal(self):
         done = False      
         reward = 0.0 #step-penalty
-        """
+        
         # Maybe create an entire function that handles all rewards, and call it here?
+        """
         if self.angAcc != 0:
             reward -= 2.0 #angAcc-penalty
-
+        
         if self.angVel != 0:
             reward -= 1.0 #angAcc-penalty
         """
 
         # If drill is no longer on screen, game over.
-        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
+        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y and 0 < self.bitLocation.z < SCREEN_Z):
             reward  -=30
             done = True   
         
@@ -151,7 +183,7 @@ class DrillEnv(gym.Env):
         # Find the values of the current target
         current_target_pos = np.array([self.state[5], self.state[6]])
         current_target_rad = self.state[7]
-        drill_pos = np.array([self.bitLocation.x, self.bitLocation.y])
+        drill_pos = np.array([self.bitLocation.x, self.bitLocation.y, self.bitLocation.z])
 
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
@@ -180,22 +212,28 @@ class DrillEnv(gym.Env):
             # Approach vector
             appr_vec = current_target_pos - drill_pos
 
-            # Heading vector.
-            head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+            # Heading vector.  [JUST GIVING IT A TRY DOING THIS FOR EACH ANGLE IN THE 3D CASE]
+            
+                #vertical-angle 
+            head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
-            #adjustment =(1-abs(10*self.angVel))**3
-            # adjustment = 0 if angVel = +-MAX      #adjustment = 1 if angVel = 0
-            reward += reward_factor*4# * adjustment 
+            reward += reward_factor*4
+                #horizontal angle
+            head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
+            angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
+            reward += reward_factor*4
         
 
         return reward, done
+#HOW TO DO THIS ONE?
     def get_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
                 
-        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y])
+        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y,current_target.center.z])
 
-        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
+        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y,self.bitLocation.z])
         appr_vec = curr_target_pos_vector - curr_drill_pos_vector
 
         head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
@@ -215,13 +253,21 @@ class DrillEnv(gym.Env):
         if abs(self.angVel + self.angAcc) < MAX_ANGVEL:
             self.angVel += self.angAcc
 
+
+        vertical_speed = abs(np.sin(vertical_heading)) * DRILL_SPEED
+        horizontal_speed = abs(np.cos(vertical_heading)) * DRILL_SPEED
+
         # Update heading.
-        self.heading = (self.heading + self.angVel) % (2 * np.pi)
+
+        self.vertical_heading = (self.vertical_heading + self.vertical_angVel) % (2 * np.pi)
+        self.horizontal_heading = (self.horizontal_heading + self.horizontal_angVel) % (2 * np.pi)
 
         # Update position
-        self.bitLocation.x += DRILL_SPEED * np.sin(self.heading)
-        self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
-        self.step_history.append([self.bitLocation.x,self.bitLocation.y])
+        self.bitLocation.x += horizontal_speed * np.cos(self.horizontal_heading)
+        self.bitLocation.y += horizontal_speed * np.sin(self.horizontal_heading)
+        self.bitLocation.z += vertical_speed * np.sin(self.vertical_heading)
+
+        self.step_history.append([self.bitLocation.x,self.bitLocation.y, self.bitLocation.z])
 
     # Returns tuple of current state
     def get_state(self):
