@@ -4,6 +4,7 @@ from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
+from random import uniform
 
 # Our own libs
 from gym_drill.envs.Coordinate import Coordinate
@@ -29,7 +30,7 @@ TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 11
+NUM_TARGETS = 7
 TARGET_WINDOW_SIZE = 2
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
 
@@ -253,7 +254,7 @@ class DrillEnv(gym.Env):
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
 
-        self.heading = self.initialHeading
+        self.heading = uniform(np.pi/2,np.pi)
         self.angVel = self.initialAngVel
         self.angAcc = self.initialAngAcc
 

@@ -14,6 +14,7 @@ from stable_baselines.common.policies import MlpPolicy
 from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR
 
 
+
 # Ignore the crazy amount of warnings
 import warnings
 import tensorflow as tf
@@ -22,7 +23,8 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
 STARTLOCATION = Coordinate(100,900.0)
-BIT_INITIALIZATION = [3.8*np.pi/4,0.0,0.0]
+BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),0.0,0.0] #initial heading is also set to random in the reset function (drill_env.py)
+
 
 env_name = 'drill-v0'
 env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
@@ -43,8 +45,8 @@ tensorboard_run_name = "DQN_(2M plus low LR)"
 #model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
 model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 #print("DQN: I start training now")
-model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
-model.save(save_as) #Saving the wisdom for later 
+#model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.save(save_as) #Saving the wisdom for later 
 
 """
 #PPO2-approach
