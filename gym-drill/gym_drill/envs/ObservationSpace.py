@@ -1,15 +1,18 @@
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
+from gym_drill.envs import environment_support as es
 
 import numpy as np
 import gym
 from gym import spaces
 
 TARGET_WINDOW_SIZE = 3
+HAZARD_WINDOW_SIZE = 2 # MUST HAVE AT LEAST TWO HAZARDS
+
 # Targets are assumed to be ordered
 class ObservationSpace:
-    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,extra_data,targets,hazards):
+    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,extra_data,targets,hazards,bit_starting_pos):
         # Spacial
         self.lower_x = space_bounds[0]
         self.upper_x = space_bounds[1]
@@ -33,6 +36,7 @@ class ObservationSpace:
 
         # Hazard related
         self.hazards = hazards
+        self.hazard_window = self.find_closest_hazards(bit_starting_pos)
         self.hazard_bound_x = hazard_bounds[0]
         self.hazard_bound_y = hazard_bounds[1]
         self.hazard_bound_r = hazard_bounds[2]
@@ -42,12 +46,19 @@ class ObservationSpace:
         self.relative_angle_bound = extra_data[1]
 
     def display_targets(self):
-        print("The current window looks like this:")
+        print("The current target window looks like this:")
         for w in self.target_window:
             print(w)
         print("The remaining targets are:")
         for t in self.remaining_targets:
             print(t)
+    def display_hazards(self):
+        print("The current hazard window looks like this:")
+        for w in self.hazard_window:
+            print(w)
+        print("All hazards are:")
+        for h in self.hazards:
+            print(h)        
             
     # To print the obs_space. Can be nice for debugging purposes
     def __str__(self):
@@ -73,7 +84,10 @@ class ObservationSpace:
         + "Hazard bounds are : \n" + "x: " + str(self.hazard_bound_x) + "\n" \
         + "y: " + str(self.hazard_bound_y) + "\n" \
         + "r: " + str(self.hazard_bound_r) + "\n" \
-        + "There are " + str(len(self.hazards))+ " hazards, these are \n" 
+        + "The hazards inside the window are: \n"
+        for h in self.hazard_window:
+            text = text + str(h) + "\n"
+        text = text + "There are a total of" + str(len(self.hazards)) + " hazards, these are \n" 
         for h in self.hazards:
             text = text + str(h) + "\n"    
 
@@ -82,11 +96,23 @@ class ObservationSpace:
         + "Relative angle " + str(self.relative_angle_bound)    
         
         return text      
-            
 
+    def find_closest_hazards(self,bitPostion):
+        candidates = self.hazards        
+        window = []
+        for _ in range(HAZARD_WINDOW_SIZE):
+            closest_index = es._findNearest(bitPostion,candidates)
+            window.append(candidates[closest_index])
+            candidates.pop(closest_index)
+        
+        return window
+    def update_hazard_window(self,bitPosition):
+        self.hazard_window = self.find_closest_hazards(bitPosition)
+
+      
     # Shifts window. The last target will be loaded 3 times (fill the entire window)
     # When there are no more remaining_targets, nothing will happen 
-    def shift_window(self):
+    def shift_target_window(self):
         if len(self.remaining_targets) >= TARGET_WINDOW_SIZE:
             self.target_window = self.remaining_targets[:TARGET_WINDOW_SIZE]
             self.remaining_targets.pop(0)
@@ -104,11 +130,11 @@ class ObservationSpace:
         lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
         upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
 
-        for t in self.target_window:
+        for _ in range(TARGET_WINDOW_SIZE):
             lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_r[0]])
             upper = np.append(upper,[self.target_bound_x[1],self.target_bound_y[1],self.target_bound_r[1]])
 
-        for h in self.hazards:
+        for _ in range(HAZARD_WINDOW_SIZE):
             lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_r[0]])
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_r[1]])       
         
@@ -151,13 +177,13 @@ if __name__ == '__main__':
     RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
     EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
-    """
+    
     for _ in range(4):
         hazard_center = Coordinate(np.random.uniform(HAZARD_BOUND_X[0],HAZARD_BOUND_X[1]),(np.random.uniform(HAZARD_BOUND_Y[0],HAZARD_BOUND_Y[1] )))
         hazard_radius = np.random.uniform(HAZARD_RADII_BOUND[0],HAZARD_RADII_BOUND[1])
         hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)
         hazards.append(hazard_candidate)
-    """    
+        
     
     print("Here are the targets")
     for _ in targets:
@@ -168,7 +194,7 @@ if __name__ == '__main__':
 
     print("Creating obs_space")
     print()
-    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,targets,hazards)
+    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,targets,hazards,Coordinate(100,300))
     print(obs_space)
     
     
@@ -181,23 +207,23 @@ if __name__ == '__main__':
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("First shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Second shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Third shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Fourth shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Fifth shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
 
     print("im done")

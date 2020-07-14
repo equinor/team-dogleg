@@ -30,7 +30,7 @@ TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_RADII_BOUND = [20,50]
 
-NUM_TARGETS = 4
+NUM_TARGETS = 6
 TARGET_WINDOW_SIZE = 3
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
 
@@ -42,7 +42,7 @@ HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_RADII_BOUND = [20,50]
 
-NUM_HAZARDS = 4
+NUM_HAZARDS = 4 # MUST BE EQUAL OR GREATER THAN HAZARD WINDOW SIZE
 
 # Observation space specs
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
@@ -92,7 +92,7 @@ class DrillEnv(gym.Env):
 
         self.action_space = spaces.Discrete(3)        
 
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -113,6 +113,7 @@ class DrillEnv(gym.Env):
         
     def step(self, action):    
         self.update_bit(action)
+        self.observation_space_container.update_hazard_window(self.bitLocation)
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
@@ -124,14 +125,13 @@ class DrillEnv(gym.Env):
     def get_reward_and_done_signal(self):
         done = False      
         reward = 0.0 #step-penalty
-        """
+        
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
             reward -= 2.0 #angAcc-penalty
 
         if self.angVel != 0:
-            reward -= 1.0 #angAcc-penalty
-        """
+            reward -= 1.0 #angAcc-penalty        
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
@@ -139,7 +139,7 @@ class DrillEnv(gym.Env):
             done = True   
         
         # Check if we hit a hazard
-        for h in self.hazards:
+        for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius):
                 reward -= 100.0
                 #done = True
@@ -165,7 +165,7 @@ class DrillEnv(gym.Env):
             # But if we do have more targets,
             else:
                 # we must shift the targets.
-                self.observation_space_container.shift_window()
+                self.observation_space_container.shift_target_window()
         
         else:
             # If target is not hit, then we give a reward if drill is approaching it.
@@ -232,8 +232,8 @@ class DrillEnv(gym.Env):
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.radius)
-        # Get all hazards
-        for hazard in self.observation_space_container.hazards:
+        # Get hazards inside window
+        for hazard in self.observation_space_container.hazard_window:
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
             state_list.append(hazard.radius)
@@ -273,7 +273,7 @@ class DrillEnv(gym.Env):
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -460,7 +460,7 @@ if __name__ == '__main__':
     import random
     BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
 
-    env = DrillEnv(startpos,BIT_INITIALIZATION)
+    env = DrillEnv(startpos,BIT_INITIALIZATION,activate_hazards=True)
 
     action_size = env.action_space.n
     action = random.choice(range(action_size))

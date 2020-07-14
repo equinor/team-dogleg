@@ -39,6 +39,7 @@ def _init_hazards(num_hazards,x_bound,y_bound,r_bound,start_pos,existing_targets
 
 # Finds nearest between 1 point and a list of candidate points
 # startlocation is type Coordinate, and candidates is list of types Targets
+# Also works with Hazards
 def _findNearest(start_location,candidates):
     current_shortest_distance = -1 # Init with an impossible distance
     current_closest_target_index = 0
