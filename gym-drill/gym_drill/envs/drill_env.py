@@ -4,6 +4,7 @@ from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
+from random import uniform
 
 # Our own libs
 from gym_drill.envs.Coordinate import Coordinate
@@ -69,7 +70,7 @@ class DrillEnv(gym.Env):
 
         # We init parameters here        
         self.bitLocation = startLocation
-        self.heading = bitInitialization[0]
+        self.heading = uniform(np.pi/2,np.pi)
         self.angVel = bitInitialization[1]
         self.angAcc = bitInitialization[2]
 
@@ -123,14 +124,14 @@ class DrillEnv(gym.Env):
     def get_reward_and_done_signal(self):
         done = False      
         reward = 0.0 #step-penalty
-
+        """
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
             reward -= 2.0 #angAcc-penalty
 
         if self.angVel != 0:
             reward -= 1.0 #angAcc-penalty
-
+        """
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
@@ -141,8 +142,8 @@ class DrillEnv(gym.Env):
         for h in self.hazards:
             if es._is_within(self.bitLocation,h.center,h.radius):
                 reward -= 100.0
-                done = True
-                print("Hazard hit, I will stop")        
+                #done = True
+                #print("Hazard hit, I will stop")        
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
@@ -266,11 +267,11 @@ class DrillEnv(gym.Env):
         # Init new hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+            self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
-
+            
         # Re-configure the observation space
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
