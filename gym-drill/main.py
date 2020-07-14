@@ -22,8 +22,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,1900.0)
-BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),0.0,0.0] #initial heading is also set to random in the reset function (drill_env.py)
+STARTLOCATION = Coordinate(100,1900, 300)
+BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),random.uniform(0,np.pi/2), 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
 env_name = 'drill-v0'
@@ -140,7 +140,8 @@ for episode in range (10):
 		#env.observation_space_container.display_targets()
 		#print(rewards)
 		#print(obs)
-	env.display_environment()
+	env.display_horizontal_plane_of_environment()
+	env.display_vertical_plane_of_environment()
 	state = env.reset()
 	
 	env.close()

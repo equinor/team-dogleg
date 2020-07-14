@@ -435,7 +435,62 @@ class DrillEnv(gym.Env):
         plt.legend()
         plt.show()
     
-    
+    def display_vertical_plane_of_environment(self):
+        # Get data
+        x_positions = []
+        z_positions = []
+        for position in self.step_history:
+            x_positions.append(position[0])
+            z_positions.append(position[2])      
+
+        
+        # Plot circles from targetballs, colors just to verify the order of the balls
+        theta = np.linspace(0, 2*np.pi, 100)
+        colors_order = {
+            1:"b",
+            2:"g",
+            3:"r",
+            4:"c",
+            5:"m",
+            6:"y",
+            7:"palevioletred",
+            8:"pink",
+            9:"coral",
+            10:"orange",
+            11:"saddlebrown"
+            }
+        cnt = 1
+        for target in self.targets:
+            center = target.center
+            radius = target.radius          
+                           
+            x = center.x + radius*np.cos(theta)
+            z = center.z + radius*np.sin(theta)
+            label = "Target #" + str(cnt)
+            plt.plot(x,z,colors_order[cnt],label=label)
+            cnt += 1
+
+        firsttime = True # To ensure hazard label only appears once
+        for hazard in self.hazards:
+            h_center = hazard.center
+            h_radius = hazard.radius
+            h_x = h_center.x + h_radius*np.cos(theta)                
+            h_z = h_center.z + h_radius*np.sin(theta)
+            if firsttime:
+                plt.plot(h_x,h_z,"k",label="Hazards")
+                firsttime = False
+            else:
+                plt.plot(h_x,h_z,"k")
+
+        # Set axis 
+        axes = plt.gca()
+        axes.set_xlim(0,SCREEN_X)
+        axes.set_zlim(0,SCREEN_Z)
+
+        plt.plot(x_positions,z_positions,"grey")
+        plt.title("Well trajectory path")
+        plt.legend()
+        plt.show()
     """
     def render(self, mode='human'):
         screen_width = SCREEN_X
@@ -496,7 +551,7 @@ if __name__ == '__main__':
     print("Creating Hazards")    
     h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startpos,t)
     for eden_hazard in h:
-        print(eden_hazard)
+        print(eden_hazard) #haha
     
     # plot circles from targetballs, colors just to verify the order of the balls
     theta = np.linspace(0, 2*np.pi, 100)
@@ -534,13 +589,14 @@ if __name__ == '__main__':
     axes = plt.gca()
     axes.set_xlim(0,SCREEN_X)
     axes.set_ylim(0,SCREEN_Y)
+
     
     plt.title("Test random generated hazard and targets")
     plt.show()
     
     print("Verify Environemnt")
     import random
-    BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
+    BIT_INITIALIZATION = [3.5*np.pi/4,np.pi/2, 0.0, 0.0, 0.0, 0.0]
 
     env = DrillEnv(startpos,BIT_INITIALIZATION)
 
