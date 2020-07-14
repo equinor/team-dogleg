@@ -6,7 +6,7 @@ import numpy as np
 import gym
 from gym import spaces
 
-TARGET_WINDOW_SIZE = 2
+TARGET_WINDOW_SIZE = 3
 # Targets are assumed to be ordered
 class ObservationSpace:
     def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,extra_data,targets,hazards):

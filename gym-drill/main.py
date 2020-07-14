@@ -11,7 +11,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy
 from stable_baselines.deepq.policies import LnMlpPolicy 
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR
+from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR, TRPO
 
 
 
@@ -22,13 +22,12 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,900.0)
+STARTLOCATION = Coordinate(100,1900.0)
 BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),0.0,0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
 env_name = 'drill-v0'
-env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
-model_name = "deepq_gym-drill-two_random_targets_v0.0"
+env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION, activate_hazards=True)
 
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
@@ -36,18 +35,18 @@ print("action space", env.action_space)
 #Using Stable-Baselines to teach an agent 
 
 #DQN-approach
-
-model_to_load = "DQN_drill_model_2M"
-save_as = "DQN_drill_model_(2M plus low LR)"
-tensorboard_folder = "./algorithm_performance_comparison_v0.3/"
-tensorboard_run_name = "DQN_(2M plus low LR)"
+"""
+model_to_load = "DQN_drill_model_hazards_v0.1"
+save_as = "DQN_drill_model_hazards_v0.2"
+tensorboard_folder = "./algorithm_performance_hazards/"
+tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
 #model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
 model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
-#print("DQN: I start training now")
+print("DQN: I start training now")
 #model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
 #model.save(save_as) #Saving the wisdom for later 
-
+"""
 """
 #PPO2-approach
 
@@ -104,6 +103,18 @@ print("ACKTR: I start training now")
 model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 """
+#TRPO-approach 
+
+model_to_load = "TRPO_drill_model"
+save_as = "TRPO_drill_model"
+tensorboard_folder = "./algorithm_performance_comparison/"
+tensorboard_run_name = "TRPO"
+#Chose one of the two lines below (#1 or #2):
+#model = TRPO(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
+model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
+print("TRPO: I start training now")
+#model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.save(save_as) #Saving the wisdom for later 
 """
 for episode in range(10):
     	done= False
@@ -119,7 +130,7 @@ for episode in range(10):
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (10):
+for episode in range (3):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)
