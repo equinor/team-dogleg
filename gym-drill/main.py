@@ -35,18 +35,18 @@ print("action space", env.action_space)
 #Using Stable-Baselines to teach an agent 
 
 #DQN-approach
-"""
-model_to_load = "DQN_drill_model_hazards_v0.1"
-save_as = "DQN_drill_model_hazards_v0.2"
-tensorboard_folder = "./algorithm_performance_hazards/"
+
+model_to_load = "DQN_drill_model_hazards_3D"
+save_as = "DQN_drill_model_hazards_3D"
+tensorboard_folder = "./algorithm_performance_hazards_3D/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-#model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
-"""
+model.learn(total_timesteps=1000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
+
 """
 #PPO2-approach
 
@@ -104,10 +104,10 @@ model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the 
 model.save(save_as) #Saving the wisdom for later 
 """
 #TRPO-approach 
-
-model_to_load = "TRPO_drill_model"
-save_as = "TRPO_drill_model_v0.1"
-tensorboard_folder = "./TB_hazards_2000x2000/"
+"""
+model_to_load = "TRPO_drill_model_3D"
+save_as = "TRPO_drill_model_3D"
+tensorboard_folder = "./TB_hazards_2000x2000x2000/"
 tensorboard_run_name = "TRPO"
 #Chose one of the two lines below (#1 or #2):
 #model = TRPO(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
@@ -115,6 +115,7 @@ model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)       
 print("TRPO: I start training now")
 model.learn(total_timesteps=500000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
+"""
 """
 for episode in range(10):
     	done= False
@@ -130,7 +131,7 @@ for episode in range(10):
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (10):
+for episode in range (5):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)

@@ -39,7 +39,8 @@ class ObservationSpace:
 
         # Extra data
         self.target_distance_bound = extra_data[0]
-        self.relative_angle_bound = extra_data[1]
+        #self.relative_horizontal_angle_bound = extra_data[1]
+        #self.relative_horizontal_angle_bound = extra_data[2]
 
     def display_targets(self):
         print("The current window looks like this:")
@@ -79,7 +80,8 @@ class ObservationSpace:
 
         text = text + "The extra data bounds are: \n" \
         + "Target distance: " + str(self.target_distance_bound) +"\n" \
-        + "Relative angle " + str(self.relative_angle_bound)    
+        #+ "Relative horizontal angle " + str(self.relativehorizontal_angle_bound) + "\n" \
+        #+ "Relative vertical angle " + str(self.relative_vertical_angle_bound)     
         
         return text      
             
@@ -100,7 +102,7 @@ class ObservationSpace:
         else:
             print("No more targets to add to window, we are done!")    
     
-    def get_space_box(self):
+    def get_space_box(self):#This has to be updated to fit the 3D environment
         lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
         upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
 
