@@ -121,7 +121,7 @@ class DrillEnv(gym.Env):
             #print("Initiating environment without hazards")
             self.hazards = []
 
-        self.action_space = spaces.Discrete(3)        
+        self.action_space = spaces.Discrete(9)        
 
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
@@ -181,8 +181,8 @@ class DrillEnv(gym.Env):
             done= True                        
 
         # Find the values of the current target
-        current_target_pos = np.array([self.state[5], self.state[6]])
-        current_target_rad = self.state[7]
+        current_target_pos = np.array([self.state[9], self.state[10], self.state[11]])
+        current_target_rad = self.state[12]
         drill_pos = np.array([self.bitLocation.x, self.bitLocation.y, self.bitLocation.z])
 
         # Check if target is hit
@@ -227,35 +227,63 @@ class DrillEnv(gym.Env):
         
 
         return reward, done
-#HOW TO DO THIS ONE?
-    def get_angle_relative_to_target(self):
+
+    def get_horizontal_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
                 
-        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y,current_target.center.z])
+        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y])
 
-        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y,self.bitLocation.z])
+        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
         appr_vec = curr_target_pos_vector - curr_drill_pos_vector
 
-        head_vec = np.array([np.sin(self.heading), np.cos(self.heading)])
+        head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
+        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+
+        return angle_between_vectors
+
+    def get_vertical_angle_relative_to_target(self):
+        current_target = self.observation_space_container.target_window[0]
+                
+        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.z])
+
+        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.z])
+        appr_vec = curr_target_pos_vector - curr_drill_pos_vector
+
+        head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
     
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
+        
+
         # Update angular acceleration, if within limits
-        if action == 0 and self.angAcc > -MAX_ANGACC:
-            self.angAcc -= ANGACC_INCREMENT
-        elif action == 1 and self.angAcc < MAX_ANGACC:
-            self.angAcc += ANGACC_INCREMENT
+        if action < 3 and self.vertical_angAcc < MAX_ANGACC:            #indexes of action space:
+            self.vertical_angAcc += ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
+        elif action > 5 and self.vertical_angAcc > -MAX_ANGACC:         #   3       4       5 | (3-5): don't accelate in the vertical plane
+            self.vertical_angAcc -= ANGACC_INCREMENT                    #   6       7       8 | (6-8): accelerate downwards
+                                                                        #---------------------
+                                                                        #(0,3,6): accelerate left 
+                                                                        #        (1,4,7): don't accelerate in the horizontal plane
+                                                                        #                (2,5,8): accelerate right
+        if (action == 0) or (action == 3) or (action == 6) and self.horizontal_angAcc > -MAX_ANGACC:
+            self.horizontal_angAcc -= ANGACC_INCREMENT
+        elif (action == 2) or (action == 5) or (action == 8) and self.horizontal_angAcc < MAX_ANGACC:
+            self.horizontal_angAcc += ANGACC_INCREMENT
+        
 
         # Update angular velocity, if within limits
-        if abs(self.angVel + self.angAcc) < MAX_ANGVEL:
-            self.angVel += self.angAcc
+
+        if abs(self.horizontal_angVel + self.horizontal_angAcc) < MAX_ANGVEL:
+            self.horizontal_angVel += self.horizontal_angAcc
+
+        if abs(self.vertical_angVel + self.vertical_angAcc) < MAX_ANGVEL:
+            self.vertical_angVel += self.vertical_angAcc
 
 
-        vertical_speed = abs(np.sin(vertical_heading)) * DRILL_SPEED
-        horizontal_speed = abs(np.cos(vertical_heading)) * DRILL_SPEED
+        vertical_speed = abs(np.sin(self.vertical_heading)) * DRILL_SPEED
+        horizontal_speed = abs(np.cos(self.vertical_heading)) * DRILL_SPEED
 
         # Update heading.
 
@@ -272,23 +300,26 @@ class DrillEnv(gym.Env):
     # Returns tuple of current state
     def get_state(self):
         # Core bit data
-        state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
+        state_list = [self.bitLocation.x, self.bitLocation.y, self.bitLocation.z, self.horizontal_heading,self.vertical_heading, self.horizontal_angVel,self.vertical_angVel, self.horizontal_angAcc,self.vertical_angAcc]
         # Target data that are inside the window
         for target in self.observation_space_container.target_window: # This will cause bug
             state_list.append(target.center.x)
             state_list.append(target.center.y)
+            state_list.append(target.center.z)
             state_list.append(target.radius)
         # Get all hazards
         for hazard in self.observation_space_container.hazards:
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
+            state_list.append(hazard.center.z)
             state_list.append(hazard.radius)
         # Extra data
         current_target = self.observation_space_container.target_window[0]
         distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)-current_target.radius
-        relative_angle = self.get_angle_relative_to_target() 
+        relative_horizontal_angle = self.get_horizontal_angle_relative_to_target() #THIS ONE CANT BE FORGOTTEN
+        relative_vertical_angle = self.get_vertical_angle_relative_to_target()
 
-        state_list =  state_list + [distance_to_target,relative_angle]
+        state_list =  state_list + [distance_to_target,relative_horizontal_angle, relative_vertical_angle]
         return tuple(state_list)        
 
     def reset(self):
@@ -299,21 +330,26 @@ class DrillEnv(gym.Env):
         
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
+        self.bitLocation.z = self.start_z
 
-        self.heading = uniform(np.pi/2,np.pi)
-        self.angVel = self.initialAngVel
-        self.angAcc = self.initialAngAcc
+        self.horizontal_heading = uniform(0,np.pi/2)
+        self.vertical_heading = uniform(np.pi/10,np.pi/2)
+        self.horizontal_angVel = self.initial_horizontal_angVel
+        self.vertical_angVel = self.initial_vertical_angVel
+        self.horizontal_angAcc = self.initial_horizontal_angAcc
+        self.vertical_angAcc = self.initial_vertical_angAcc
+        
 
         # Save the starting position as "first" step
-        self.step_history = [[self.start_x,self.start_y]]       
+        self.step_history = [[self.start_x,self.start_y,self.start_z]]       
 
         # Need to init new targets
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
+        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,self.bitLocation)             
         
         # Init new hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+            self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],[0.25*SCREEN_Z,0.85*SCREEN_Z],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
@@ -342,7 +378,7 @@ class DrillEnv(gym.Env):
             self.viewer.close()
             self.viewer = None
 
-    def display_environment(self):
+    def display_horizontal_plane_of_environment(self):
         # Get data
         x_positions = []
         y_positions = []
@@ -450,15 +486,15 @@ class DrillEnv(gym.Env):
     
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
-    startpos = Coordinate(100,400)
+    startpos = Coordinate(100,400,100)
 
     print("Creating targets")
-    t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startpos)
+    t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startpos)
     for _ in t:
         print(_)
     
     print("Creating Hazards")    
-    h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startpos,t)
+    h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startpos,t)
     for eden_hazard in h:
         print(eden_hazard)
     
