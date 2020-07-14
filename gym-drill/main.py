@@ -14,6 +14,7 @@ from stable_baselines.common.policies import MlpPolicy
 from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR, TRPO
 
 
+
 # Ignore the crazy amount of warnings
 import warnings
 import tensorflow as tf
@@ -21,8 +22,9 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,900.0)
-BIT_INITIALIZATION = [3.8*np.pi/4,0.0,0.0]
+STARTLOCATION = Coordinate(100,1900.0)
+BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),0.0,0.0] #initial heading is also set to random in the reset function (drill_env.py)
+
 
 env_name = 'drill-v0'
 env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION, activate_hazards=True)

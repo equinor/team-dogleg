@@ -22,8 +22,8 @@ ANGACC_INCREMENT = 0.01
 DRILL_SPEED = 5.0
 
 # Screen size, environment should be square
-SCREEN_X = 1000
-SCREEN_Y = 1000
+SCREEN_X = 2000
+SCREEN_Y = 2000
 
 # Target specs
 TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
@@ -254,7 +254,7 @@ class DrillEnv(gym.Env):
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
 
-        self.heading = self.initialHeading
+        self.heading = uniform(np.pi/2,np.pi)
         self.angVel = self.initialAngVel
         self.angAcc = self.initialAngAcc
 
@@ -271,7 +271,7 @@ class DrillEnv(gym.Env):
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
-            
+
         # Re-configure the observation space
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
