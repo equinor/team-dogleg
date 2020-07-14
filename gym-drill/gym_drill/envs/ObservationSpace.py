@@ -101,9 +101,8 @@ class ObservationSpace:
         # Need to make a independent copy that does not point to same memory location
         candidates = [] 
         for h in self.hazards:
-            print("asdasd")
             candidates.append(h)
-        print("I have just copied")
+
         print(len(candidates))
         window = []
         for _ in range(HAZARD_WINDOW_SIZE):

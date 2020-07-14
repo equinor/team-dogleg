@@ -63,7 +63,6 @@ class DrillEnv(gym.Env):
     }
 
     def __init__(self,startLocation,bitInitialization,*,activate_hazards=True):
-        print("Initing!")
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         # Save the starting position as "first" step. Needed for plotting in matplotlib
@@ -113,7 +112,6 @@ class DrillEnv(gym.Env):
         return [seed]
         
     def step(self, action):
-        print("Stepping")    
         self.update_bit(action)
         self.observation_space_container.update_hazard_window(self.bitLocation)
         reward, done = self.get_reward_and_done_signal()           
@@ -125,7 +123,6 @@ class DrillEnv(gym.Env):
     
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
-        print("Rewarding")
         done = False      
         reward = 0.0 #step-penalty
         
@@ -208,7 +205,6 @@ class DrillEnv(gym.Env):
     
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
-        print("Updating")
         # Update angular acceleration, if within limits
         if action == 0 and self.angAcc > -MAX_ANGACC:
             self.angAcc -= ANGACC_INCREMENT
@@ -229,7 +225,6 @@ class DrillEnv(gym.Env):
 
     # Returns tuple of current state
     def get_state(self):
-        print("Getting state")
         # Core bit data
         state_list = [self.bitLocation.x, self.bitLocation.y, self.heading, self.angVel, self.angAcc]
         # Target data that are inside the window
@@ -251,7 +246,6 @@ class DrillEnv(gym.Env):
         return tuple(state_list)        
 
     def reset(self):
-        print("Resetting")
         # Save previous run to log
         #self.write_to_log()
         #self.episode_counter += 1
