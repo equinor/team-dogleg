@@ -98,7 +98,13 @@ class ObservationSpace:
         return text      
 
     def find_closest_hazards(self,bitPostion):
-        candidates = self.hazards        
+        # Need to make a independent copy that does not point to same memory location
+        candidates = [] 
+        for h in self.hazards:
+            print("asdasd")
+            candidates.append(h)
+        print("I have just copied")
+        print(len(candidates))
         window = []
         for _ in range(HAZARD_WINDOW_SIZE):
             closest_index = es._findNearest(bitPostion,candidates)
@@ -184,24 +190,27 @@ if __name__ == '__main__':
         hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)
         hazards.append(hazard_candidate)
         
-    
+    """
     print("Here are the targets")
     for _ in targets:
         print(_)
     print("here are the hazards")
     for _ in hazards:
         print(_)
-
+    """
     print("Creating obs_space")
     print()
     obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,targets,hazards,Coordinate(100,300))
-    print(obs_space)
-    
+    #print(obs_space)
+    print("test hazard window")
+    obs_space.update_hazard_window(Coordinate(200,100))
+    print(obs_space.hazard_window)
     
     box = obs_space.get_space_box()
     print(box)
     print("Expected dimension of the obs space is: ", 5 + 3*TARGET_WINDOW_SIZE + 3*len(hazards) + 2) # Only 2 extra data
     
+    """
     print("Test shifting of window")
     print("State before shifting")
     obs_space.display_targets()
@@ -227,7 +236,7 @@ if __name__ == '__main__':
     obs_space.display_targets()
 
     print("im done")
-
+    """
     
 
 
