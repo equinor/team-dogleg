@@ -22,8 +22,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,1900, 300)
-BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),random.uniform(0,np.pi/2), 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
+STARTLOCATION = Coordinate(100,1900,1900)
+BIT_INITIALIZATION = [np.pi/4,np.pi/2, 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
 env_name = 'drill-v0'

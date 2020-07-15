@@ -48,7 +48,7 @@ HAZARD_RADII_BOUND = [20,50]
 NUM_HAZARDS = 4
 
 # Observation space specs
-SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
+SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] # x_low,x_high,y_low,y_high
 BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
 HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
 TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUND]
@@ -489,7 +489,7 @@ class DrillEnv(gym.Env):
         # Set axis 
         axes = plt.gca()
         axes.set_xlim(0,SCREEN_X)
-        axes.set_zlim(0,SCREEN_Z)
+        axes.set_ylim(0,SCREEN_Z)
 
         plt.plot(x_positions,z_positions,"grey")
         plt.title("Well trajectory path")

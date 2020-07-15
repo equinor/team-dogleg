@@ -14,7 +14,9 @@ class ObservationSpace:
         self.lower_x = space_bounds[0]
         self.upper_x = space_bounds[1]
         self.lower_y = space_bounds[2]
-        self.upper_y = space_bounds[3] 
+        self.upper_y = space_bounds[3]
+        self.lower_z = space_bounds[4]
+        self.upper_z = space_bounds[5]  #have to adjust space_bounds as well
 
         # Bit related
         self.lower_heading = bit_bounds[0]
@@ -29,13 +31,15 @@ class ObservationSpace:
         self.remaining_targets = targets[1:]
         self.target_bound_x = target_bounds[0]
         self.target_bound_y = target_bounds[1]
-        self.target_bound_r = target_bounds[2]
+        self.target_bound_z = target_bounds[2]
+        self.target_bound_r = target_bounds[3] #must be added
 
         # Hazard related
         self.hazards = hazards
         self.hazard_bound_x = hazard_bounds[0]
         self.hazard_bound_y = hazard_bounds[1]
-        self.hazard_bound_r = hazard_bounds[2]
+        self.hazard_bound_z = hazard_bounds[2]
+        self.hazard_bound_r = hazard_bounds[3]
 
         # Extra data
         self.target_distance_bound = extra_data[0]
@@ -103,20 +107,20 @@ class ObservationSpace:
             print("No more targets to add to window, we are done!")    
     
     def get_space_box(self):#This has to be updated to fit the 3D environment
-        lower = np.array([self.lower_x,self.lower_y,self.lower_heading,self.lower_ang_vel,self.lower_ang_acc])
-        upper = np.array([self.upper_x,self.upper_y,self.upper_heading,self.upper_ang_vel,self.upper_ang_acc])
+        lower = np.array([self.lower_x,self.lower_y,self.lower_z,self.lower_heading,self.lower_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
+        upper = np.array([self.upper_x,self.upper_y,self.upper_z,self.upper_heading,self.upper_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
 
         for t in self.target_window:
-            lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_r[0]])
-            upper = np.append(upper,[self.target_bound_x[1],self.target_bound_y[1],self.target_bound_r[1]])
+            lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_z[0],self.target_bound_r[0]])
+            upper = np.append(upper,[self.target_bound_x[1],self.target_bound_y[1],self.target_bound_z[1],self.target_bound_r[1]])
 
         for h in self.hazards:
-            lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_r[0]])
-            upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_r[1]])       
+            lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_z[0],self.hazard_bound_r[0]])
+            upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_z[1],self.hazard_bound_r[1]])       
         
         # Add extra data
-        lower = np.append(lower,[self.target_distance_bound[0],self.relative_angle_bound[0]])
-        upper = np.append(upper,[self.target_distance_bound[1],self.relative_angle_bound[1]])
+        lower = np.append(lower,[self.target_distance_bound[0]])#,self.relative_angle_bound[0]])
+        upper = np.append(upper,[self.target_distance_bound[1]])#,self.relative_angle_bound[1]])
         
         return spaces.Box(lower,upper,dtype=np.float64)    
 
@@ -127,26 +131,26 @@ if __name__ == '__main__':
     SCREEN_Y = 600
     SCREEN_Z = 600
 
-    SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
-    BIT_BOUNDS = [0,2*np.pi,-0.05,0.05,-0.1,0.1] #
+    SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] # x_low,x_high,y_low,y_high
+    BIT_BOUNDS = [0,2*np.pi,0,2*np.pi,-0.05,0.05,-0.05,0.05,-0.1,0.1,-0.1,0.1] #
 
     TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
     TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
     TARGET_BOUND_Z = [0.5*SCREEN_Z,0.9*SCREEN_Z]
     TARGET_RADII_BOUND = [20,50]
-    TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
+    TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND]
 
     HAZARD_BOUND_X = [0,SCREEN_X]
     HAZARD_BOUND_Y = [0,SCREEN_Y]
     HAZARD_BOUND_Z = [0,SCREEN_Z]
     HAZARD_RADII_BOUND = [20,50]
-    HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
+    HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
     
     targets = []
     for _ in range(4):
         target_center = Coordinate(np.random.uniform(TARGET_BOUND_X[0],TARGET_BOUND_X[1]),np.random.uniform(TARGET_BOUND_Y[0],TARGET_BOUND_Y[1]),np.random.uniform(TARGET_BOUND_Z[0],TARGET_BOUND_Z[1]))
         target_radius = np.random.uniform(TARGET_RADII_BOUND[0],TARGET_RADII_BOUND[1])
-        target_candidate = TargetBall(target_center.x,target_center.y,target_radius)
+        target_candidate = TargetBall(target_center.x,target_center.y,target_center.z,target_radius)
         targets.append(target_candidate)
     
     hazards = []
@@ -155,7 +159,7 @@ if __name__ == '__main__':
     TARGET_DISTANCE_BOUND = [0,DIAGONAL]
     RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
     RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
-    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND, RELATIVE_VERTICAL_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND]#,RELATIVE_HORIZONTAL_ANGLE_BOUND, RELATIVE_VERTICAL_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
     """
     for _ in range(4):
