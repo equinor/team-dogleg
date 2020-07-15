@@ -3,6 +3,8 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib.lines import Line2D
 from datetime import datetime
 from random import uniform
 
@@ -381,7 +383,7 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
-
+    """
     def display_horizontal_plane_of_environment(self):
         # Get data
         x_positions = []
@@ -496,6 +498,84 @@ class DrillEnv(gym.Env):
         plt.legend()
         plt.show()
     """
+
+    def display_3d_environment(self):
+        # Get data
+        x_positions = []
+        y_positions = []
+        z_positions = []
+        for position in self.step_history:
+            x_positions.append(position[0])
+            y_positions.append(position[1])
+            z_positions.append(position[2])      
+
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot(x_positions,y_positions,z_positions)
+        #ax.invert_zaxis()
+
+        # Plot circles from targetballs, colors just to verify the order of the balls
+        theta = np.linspace(0, 2*np.pi, 100)
+        colors_order = {
+            1:"b",
+            2:"g",
+            3:"r",
+            4:"c",
+            5:"m",
+            6:"y",
+            7:"palevioletred",
+            8:"pink",
+            9:"coral",
+            10:"orange",
+            11:"saddlebrown"
+            }
+        cnt = 1
+        for target in self.targets:
+
+            plot_ball(target.center.x,target.center.y,target.center.z,target.radius,colors_order[cnt],ax)
+        
+                     
+            #x = center.x + radius*np.cos(theta)
+            #z = center.z + radius*np.sin(theta)
+            label = "Target #" + str(cnt)
+            #plt.plot(x,y,z,colors_order[cnt],label=label)#?
+            
+            cnt += 1
+        """
+        firsttime = True # To ensure hazard label only appears once
+        for hazard in self.hazards:
+            h_center = hazard.center
+            h_radius = hazard.radius
+            h_x = h_center.x + h_radius*np.cos(theta)                
+            h_z = h_center.z + h_radius*np.sin(theta)
+            if firsttime:
+                plt.plot(h_x,h_z,"k",label="Hazards")
+                firsttime = False
+            else:
+                plt.plot(h_x,h_z,"k")
+                """
+        for hazard in self.hazards:
+            plot_ball(hazard.center.x,hazard.center.y,hazard.center.z,hazard.radius,'k',ax)
+
+
+        # Set axis 
+        #ax = plt.gca()
+        ax.set_xlim(SCREEN_X,0)
+        ax.set_ylim(0,SCREEN_Y)
+        ax.set_zlim(SCREEN_Z,0)
+        
+        ax.set_xlabel("North")
+        ax.set_ylabel("West")
+        ax.set_zlabel("Down")
+
+        return fig
+        """
+        plt.plot(x_positions,z_positions,"grey")
+        plt.title("Well trajectory path")
+        plt.legend()
+        plt.show()
+        """
+    """
     def render(self, mode='human'):
         screen_width = SCREEN_X
         screen_height = SCREEN_Y
@@ -542,7 +622,18 @@ class DrillEnv(gym.Env):
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
     """
+
+def plot_ball(x0,y0,z0,r,c,ax):
     
+    # Make data
+    u = np.linspace(0, 2 * np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = x0 + r * np.outer(np.cos(u), np.sin(v))
+    y = y0 + r * np.outer(np.sin(u), np.sin(v))
+    z = z0 + r * np.outer(np.ones(np.size(u)), np.cos(v))
+    # Plot the surface
+    ax.plot_surface(x, y, z, color=c)
+
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
     startpos = Coordinate(100,400,100)

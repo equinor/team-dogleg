@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,1900,1900)
+STARTLOCATION = Coordinate(100,100,100)
 BIT_INITIALIZATION = [np.pi/4,np.pi/2, 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
@@ -131,7 +131,7 @@ for episode in range(10):
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (5):
+for episode in range (1):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)
@@ -141,8 +141,10 @@ for episode in range (5):
 		#env.observation_space_container.display_targets()
 		#print(rewards)
 		#print(obs)
-	env.display_horizontal_plane_of_environment()
-	env.display_vertical_plane_of_environment()
+	#env.display_horizontal_plane_of_environment()
+	#env.display_vertical_plane_of_environment()
+	fig = env.display_3d_environment()
+	plt.show()
 	state = env.reset()
 	
 	env.close()
