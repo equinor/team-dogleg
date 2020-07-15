@@ -13,7 +13,7 @@ def _init_log(*,filename="drill_log.txt"):
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)
     f.close()
-    #print("Log created!")
+
 
 
 # Returns an ordered list of randomly generated targets within the bounds given. 
