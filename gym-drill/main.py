@@ -23,7 +23,7 @@ tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
 STARTLOCATION = Coordinate(100,100,100)
-BIT_INITIALIZATION = [np.pi/4,np.pi/2, 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
+BIT_INITIALIZATION = [np.pi/4,0.0, 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
 env_name = 'drill-v0'
