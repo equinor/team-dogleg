@@ -143,8 +143,7 @@ for episode in range (1):
 		#print(obs)
 	#env.display_horizontal_plane_of_environment()
 	#env.display_vertical_plane_of_environment()
-	fig = env.display_3d_environment()
-	plt.show()
+	env.display_3d_environment()
 	state = env.reset()
 	
 	env.close()

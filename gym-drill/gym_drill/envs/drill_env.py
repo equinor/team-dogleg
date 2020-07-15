@@ -533,30 +533,12 @@ class DrillEnv(gym.Env):
         for target in self.targets:
 
             plot_ball(target.center.x,target.center.y,target.center.z,target.radius,colors_order[cnt],ax)
-        
-                     
-            #x = center.x + radius*np.cos(theta)
-            #z = center.z + radius*np.sin(theta)
             label = "Target #" + str(cnt)
-            #plt.plot(x,y,z,colors_order[cnt],label=label)#?
             
             cnt += 1
-        """
-        firsttime = True # To ensure hazard label only appears once
-        for hazard in self.hazards:
-            h_center = hazard.center
-            h_radius = hazard.radius
-            h_x = h_center.x + h_radius*np.cos(theta)                
-            h_z = h_center.z + h_radius*np.sin(theta)
-            if firsttime:
-                plt.plot(h_x,h_z,"k",label="Hazards")
-                firsttime = False
-            else:
-                plt.plot(h_x,h_z,"k")
-                """
+
         for hazard in self.hazards:
             plot_ball(hazard.center.x,hazard.center.y,hazard.center.z,hazard.radius,'k',ax)
-
 
         # Set axis 
         #ax = plt.gca()
@@ -568,7 +550,7 @@ class DrillEnv(gym.Env):
         ax.set_ylabel("East")
         ax.set_zlabel("Down")
 
-        return fig
+        plt.show()
         """
         plt.plot(x_positions,z_positions,"grey")
         plt.title("Well trajectory path")
