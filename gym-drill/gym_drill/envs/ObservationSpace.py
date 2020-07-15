@@ -86,7 +86,7 @@ class ObservationSpace:
 
     # Shifts window. The last target will be loaded 3 times (fill the entire window)
     # When there are no more remaining_targets, nothing will happen 
-    def shift_window(self):
+    def shift_target_window(self):
         if len(self.remaining_targets) >= TARGET_WINDOW_SIZE:
             self.target_window = self.remaining_targets[:TARGET_WINDOW_SIZE]
             self.remaining_targets.pop(0)
@@ -181,23 +181,23 @@ if __name__ == '__main__':
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("First shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Second shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Third shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Fourth shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
     print("-----------------------------------------------------------------------")
     print("Fifth shift")
-    obs_space.shift_window()
+    obs_space.shift_target_window()
     obs_space.display_targets()
 
     print("im done")
