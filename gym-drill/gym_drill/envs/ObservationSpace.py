@@ -32,7 +32,7 @@ class ObservationSpace:
         self.target_bound_x = target_bounds[0]
         self.target_bound_y = target_bounds[1]
         self.target_bound_z = target_bounds[2]
-        self.target_bound_r = target_bounds[3] #must be added
+        self.target_bound_r = target_bounds[3]
 
         # Hazard related
         self.hazards = hazards
@@ -43,8 +43,8 @@ class ObservationSpace:
 
         # Extra data
         self.target_distance_bound = extra_data[0]
-        #self.relative_horizontal_angle_bound = extra_data[1]
-        #self.relative_horizontal_angle_bound = extra_data[2]
+        self.relative_horizontal_angle_bound = extra_data[1]
+        self.relative_vertical_angle_bound = extra_data[2]
 
     def display_targets(self):
         print("The current window looks like this:")
@@ -119,8 +119,8 @@ class ObservationSpace:
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_z[1],self.hazard_bound_r[1]])       
         
         # Add extra data
-        lower = np.append(lower,[self.target_distance_bound[0]])#,self.relative_angle_bound[0]])
-        upper = np.append(upper,[self.target_distance_bound[1]])#,self.relative_angle_bound[1]])
+        lower = np.append(lower,[self.target_distance_bound[0],self.relative_horizontal_angle_bound[0],self.relative_vertical_angle_bound[0]])
+        upper = np.append(upper,[self.target_distance_bound[1],self.relative_horizontal_angle_bound[1],self.relative_vertical_angle_bound[1]])
         
         return spaces.Box(lower,upper,dtype=np.float64)    
 

@@ -227,7 +227,7 @@ class DrillEnv(gym.Env):
 
         return reward, done
     
-    def get_horizontal_angle_relative_to_target(self):
+    def get_horizontal_angle_relative_to_target(self): #I GUESS THAT THESE TWO FUNCTIONS SHOULD BE USED IN THE REWARD-FUNCTION ABOVE
         current_target = self.observation_space_container.target_window[0]
                 
         curr_target_hor_pos_vector = np.array([current_target.center.x,current_target.center.y])
@@ -315,10 +315,10 @@ class DrillEnv(gym.Env):
         # Extra data
         current_target = self.observation_space_container.target_window[0]
         distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)-current_target.radius
-        #relative_horizontal_angle = self.get_horizontal_angle_relative_to_target()
-        #relative_vertical_angle = self.get_vertical_angle_relative_to_target()
+        relative_horizontal_angle = self.get_horizontal_angle_relative_to_target()
+        relative_vertical_angle = self.get_vertical_angle_relative_to_target()
 
-        state_list =  state_list + [distance_to_target]#,relative_horizontal_angle, relative_vertical_angle]
+        state_list =  state_list + [distance_to_target,relative_horizontal_angle, relative_vertical_angle]
         return tuple(state_list)        
 
     def reset(self):
@@ -545,12 +545,7 @@ class DrillEnv(gym.Env):
         ax.set_zlabel("Down")
 
         plt.show()
-        """
-        plt.plot(x_positions,z_positions,"grey")
-        plt.title("Well trajectory path")
-        plt.legend()
-        plt.show()
-        """
+
     """
     def render(self, mode='human'):
         screen_width = SCREEN_X
