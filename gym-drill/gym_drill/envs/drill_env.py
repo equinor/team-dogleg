@@ -42,7 +42,7 @@ HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_RADII_BOUND = [20,50]
 
-NUM_HAZARDS = 4 # MUST BE EQUAL OR GREATER THAN HAZARD WINDOW SIZE
+NUM_HAZARDS = 10 # MUST BE EQUAL OR GREATER THAN HAZARD WINDOW SIZE
 
 # Observation space specs
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
@@ -84,10 +84,8 @@ class DrillEnv(gym.Env):
         self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
         self.activate_hazards = activate_hazards
         if self.activate_hazards:
-            #print("Initiating environment with hazards")
             self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
-            #print("Initiating environment without hazards")
             self.hazards = []
 
         self.action_space = spaces.Discrete(3)        
@@ -266,10 +264,8 @@ class DrillEnv(gym.Env):
         
         # Init new hazards
         if self.activate_hazards:
-            #print("Initiating environment with hazards")
             self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
-            #print("Initiating environment without hazards")
             self.hazards = []
 
         # Re-configure the observation space
@@ -295,6 +291,22 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def display_state(self):
+        print("Bit location:", Coordinate(self.state[0],self.state[1]))
+        print("Bit angles: ", self.state[2:5])
+        print("Targets inside window: ")
+        for i in range(len(self.observation_space_container.target_window)):
+            t = TargetBall(self.state[5+3*i],self.state[6+3*i],self.state[7+3*i])
+            print(t)
+        print("Hazards inside window")
+        for i in range(len(self.observation_space_container.hazard_window)):
+            h = Hazard(self.state[5+3*i],self.state[6+3*i],self.state[7+3*i])
+            print(h)
+
+        print("Extra data:")
+        print("Distance: ",self.state[5+3*len(self.observation_space_container.target_window)+ 3*len(self.observation_space_container.hazard_window)])
+        print("Relative angle: ",self.state[5+3*len(self.observation_space_container.target_window)+ 3*len(self.observation_space_container.hazard_window)+1])
 
     def display_environment(self):
         # Get data
@@ -352,59 +364,12 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path")
         plt.legend()
         plt.show()
-    
-    
-    """
-    def render(self, mode='human'):
-        screen_width = SCREEN_X
-        screen_height = SCREEN_Y
-        from gym.envs.classic_control import rendering
-
-        if self.viewer is None:
-            #from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(screen_width, screen_height)
-
-            # Create drill bit
-            self.bittrans = rendering.Transform()
-
-            self.dbit = rendering.make_circle(6)
-            self.dbit.set_color(0.5, 0.5, 0.5)
-            self.dbit.add_attr(self.bittrans)
-            self.viewer.add_geom(self.dbit)
-
-            # Draw target ball
-            for target in self.targets:
-                targetCenter = target[0]
-                targetRadius = target[1]
-
-                self.tballtrans = rendering.Transform()
-
-                self.tball = rendering.make_circle(targetRadius)
-                self.tball.set_color(0, 0, 0)
-                self.tball.add_attr(self.tballtrans)
-                self.viewer.add_geom(self.tball)
-                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
-
-        # Update position of drill on screen
-        this_state = self.state
-        self.bittrans.set_translation(this_state[0], this_state[1])
-
-        # Every iteration add a new tracing point
-        self.new_trans = rendering.Transform()
-        self.new_trans.set_translation(this_state[0], this_state[1])
-
-        self.new_point = rendering.make_circle(2)
-        self.new_point.set_color(0.5, 0.5, 0.5)
-        self.new_point.add_attr(self.new_trans)
-
-        self.viewer.add_geom(self.new_point)
-
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
-    """
+      
     
 if __name__ == '__main__':
+    startpos = Coordinate(1000,1000)
+    """
     print("Testing init of targets and hazards")    
-    startpos = Coordinate(100,400)
 
     print("Creating targets")
     t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startpos)
@@ -455,10 +420,10 @@ if __name__ == '__main__':
     
     plt.title("Test random generated hazard and targets")
     plt.show()
-    
+    """
     print("Verify Environemnt")
     import random
-    BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
+    BIT_INITIALIZATION = [np.pi/2,0.0,0.0]
 
     env = DrillEnv(startpos,BIT_INITIALIZATION,activate_hazards=True)
 
@@ -467,7 +432,19 @@ if __name__ == '__main__':
     env.step(action)
     print("I took one step, this is what the current state is:")
     print(env.state)
-    print(len(env.state))
-    print(env.observation_space)
-
+    env.observation_space_container.display_hazards()
+    env.display_environment()
+    
+    for _ in range (5000):
+        action = random.choice(range(action_size))
+        env.step(action)
+    print("50 steps later")
+    env.display_state()
+    env.observation_space_container.display_hazards()
+    env.display_environment()
    
+    print("Resetting")
+    env.reset()
+    env.display_state()
+    env.observation_space_container.display_hazards()
+    env.display_environment()

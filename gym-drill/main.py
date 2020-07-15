@@ -11,7 +11,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy
 from stable_baselines.deepq.policies import LnMlpPolicy 
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines import (DQN, PPO2, A2C, ACER, ACKTR) #TRPO
+from stable_baselines import (DQN, PPO2, A2C, ACER, ACKTR, TRPO) 
 
 # Ignore the crazy amount of warnings
 import warnings
@@ -45,7 +45,7 @@ print("DQN: I start training now")
 model.learn(total_timesteps=10, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 """
-"""
+
 #PPO2-approach
 
 model_to_load = "PPO2_drill_model"
@@ -56,11 +56,11 @@ tensorboard_run_name = "PP02"
 model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
 #model = PPO2.load(model_to_load, env, tensorboard_log=tensorboard_folder)               #2) Load an existing one from your own files
 print("PPO2: I start training now")
-model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
-"""
-#A2C-approach
 
+#A2C-approach
+"""
 model_to_load = "A2C_drill_model"
 save_as = "A2C_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
@@ -76,7 +76,7 @@ model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the 
 model.save(save_as) #Saving the wisdom for later 
 """
 #ACER-approach
-
+"""
 model_to_load = "ACER_drill_model"
 save_as = "ACER_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
@@ -110,13 +110,12 @@ save_as = "TRPO_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
 tensorboard_run_name = "TRPO"
 #Chose one of the two lines below (#1 or #2):
-#model = TRPO(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
-model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
+model = TRPO(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
+#model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
 print("TRPO: I start training now")
-#model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
+model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
 """
-
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()

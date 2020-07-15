@@ -103,7 +103,6 @@ class ObservationSpace:
         for h in self.hazards:
             candidates.append(h)
 
-        print(len(candidates))
         window = []
         for _ in range(HAZARD_WINDOW_SIZE):
             closest_index = es._findNearest(bitPostion,candidates)
