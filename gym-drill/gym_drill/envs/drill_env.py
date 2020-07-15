@@ -281,8 +281,9 @@ class DrillEnv(gym.Env):
             self.vertical_angVel += self.vertical_angAcc
 
 
-        vertical_speed = abs(np.sin(self.vertical_heading)) * DRILL_SPEED
-        horizontal_speed = abs(np.cos(self.vertical_heading)) * DRILL_SPEED
+        
+        horizontal_speed = abs(np.sin(self.vertical_heading)) * DRILL_SPEED
+        vertical_speed = np.cos(self.vertical_heading) * DRILL_SPEED
 
         # Update heading.
 
@@ -292,7 +293,7 @@ class DrillEnv(gym.Env):
         # Update position
         self.bitLocation.x += horizontal_speed * np.cos(self.horizontal_heading)
         self.bitLocation.y += horizontal_speed * np.sin(self.horizontal_heading)
-        self.bitLocation.z += vertical_speed * np.cos(self.vertical_heading)
+        self.bitLocation.z += vertical_speed
 
         self.step_history.append([self.bitLocation.x,self.bitLocation.y, self.bitLocation.z])
 

@@ -38,13 +38,13 @@ print("action space", env.action_space)
 
 model_to_load = "DQN_drill_model_hazards_3D"
 save_as = "DQN_drill_model_hazards_3D"
-tensorboard_folder = "./algorithm_performance_hazards_3D/"
+tensorboard_folder = "./3D_v0.1/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
 model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
 #model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=1000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=3000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 """
