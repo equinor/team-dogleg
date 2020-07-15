@@ -50,8 +50,8 @@ HAZARD_RADII_BOUND = [20,50]
 NUM_HAZARDS = 4
 
 # Observation space specs
-SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] # x_low,x_high,y_low,y_high
-BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
+SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] 
+BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] 
 HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
 TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUND]
 
@@ -61,7 +61,7 @@ TARGET_DISTANCE_BOUND = [0,DIAGONAL]
 RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
 RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
 
-EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND]#,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELATIVE_VERTICAL_ANGLE_BOUND ] # [Distance, angle between current direction and target direction]
+EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELATIVE_VERTICAL_ANGLE_BOUND ] # [Distance, angle between current direction and target direction]
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -92,12 +92,6 @@ class DrillEnv(gym.Env):
        
 
         # For resetting the environment
-        """
-        self.initialBitLocation = startLocation
-        self.initialHeading = bitInitialization[0]
-        self.initialAngVel = bitInitialization[1]
-        self.initialAngAcc = bitInitialization[2]
-        """
 
         self.initialBitLocation = startLocation
         
@@ -216,29 +210,30 @@ class DrillEnv(gym.Env):
 
             # Heading vector.  [JUST GIVING IT A TRY DOING THIS FOR EACH ANGLE IN THE 3D CASE]
             
-                #vertical-angle
-            """
-            head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
-            angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
-            reward += reward_factor*4
+            appr_hor_vec = [appr_vec[0],appr_vec[1]]
+            appr_ver_vec = [appr_vec[1],appr_vec[2]]
                 #horizontal angle
-            head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
-            angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+            head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
+            angle_between_vectors = np.math.atan2(np.linalg.det([appr_hor_vec, head_vec]), np.dot(appr_hor_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
             reward += reward_factor*4
-            """
+                #vertical angle
+            head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
+            angle_between_vectors = np.math.atan2(np.linalg.det([appr_ver_vec, head_vec]), np.dot(appr_ver_vec, head_vec))
+            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
+            reward += reward_factor*4
+            
         
 
         return reward, done
-    """
+    
     def get_horizontal_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
                 
-        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.y])
+        curr_target_hor_pos_vector = np.array([current_target.center.x,current_target.center.y])
 
-        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
-        appr_vec = curr_target_pos_vector - curr_drill_pos_vector
+        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
+        appr_vec = curr_target_hor_pos_vector - curr_drill_hor_pos_vector
 
         head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
@@ -248,16 +243,16 @@ class DrillEnv(gym.Env):
     def get_vertical_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
                 
-        curr_target_pos_vector = np.array([current_target.center.x,current_target.center.z])
+        curr_target_ver_pos_vector = np.array([current_target.center.y,current_target.center.z])
 
-        curr_drill_pos_vector = np.array([self.bitLocation.x,self.bitLocation.z])
-        appr_vec = curr_target_pos_vector - curr_drill_pos_vector
+        curr_drill_ver_pos_vector = np.array([self.bitLocation.y,self.bitLocation.z])
+        appr_vec = curr_target_ver_pos_vector - curr_drill_ver_pos_vector
 
         head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
-    """
+    
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         
@@ -383,7 +378,7 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
-    """
+    
     def display_horizontal_plane_of_environment(self):
         # Get data
         x_positions = []
@@ -497,7 +492,7 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path")
         plt.legend()
         plt.show()
-    """
+    
 
     def display_3d_environment(self):
         # Get data
@@ -515,7 +510,6 @@ class DrillEnv(gym.Env):
         #ax.invert_zaxis()
 
         # Plot circles from targetballs, colors just to verify the order of the balls
-        theta = np.linspace(0, 2*np.pi, 100)
         colors_order = {
             1:"b",
             2:"g",

@@ -139,7 +139,7 @@ for episode in range (1):
 		#env.render()
 		#print('distance: ',obs[8], '   direction: ', obs[9])
 		#env.observation_space_container.display_targets()
-		#print(rewards)
+		print(rewards)
 		#print(obs)
 	#env.display_horizontal_plane_of_environment()
 	#env.display_vertical_plane_of_environment()
