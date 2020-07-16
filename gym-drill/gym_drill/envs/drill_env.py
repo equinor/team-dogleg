@@ -15,6 +15,10 @@ from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
 
+# Min and max vertical angle
+MIN_VERT_ANGLE = 0
+MAX_VERT_ANGLE = np.pi
+
 # Max values for angular velocity and acceleration
 MAX_ANGVEL = 0.1
 MAX_ANGACC = 0.05
@@ -32,7 +36,7 @@ SCREEN_Z = 2000
 TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_BOUND_Z = [0.25*SCREEN_Z,0.85*SCREEN_Z]
-TARGET_RADII_BOUND = [20,50]
+TARGET_RADII_BOUND = [40,100]
 
 NUM_TARGETS = 4
 TARGET_WINDOW_SIZE = 3
@@ -45,13 +49,13 @@ FINISHED_EARLY_FACTOR = 1 # Point per unused step
 HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_BOUND_Z = [0,SCREEN_Z]
-HAZARD_RADII_BOUND = [20,50]
+HAZARD_RADII_BOUND = [40,100]
 
 NUM_HAZARDS = 4
 
 # Observation space specs
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] 
-BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] 
+BIT_BOUNDS = [0,2*np.pi,0,np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC,-MAX_ANGACC,MAX_ANGACC] #CHANGED
 HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
 TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUND]
 
@@ -287,8 +291,18 @@ class DrillEnv(gym.Env):
 
         # Update heading.
 
-        self.vertical_heading = (self.vertical_heading + self.vertical_angVel) % (2 * np.pi)
         self.horizontal_heading = (self.horizontal_heading + self.horizontal_angVel) % (2 * np.pi)
+
+        if abs(self.vertical_heading + self.vertical_angVel) < MAX_VERT_ANGLE and abs(self.vertical_heading + self.vertical_angVel) > MIN_VERT_ANGLE:
+            self.vertical_heading= self.vertical_heading + self.vertical_angVel
+        else:
+            self.vertical_angVel = 0
+            self.vertical_angAcc = 0
+
+
+
+
+
 
         # Update position
         self.bitLocation.x += horizontal_speed * np.cos(self.horizontal_heading)

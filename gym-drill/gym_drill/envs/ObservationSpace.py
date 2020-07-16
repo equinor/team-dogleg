@@ -19,12 +19,14 @@ class ObservationSpace:
         self.upper_z = space_bounds[5]  #have to adjust space_bounds as well
 
         # Bit related
-        self.lower_heading = bit_bounds[0]
-        self.upper_heading = bit_bounds[1]
-        self.lower_ang_vel = bit_bounds[2]
-        self.upper_ang_vel = bit_bounds[3]
-        self.lower_ang_acc = bit_bounds[4]
-        self.upper_ang_acc = bit_bounds[5]
+        self.lower_horizontal_heading = bit_bounds[0]
+        self.upper_horizontal_heading = bit_bounds[1]
+        self.lower_vertical_heading = bit_bounds[2]
+        self.upper_vertical_heading = bit_bounds[3]
+        self.lower_ang_vel = bit_bounds[4]
+        self.upper_ang_vel = bit_bounds[5]
+        self.lower_ang_acc = bit_bounds[6]
+        self.upper_ang_acc = bit_bounds[7]
 
         # Target related
         self.target_window = targets[:TARGET_WINDOW_SIZE]
@@ -59,8 +61,10 @@ class ObservationSpace:
         text = "The observation space looks like this: \n \n" + "Spacial bounds: " \
         + str(self.lower_x) + " < x < " + str(self.upper_x) +" and " + str(self.lower_y) \
         + " < y < " + str(self.upper_y)+ ". \n \n" \
-        + "Bit related bounds: \n" + "Heading interval: [" + str(self.lower_heading)+","\
-        + str(self.upper_heading) + "] \n" \
+        + "Bit related bounds: \n" + "Horisontal heading interval: [" + str(self.lower_horizontal_heading)+","\
+        + str(self.upper_horizontal_heading) + "] \n" \
+        + "Vertical heading interval: [" + str(self.lower_vertical_heading)+","\
+        + str(self.upper_vertical_heading) + "] \n" \
         + "Angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
         + "Angular acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
         + "There are " + str(TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" 
@@ -107,8 +111,8 @@ class ObservationSpace:
             print("No more targets to add to window, we are done!")    
     
     def get_space_box(self):#This has to be updated to fit the 3D environment
-        lower = np.array([self.lower_x,self.lower_y,self.lower_z,self.lower_heading,self.lower_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
-        upper = np.array([self.upper_x,self.upper_y,self.upper_z,self.upper_heading,self.upper_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
+        lower = np.array([self.lower_x,self.lower_y,self.lower_z,self.lower_horizontal_heading,self.lower_vertical_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
+        upper = np.array([self.upper_x,self.upper_y,self.upper_z,self.upper_horizontal_heading,self.upper_vertical_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
 
         for t in self.target_window:
             lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_z[0],self.target_bound_r[0]])
@@ -132,7 +136,7 @@ if __name__ == '__main__':
     SCREEN_Z = 600
 
     SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] # x_low,x_high,y_low,y_high
-    BIT_BOUNDS = [0,2*np.pi,0,2*np.pi,-0.05,0.05,-0.05,0.05,-0.1,0.1,-0.1,0.1] #
+    BIT_BOUNDS = [0,2*np.pi,0,np.pi,-0.05,0.05,-0.05,0.05,-0.1,0.1,-0.1,0.1] #
 
     TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
     TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
@@ -159,7 +163,7 @@ if __name__ == '__main__':
     TARGET_DISTANCE_BOUND = [0,DIAGONAL]
     RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
     RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
-    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND]#,RELATIVE_HORIZONTAL_ANGLE_BOUND, RELATIVE_VERTICAL_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND, RELATIVE_VERTICAL_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
     """
     for _ in range(4):
