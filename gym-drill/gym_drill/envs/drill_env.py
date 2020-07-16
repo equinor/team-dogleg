@@ -12,61 +12,7 @@ from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
-
-# Max values for angular velocity and acceleration
-MAX_ANGVEL = 0.1
-MAX_ANGACC = 0.05
-
-# The allowed increment. We either add or remove this value to the angular acceleration
-ANGACC_INCREMENT = 0.01
-DRILL_SPEED = 5.0
-
-# Screen size, environment should be square
-SCREEN_X = 2000
-SCREEN_Y = 2000
-
-# Target specs
-TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
-TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
-TARGET_RADII_BOUND = [20,50]
-
-NUM_TARGETS = 4
-TARGET_WINDOW_SIZE = 3
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
-
-# Rewards
-FINISHED_EARLY_FACTOR = 1 # Point per unused step
-
-# Hazard specs. Can be in entire screen
-HAZARD_BOUND_X = [0,SCREEN_X]
-HAZARD_BOUND_Y = [0,SCREEN_Y]
-HAZARD_RADII_BOUND = [20,50]
-
-NUM_HAZARDS = 4
-
-# Observation space specs
-SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y] # x_low,x_high,y_low,y_high
-BIT_BOUNDS = [0,2*np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC] #
-HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND]
-TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND]
-
-# Additional data
-DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2)
-TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
-EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
-
-# All reward values go here. The reward will add these values. Make sure signs are correct!
-STEP_PENALTY = -0.0
-ANGULAR_VELOCITY_PENALTY = -1.0
-ANGULAR_ACCELERATION_PENALTY = -2.0
-OUTSIDE_SCREEN_PENALTY = -30.0
-TARGET_REWARD = 100.0
-HAZARD_PENALTY = -100.0
-ANGLE_REWARD_FACTOR = 4
-
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
-FINISHED_EARLY_FACTOR = 1 # Point per unused step
+from gym_drill.envs import environment_config as cfg
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -93,18 +39,18 @@ class DrillEnv(gym.Env):
         self.initialAngAcc = bitInitialization[2]
 
         # Init targets. See _init_targets function
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startLocation)
+        self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startLocation)
         self.activate_hazards = activate_hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startLocation,self.targets)
+            self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
 
         self.action_space = spaces.Discrete(3)        
 
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -135,27 +81,27 @@ class DrillEnv(gym.Env):
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
         done = False      
-        reward = STEP_PENALTY
+        reward = cfg.STEP_PENALTY
         
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
-            reward += ANGULAR_ACCELERATION_PENALTY
+            reward += cfg.ANGULAR_ACCELERATION_PENALTY
 
         if self.angVel != 0:
-            reward += ANGULAR_VELOCITY_PENALTY
+            reward += cfg.ANGULAR_VELOCITY_PENALTY
 
         # If drill is no longer on screen, game over.
-        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward  += OUTSIDE_SCREEN_PENALTY
+        if not (0 < self.bitLocation.x < cfg.SCREEN_X and 0 < self.bitLocation.y < cfg.SCREEN_Y):
+            reward  += cfg.OUTSIDE_SCREEN_PENALTY
             done = True   
         
         # Check if we hit a hazard
         for h in self.hazards:
             if es._is_within(self.bitLocation,h.center,h.radius):
-                reward += HAZARD_PENALTY 
+                reward += cfg.HAZARD_PENALTY 
                 #done = True
 
-        if len(self.step_history)>NUM_MAX_STEPS:
+        if len(self.step_history)>cfg.NUM_MAX_STEPS:
             done= True                        
 
         # Find the values of the current target
@@ -166,9 +112,9 @@ class DrillEnv(gym.Env):
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
         #if es._is_within(self.bitLocation,self.observation_space_container.target_window[0].center,self.observation_space_container.target_window[0].radius):
-            reward += TARGET_REWARD
+            reward += cfg.TARGET_REWARD
             if len(self.observation_space_container.remaining_targets) == 0:
-                reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
+                reward += (cfg.NUM_MAX_STEPS-len(self.step_history))*cfg.FINISHED_EARLY_FACTOR
                 done = True
             else:
                 self.observation_space_container.shift_target_window()
@@ -183,7 +129,7 @@ class DrillEnv(gym.Env):
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
             #adjustment =(1-abs(10*self.angVel))**3
             # adjustment = 0 if angVel = +-MAX      #adjustment = 1 if angVel = 0
-            reward += reward_factor*ANGLE_REWARD_FACTOR# * adjustment 
+            reward += reward_factor*cfg.ANGLE_REWARD_FACTOR# * adjustment 
 
         return reward, done
     def get_angle_relative_to_target(self):
@@ -202,21 +148,21 @@ class DrillEnv(gym.Env):
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         # Update angular acceleration, if within limits
-        if action == 0 and self.angAcc > -MAX_ANGACC:
-            self.angAcc -= ANGACC_INCREMENT
-        elif action == 1 and self.angAcc < MAX_ANGACC:
-            self.angAcc += ANGACC_INCREMENT
+        if action == 0 and self.angAcc > -cfg.MAX_ANGACC:
+            self.angAcc -= cfg.ANGACC_INCREMENT
+        elif action == 1 and self.angAcc < cfg.MAX_ANGACC:
+            self.angAcc += cfg.ANGACC_INCREMENT
 
         # Update angular velocity, if within limits
-        if abs(self.angVel + self.angAcc) < MAX_ANGVEL:
+        if abs(self.angVel + self.angAcc) < cfg.MAX_ANGVEL:
             self.angVel += self.angAcc
 
         # Update heading.
         self.heading = (self.heading + self.angVel) % (2 * np.pi)
 
         # Update position
-        self.bitLocation.x += DRILL_SPEED * np.sin(self.heading)
-        self.bitLocation.y += DRILL_SPEED * np.cos(self.heading)
+        self.bitLocation.x += cfg.DRILL_SPEED * np.sin(self.heading)
+        self.bitLocation.y += cfg.DRILL_SPEED * np.cos(self.heading)
         self.step_history.append([self.bitLocation.x,self.bitLocation.y])
 
     # Returns tuple of current state
@@ -258,18 +204,18 @@ class DrillEnv(gym.Env):
         self.step_history = [[self.start_x,self.start_y]]       
 
         # Need to init new targets
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,self.bitLocation)             
+        self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,self.bitLocation)             
         
         # Init new hazards
         if self.activate_hazards:
             #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+            self.hazards = es._init_hazards(cfg.NUM_HAZARDS,[0.25*cfg.SCREEN_X,0.85*cfg.SCREEN_X],[0.2*cfg.SCREEN_Y,0.75*cfg.SCREEN_Y],cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -285,7 +231,7 @@ class DrillEnv(gym.Env):
         f.write(text)
         f.close()
         #print("Log updated!")
-        """
+    """
    
     def close(self):
         if self.viewer:
@@ -341,74 +287,37 @@ class DrillEnv(gym.Env):
 
         # Set axis 
         axes = plt.gca()
-        axes.set_xlim(0,SCREEN_X)
-        axes.set_ylim(0,SCREEN_Y)
+        axes.set_xlim(0,cfg.SCREEN_X)
+        axes.set_ylim(0,cfg.SCREEN_Y)
 
         plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path")
         plt.legend()
         plt.show()
     
-    
-    """
-    def render(self, mode='human'):
-        screen_width = SCREEN_X
-        screen_height = SCREEN_Y
-        from gym.envs.classic_control import rendering
+    def load_predefined_env(self,targets,hazards):
+        self.targets = targets
+        self.hazards = hazards
 
-        if self.viewer is None:
-            #from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(screen_width, screen_height)
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space = self.observation_space_container.get_space_box()        
 
-            # Create drill bit
-            self.bittrans = rendering.Transform()
+        self.seed()
 
-            self.dbit = rendering.make_circle(6)
-            self.dbit.set_color(0.5, 0.5, 0.5)
-            self.dbit.add_attr(self.bittrans)
-            self.viewer.add_geom(self.dbit)
+        self.state = self.get_state()
+       
 
-            # Draw target ball
-            for target in self.targets:
-                targetCenter = target[0]
-                targetRadius = target[1]
-
-                self.tballtrans = rendering.Transform()
-
-                self.tball = rendering.make_circle(targetRadius)
-                self.tball.set_color(0, 0, 0)
-                self.tball.add_attr(self.tballtrans)
-                self.viewer.add_geom(self.tball)
-                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
-
-        # Update position of drill on screen
-        this_state = self.state
-        self.bittrans.set_translation(this_state[0], this_state[1])
-
-        # Every iteration add a new tracing point
-        self.new_trans = rendering.Transform()
-        self.new_trans.set_translation(this_state[0], this_state[1])
-
-        self.new_point = rendering.make_circle(2)
-        self.new_point.set_color(0.5, 0.5, 0.5)
-        self.new_point.add_attr(self.new_trans)
-
-        self.viewer.add_geom(self.new_point)
-
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
-    """
-    
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
     startpos = Coordinate(100,400)
 
     print("Creating targets")
-    t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_RADII_BOUND,startpos)
+    t = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startpos)
     for _ in t:
         print(_)
     
     print("Creating Hazards")    
-    h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_RADII_BOUND,startpos,t)
+    h = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startpos,t)
     for eden_hazard in h:
         print(eden_hazard)
     
@@ -446,8 +355,8 @@ if __name__ == '__main__':
 
     # Set axis 
     axes = plt.gca()
-    axes.set_xlim(0,SCREEN_X)
-    axes.set_ylim(0,SCREEN_Y)
+    axes.set_xlim(0,cfg.SCREEN_X)
+    axes.set_ylim(0,cfg.SCREEN_Y)
     
     plt.title("Test random generated hazard and targets")
     plt.show()
