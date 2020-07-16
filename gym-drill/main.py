@@ -41,10 +41,10 @@ save_as = "DQN_drill_model_3D"
 tensorboard_folder = "./3D_v0.1/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=250000, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.learn(total_timesteps=250000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 """
@@ -131,8 +131,9 @@ for episode in range(10):
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (1):
+for episode in range (5):
 	done = False
+	num_steps = 0
 	while done == False:
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
@@ -140,9 +141,11 @@ for episode in range (1):
 		#print('distance: ',obs[8], '   direction: ', obs[9])
 		#env.observation_space_container.display_targets()
 		print(rewards)
+		num_steps +=1
 		#print(obs)
 	#env.display_horizontal_plane_of_environment()
 	#env.display_vertical_plane_of_environment()
+	print(num_steps)
 	env.display_3d_environment()
 	state = env.reset()
 	
