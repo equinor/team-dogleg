@@ -21,7 +21,7 @@ MAX_ANGACC = 0.05
 
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
-DRILL_SPEED = 5.0
+DRILL_SPEED = 10.0
 
 # Screen size, environment should be square
 SCREEN_X = 2000
@@ -79,7 +79,7 @@ class DrillEnv(gym.Env):
         # We init parameters here        
         self.bitLocation = startLocation
         self.horizontal_heading = uniform(0,np.pi/2)
-        self.vertical_heading = uniform(np.pi/10,np.pi/2)
+        self.vertical_heading = uniform(0,np.pi/4)
 
             #self.angVel = bitInitialization[1]
         self.horizontal_angVel = bitInitialization[2]
