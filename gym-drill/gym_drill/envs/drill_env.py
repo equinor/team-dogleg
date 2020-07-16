@@ -293,13 +293,12 @@ class DrillEnv(gym.Env):
 
         self.horizontal_heading = (self.horizontal_heading + self.horizontal_angVel) % (2 * np.pi)
 
-        if abs(self.vertical_heading + self.vertical_angVel) < MAX_VERT_ANGLE and abs(self.vertical_heading + self.vertical_angVel) > MIN_VERT_ANGLE:
+        if abs(self.vertical_heading + self.vertical_angVel) <= MAX_VERT_ANGLE and abs(self.vertical_heading + self.vertical_angVel) >= MIN_VERT_ANGLE:
             self.vertical_heading= self.vertical_heading + self.vertical_angVel
-        else:
-            self.vertical_angVel = 0
-            self.vertical_angAcc = 0
 
-
+            if abs(self.vertical_heading + self.vertical_angVel) == MAX_VERT_ANGLE or abs(self.vertical_heading + self.vertical_angVel) == MIN_VERT_ANGLE:
+                self.vertical_angVel = 0
+                self.vertical_angAcc = 0
 
 
 
