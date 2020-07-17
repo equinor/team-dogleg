@@ -38,7 +38,7 @@ print("action space", env.action_space)
 
 model_to_load = "DQN_drill_model_3D"
 save_as = "DQN_drill_model_3D"
-tensorboard_folder = None #"./3D_v0.1/"
+tensorboard_folder = "./3D_v0.1/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
 model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
