@@ -49,6 +49,10 @@ def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_ini
 	print("Done training with DQN algorithm.")
 	print("Results have been saved in ", save_location)
 
+def get_trained_model(model_to_load):
+	model = DQN.load(model_to_load, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+	return model
+    	
 # Will display model from trained_models folder. To override, specify FOLDERNAME in source_folder
 def display_agent(model,*,num_episodes = 5,source_folder = "./trained_models/",vector = False):
 	if not vector:
@@ -77,17 +81,31 @@ def display_agent(model,*,num_episodes = 5,source_folder = "./trained_models/",v
 	else:
 		print("Vectorized env not implemented yet")
 
-def benchmark_environment(targets,hazards,model,*,startpos=Coordinate(cfg.SCREEN_X*0.1,cfg.SCREEN_Y*0.8), bit_data=[random.uniform(np.pi/2,np.pi),0.0,0.0],num_runs = 1):    	
-    env = gym.make('drill-v0',startLocation = startpos, activate_hazards=True)
-    env.load_predefined_env(targets,hazards)
+# Change mode to path to get path data
+def benchmark_environment(targets,hazards,model,*, 
+						startpos=Coordinate(cfg.SCREEN_X*0.1,cfg.SCREEN_Y*0.8), 
+						bit_data=[random.uniform(np.pi/2,np.pi),0.0,0.0],
+						num_runs = 1,
+						mode="display"):
+	# Verify mode
+	if mode != "display" and mode != "path":
+		print("Invalid mode selected!")
+		os._exit(0)
 
-    obs = np.array(env.get_state())
-    done = False
-    while not done:
-        action,states = model.predict(obs)    
-        obs, rewards, done, info = env.step(action)
-    env.display_environment()
-    env.close()
+	env = gym.make('drill-v0',startLocation = startpos, activate_hazards=True)
+	env.load_predefined_env(targets,hazards)
+	obs = np.array(env.get_state())
+
+	done = False
+	while not done:
+		action,states = model.predict(obs)    
+		obs, rewards, done, info = env.step(action)
+	if mode == "display":
+		env.display_environment()
+	else:
+		path = env.get_path()
+	
+	env.close()
 
 def main():
 	train_new_DQN(10,"final_test")
@@ -161,8 +179,6 @@ def main():
 	model.learn(total_timesteps=2000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 	model.save(save_as) #Saving the wisdom for later 
 	"""
-
-
 
 if __name__ == '__main__':
 	main()

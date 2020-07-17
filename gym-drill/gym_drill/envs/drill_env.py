@@ -305,6 +305,9 @@ class DrillEnv(gym.Env):
         self.seed()
 
         self.state = self.get_state()
+
+    def get_path(self):
+        return self.step_history
        
 
 if __name__ == '__main__':
