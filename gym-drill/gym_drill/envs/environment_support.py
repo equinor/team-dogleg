@@ -102,7 +102,7 @@ def _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obst
     hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)  
     
     for obstacle in existing_obstacles:
-        if _is_overlapping(obstacle,hazard_candidate) or _is_within(start_pos,hazard_center,hazard_radius):
+        if _is_overlapping(obstacle,hazard_candidate) or _is_within(start_pos,hazard_center,(hazard_radius+10)):
             hazard_candidate = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles)
             break
     

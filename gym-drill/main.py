@@ -33,7 +33,7 @@ print("action space", env.action_space)
 #Using Stable-Baselines to teach an agent 
 
 #DQN-approach
-"""
+
 model_to_load = "DQN_drill_model_hazards_v0.1"
 save_as = "DQN_drill_model_hazards_v0.2"
 tensorboard_folder = "./algorithm_performance_hazards/"
@@ -44,10 +44,9 @@ model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)    
 print("DQN: I start training now")
 model.learn(total_timesteps=10, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
-"""
 
 #PPO2-approach
-
+"""
 model_to_load = "PPO2_drill_model"
 save_as = "PPO2_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
@@ -60,7 +59,7 @@ model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where 
 model.save(save_as) #Saving the wisdom for later 
 
 #A2C-approach
-"""
+
 model_to_load = "A2C_drill_model"
 save_as = "A2C_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
@@ -119,16 +118,11 @@ model.save(save_as) #Saving the wisdom for later
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (3):
+for episode in range (10):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
-		#env.render()
-		#print('distance: ',obs[8], '   direction: ', obs[9])
-		#env.observation_space_container.display_targets()
-		#print(rewards)
-		#print(obs)
 	env.display_environment()
 	state = env.reset()
 	
