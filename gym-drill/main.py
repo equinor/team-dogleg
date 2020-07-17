@@ -36,16 +36,16 @@ print("action space", env.action_space)
 
 #DQN-approach
 
-model_to_load = "DQN_drill_model_3D"
-save_as = "DQN_drill_model_3D"
-tensorboard_folder = "./3D_v0.1/"
+model_to_load = "temp_test"
+save_as = "temp_test"
+tensorboard_folder = None #"./3D_v0.1/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
-print("DQN: I start training now")
-model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
+#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+#print("DQN: I start training now")
+#model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
 
 """
 #PPO2-approach
@@ -127,15 +127,15 @@ for episode in range (5):
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
 		#env.render()
-		#print('distance: ',obs[8], '   direction: ', obs[9])
+		print('rel.hori: ',round(obs[30]*(180/np.pi),0), '  rel.vert: ', round(obs[31]*(180/np.pi),0))
 		#env.observation_space_container.display_targets()
-		print(rewards)
+		#print(rewards)
 		num_steps +=1
 		#print(obs)
-	#env.display_horizontal_plane_of_environment()
-	#env.display_vertical_plane_of_environment()
 	print(num_steps)
-	env.display_3d_environment()
+	#env.display_3d_environment()
+	env.display_vertical_plane_of_environment()
+	env.display_horizontal_plane_of_environment()
 	state = env.reset()
 	
 	env.close()
