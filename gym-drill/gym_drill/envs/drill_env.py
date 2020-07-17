@@ -270,9 +270,9 @@ class DrillEnv(gym.Env):
                                                                         #(0,3,6): accelerate left 
                                                                         #        (1,4,7): don't accelerate in the horizontal plane
                                                                         #                (2,5,8): accelerate right
-        if (action == 0) or (action == 3) or (action == 6) and self.horizontal_angAcc > -MAX_ANGACC:
+        if (action == 0 or action == 3 or action == 6) and self.horizontal_angAcc > -MAX_ANGACC:
             self.horizontal_angAcc -= ANGACC_INCREMENT
-        elif (action == 2) or (action == 5) or (action == 8) and self.horizontal_angAcc < MAX_ANGACC:
+        elif (action == 2 or action == 5 or action == 8) and self.horizontal_angAcc < MAX_ANGACC:
             self.horizontal_angAcc += ANGACC_INCREMENT
         
 
