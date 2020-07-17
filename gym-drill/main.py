@@ -11,7 +11,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy
 from stable_baselines.deepq.policies import LnMlpPolicy 
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR, TRPO
+from stable_baselines import (DQN, PPO2, A2C, ACER, ACKTR, TRPO)
 
 
 
@@ -38,14 +38,14 @@ print("action space", env.action_space)
 
 model_to_load = "DQN_drill_model_3D"
 save_as = "DQN_drill_model_3D"
-tensorboard_folder = "./3D_v0.1/"
+tensorboard_folder = None #"./3D_v0.1/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-#model.learn(total_timesteps=250000, tb_log_name = tensorboard_run_name) #Where the learning happens
-model.save(save_as) #Saving the wisdom for later 
+model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.save(save_as) #Saving the wisdom for later 
 
 """
 #PPO2-approach
@@ -115,17 +115,6 @@ model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)       
 print("TRPO: I start training now")
 model.learn(total_timesteps=500000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
-"""
-"""
-for episode in range(10):
-    	done= False
-	steps = 0
-	while done==False:
-		action = agent.get_action()
-		state, reward, done, info = env.step(action)
-		env.render()		
-
-	env.display_environment()
 """
 
 print("Im done training and I will show you the results")

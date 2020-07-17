@@ -15,6 +15,8 @@ from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
 
+# PARAMETERS RELATED TO THE MODEL AND OBSERVATION SPACE
+
 # Min and max vertical angle
 MIN_VERT_ANGLE = 0
 MAX_VERT_ANGLE = np.pi
@@ -42,9 +44,6 @@ NUM_TARGETS = 4
 TARGET_WINDOW_SIZE = 3
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
 
-# Rewards
-FINISHED_EARLY_FACTOR = 1 # Point per unused step
-
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
@@ -53,9 +52,9 @@ HAZARD_RADII_BOUND = [40,100]
 
 NUM_HAZARDS = 4
 
-# Observation space specs
+# Observation space specs (vectorized bounds)
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] 
-BIT_BOUNDS = [0,2*np.pi,0,np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC,-MAX_ANGACC,MAX_ANGACC] #CHANGED
+BIT_BOUNDS = [0,2*np.pi,0,np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC,-MAX_ANGACC,MAX_ANGACC]
 HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
 TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUND]
 
@@ -67,13 +66,24 @@ RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
 
 EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELATIVE_VERTICAL_ANGLE_BOUND ] # [Distance, angle between current direction and target direction]
 
+# Rewards
+STEP_PENALTY = -0.0
+ANGULAR_VELOCITY_PENALTY = -1.0
+ANGULAR_ACCELERATION_PENALTY = -2.0
+OUTSIDE_SCREEN_PENALTY = -30.0
+TARGET_REWARD = 100.0
+HAZARD_PENALTY = -100.0
+ANGLE_REWARD_FACTOR = 0.5
+FINISHED_EARLY_FACTOR = 1 # Point per unused step
+
+
 class DrillEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True):
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         self.start_z = startLocation.z
@@ -115,7 +125,6 @@ class DrillEnv(gym.Env):
         self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startLocation)
         self.activate_hazards = activate_hazards
         if self.activate_hazards:
-            #print("Initiating environment with hazards")
             self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
             #print("Initiating environment without hazards")
@@ -123,7 +132,7 @@ class DrillEnv(gym.Env):
 
         self.action_space = spaces.Discrete(9)        
 
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -144,6 +153,7 @@ class DrillEnv(gym.Env):
         
     def step(self, action):    
         self.update_bit(action)
+        self.observation_space_container.update_hazard_window(self.bitLocation)
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
@@ -154,28 +164,33 @@ class DrillEnv(gym.Env):
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
         done = False      
-        reward = 0.0 #step-penalty
+        reward = STEP_PENALTY
+
         
-        # Maybe create an entire function that handles all rewards, and call it here?
-        """
-        if self.angAcc != 0:
-            reward -= 2.0 #angAcc-penalty
+        if self.horizontal_angAcc != 0:
+            reward -= ANGULAR_ACCELERATION_PENALTY
         
-        if self.angVel != 0:
-            reward -= 1.0 #angAcc-penalty
-        """
+        if self.horizontal_angVel != 0:
+            reward -= ANGULAR_VELOCITY_PENALTY
+        
+        if self.vertical_angAcc != 0:
+            reward -= ANGULAR_ACCELERATION_PENALTY
+        
+        if self.vertical_angVel != 0:
+            reward -= ANGULAR_VELOCITY_PENALTY
+        
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y and 0 < self.bitLocation.z < SCREEN_Z):
-            reward  -=30
+            reward  -= OUTSIDE_SCREEN_PENALTY
             done = True   
         
         # Check if we hit a hazard
-        for h in self.hazards:
+        for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius):
-                reward -= 100.0
+                reward -= HAZARD_PENALTY
                 #done = True
-                #print("Hazard hit, I will stop")        
+                     
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
@@ -187,28 +202,16 @@ class DrillEnv(gym.Env):
 
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
-            # If target is hit, give reward.
-            reward += 100
-            # If we don't have any more targets,
+        #if es._is_within(self.bitLocation,self.observation_space_container.target_window[0].center,self.observation_space_container.target_window[0].radius):
+            reward += TARGET_REWARD
+
             if len(self.observation_space_container.remaining_targets) == 0:
-                # we are done.
                 reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
                 done = True
-            # But if we do have more targets,
             else:
-                # we must shift the targets.
-                self.observation_space_container.shift_window()
+                self.observation_space_container.shift_target_window()
         
         else:
-            # If target is not hit, then we give a reward if drill is approaching it.
-            # Find the vector that points from drill and to target
-            # We also have the heading vector
-            # The angle between these two vectors decides the reward
-
-            # The reward is multiplied by 0 if angle is pi
-            # 1 if 0*pi
-            # -1 if -1*pi degree
-
             # Approach vector
             appr_vec = current_target_pos - drill_pos
 
@@ -220,12 +223,12 @@ class DrillEnv(gym.Env):
             head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_hor_vec, head_vec]), np.dot(appr_hor_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
-            reward += reward_factor*4
+            reward += reward_factor*ANGLE_REWARD_FACTOR
                 #vertical angle
             head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_ver_vec, head_vec]), np.dot(appr_ver_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
-            reward += reward_factor*4
+            reward += reward_factor*ANGLE_REWARD_FACTOR
             
         
 
@@ -320,8 +323,8 @@ class DrillEnv(gym.Env):
             state_list.append(target.center.y)
             state_list.append(target.center.z)
             state_list.append(target.radius)
-        # Get all hazards
-        for hazard in self.observation_space_container.hazards:
+        # Get all hazards inside window
+        for hazard in self.observation_space_container.hazard_window:
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
             state_list.append(hazard.center.z)
@@ -363,14 +366,12 @@ class DrillEnv(gym.Env):
         
         # Init new hazards
         if self.activate_hazards:
-            #print("Initiating environment with hazards")
             self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],[0.25*SCREEN_Z,0.85*SCREEN_Z],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
-            #print("Initiating environment without hazards")
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -393,6 +394,24 @@ class DrillEnv(gym.Env):
             self.viewer.close()
             self.viewer = None
     
+    def display_state(self):
+        print("Bit location:", Coordinate(self.state[0],self.state[1],self.state[2]))
+        print("Bit angles: ", self.state[3:8])
+        print("Targets inside window: ")
+        for i in range(len(self.observation_space_container.target_window)):
+            t = TargetBall(self.state[9+4*i],self.state[10+4*i],self.state[11+4*i],self.state[12+4*i])
+            print(t)
+        print("Hazards inside window")
+        for i in range(len(self.observation_space_container.hazard_window)):
+            h = Hazard(self.state[21+4*i],self.state[22+4*i],self.state[23+4*i],self.state[24+4*i])
+            print(h)
+
+        print("Extra data:")
+        print("Distance: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)])
+        print("Relative horizontal angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+1])
+        print("Relative vertical angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+2])
+
+
     def display_horizontal_plane_of_environment(self):
         # Get data
         x_positions = []
@@ -541,7 +560,7 @@ class DrillEnv(gym.Env):
         for target in self.targets:
 
             plot_ball(target.center.x,target.center.y,target.center.z,target.radius,colors_order[cnt],ax)
-            label = "Target #" + str(cnt)
+            #label = "Target #" + str(cnt)
             
             cnt += 1
 
@@ -560,54 +579,7 @@ class DrillEnv(gym.Env):
 
         plt.show()
 
-    """
-    def render(self, mode='human'):
-        screen_width = SCREEN_X
-        screen_height = SCREEN_Y
-        from gym.envs.classic_control import rendering
-
-        if self.viewer is None:
-            #from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(screen_width, screen_height)
-
-            # Create drill bit
-            self.bittrans = rendering.Transform()
-
-            self.dbit = rendering.make_circle(6)
-            self.dbit.set_color(0.5, 0.5, 0.5)
-            self.dbit.add_attr(self.bittrans)
-            self.viewer.add_geom(self.dbit)
-
-            # Draw target ball
-            for target in self.targets:
-                targetCenter = target[0]
-                targetRadius = target[1]
-
-                self.tballtrans = rendering.Transform()
-
-                self.tball = rendering.make_circle(targetRadius)
-                self.tball.set_color(0, 0, 0)
-                self.tball.add_attr(self.tballtrans)
-                self.viewer.add_geom(self.tball)
-                self.tballtrans.set_translation(targetCenter.x, targetCenter.y)
-
-        # Update position of drill on screen
-        this_state = self.state
-        self.bittrans.set_translation(this_state[0], this_state[1])
-
-        # Every iteration add a new tracing point
-        self.new_trans = rendering.Transform()
-        self.new_trans.set_translation(this_state[0], this_state[1])
-
-        self.new_point = rendering.make_circle(2)
-        self.new_point.set_color(0.5, 0.5, 0.5)
-        self.new_point.add_attr(self.new_trans)
-
-        self.viewer.add_geom(self.new_point)
-
-        return self.viewer.render(return_rgb_array = mode=='rgb_array')
-    """
-
+   
 def plot_ball(x0,y0,z0,r,c,ax):
     
     # Make data
@@ -621,7 +593,7 @@ def plot_ball(x0,y0,z0,r,c,ax):
 
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
-    startpos = Coordinate(100,400,100)
+    startpos = Coordinate(100,100,100)
 
     print("Creating targets")
     t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startpos)
@@ -674,18 +646,33 @@ if __name__ == '__main__':
     plt.title("Test random generated hazard and targets")
     plt.show()
     
+    
     print("Verify Environemnt")
     import random
     BIT_INITIALIZATION = [3.5*np.pi/4,np.pi/2, 0.0, 0.0, 0.0, 0.0]
 
-    env = DrillEnv(startpos,BIT_INITIALIZATION)
+    env = DrillEnv(startpos,BIT_INITIALIZATION,activate_hazards=True)
 
     action_size = env.action_space.n
     action = random.choice(range(action_size))
     env.step(action)
     print("I took one step, this is what the current state is:")
     print(env.state)
-    print(len(env.state))
-    print(env.observation_space)
 
+    env.observation_space_container.display_hazards()
+    env.display_3d_environment()
+
+    for _ in range (5000):
+        action = random.choice(range(action_size))
+        env.step(action)
+    print("50 steps later")
+    env.display_state()
+    env.observation_space_container.display_hazards()
+    env.display_3d_environment()
+
+    print("Resetting")
+    env.reset()
+    env.display_state()
+    env.observation_space_container.display_hazards()
+    env.display_3d_environment()
    
