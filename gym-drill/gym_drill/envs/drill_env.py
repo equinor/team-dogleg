@@ -20,7 +20,7 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True):
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         # Save the starting position as "first" step. Needed for plotting in matplotlib
