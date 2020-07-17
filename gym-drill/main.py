@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from gym_drill.envs.Coordinate import Coordinate
+from gym_drill.envs.Policies import CustomPolicy
 
 from stable_baselines.common import make_vec_env
 from stable_baselines.common.vec_env import DummyVecEnv
@@ -13,8 +14,6 @@ from stable_baselines.deepq.policies import LnMlpPolicy
 from stable_baselines.common.policies import MlpPolicy
 from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR, TRPO
 
-
-
 # Ignore the crazy amount of warnings
 import warnings
 import tensorflow as tf
@@ -22,7 +21,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,1900.0)
+STARTLOCATION = Coordinate(100,900.0)
 BIT_INITIALIZATION = [random.uniform(np.pi/2,np.pi),0.0,0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
@@ -35,18 +34,18 @@ print("action space", env.action_space)
 #Using Stable-Baselines to teach an agent 
 
 #DQN-approach
-"""
-model_to_load = "DQN_drill_model_hazards_v0.1"
-save_as = "DQN_drill_model_hazards_v0.2"
+
+model_to_load = "DQN_drill_model_hazards"
+save_as = "DQN_drill_model_hazards"
 tensorboard_folder = "./algorithm_performance_hazards/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
-model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)           #1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-#model.learn(total_timesteps=300000, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
-"""
+model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
+
 """
 #PPO2-approach
 
@@ -104,27 +103,17 @@ model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the 
 model.save(save_as) #Saving the wisdom for later 
 """
 #TRPO-approach 
-
-model_to_load = "TRPO_drill_model"
-save_as = "TRPO_drill_model"
-tensorboard_folder = "./algorithm_performance_comparison/"
+"""
+model_to_load = "TRPO_drill_model_1000"
+save_as = "TRPO_drill_model_1000"
+tensorboard_folder = "./algorithm_performance_comparison_1000/"
 tensorboard_run_name = "TRPO"
 #Chose one of the two lines below (#1 or #2):
-#model = TRPO(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
-model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
+model = TRPO(MlpPolicy, env, verbose=0, tensorboard_log=tensorboard_folder)              	#1) Make a new model
+#model = TRPO.load(model_to_load, env, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
 print("TRPO: I start training now")
-#model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
-#model.save(save_as) #Saving the wisdom for later 
-"""
-for episode in range(10):
-    	done= False
-	steps = 0
-	while done==False:
-		action = agent.get_action()
-		state, reward, done, info = env.step(action)
-		env.render()		
-
-	env.display_environment()
+model.learn(total_timesteps=2000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.save(save_as) #Saving the wisdom for later 
 """
 
 print("Im done training and I will show you the results")
@@ -135,11 +124,6 @@ for episode in range (3):
 	while done == False:
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
-		#env.render()
-		#print('distance: ',obs[8], '   direction: ', obs[9])
-		#env.observation_space_container.display_targets()
-		#print(rewards)
-		#print(obs)
 	env.display_environment()
 	state = env.reset()
 	

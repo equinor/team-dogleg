@@ -56,6 +56,18 @@ TARGET_DISTANCE_BOUND = [0,DIAGONAL]
 RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
 EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
+# All reward values go here. The reward will add these values. Make sure signs are correct!
+STEP_PENALTY = -0.0
+ANGULAR_VELOCITY_PENALTY = -1.0
+ANGULAR_ACCELERATION_PENALTY = -2.0
+OUTSIDE_SCREEN_PENALTY = -30.0
+TARGET_REWARD = 100.0
+HAZARD_PENALTY = -100.0
+ANGLE_REWARD_FACTOR = 4
+
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y)/DRILL_SPEED)*1.3
+FINISHED_EARLY_FACTOR = 1 # Point per unused step
+
 class DrillEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
@@ -123,27 +135,25 @@ class DrillEnv(gym.Env):
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
         done = False      
-        reward = 0.0 #step-penalty
-        """
+        reward = STEP_PENALTY
+        
         # Maybe create an entire function that handles all rewards, and call it here?
         if self.angAcc != 0:
-            reward -= 2.0 #angAcc-penalty
+            reward += ANGULAR_ACCELERATION_PENALTY
 
         if self.angVel != 0:
-            reward -= 1.0 #angAcc-penalty
-        """
+            reward += ANGULAR_VELOCITY_PENALTY
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y):
-            reward  -=30
+            reward  += OUTSIDE_SCREEN_PENALTY
             done = True   
         
         # Check if we hit a hazard
         for h in self.hazards:
             if es._is_within(self.bitLocation,h.center,h.radius):
-                reward -= 100.0
+                reward += HAZARD_PENALTY 
                 #done = True
-                #print("Hazard hit, I will stop")        
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
@@ -155,28 +165,15 @@ class DrillEnv(gym.Env):
 
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
-            # If target is hit, give reward.
-            reward += 100
-            # If we don't have any more targets,
+        #if es._is_within(self.bitLocation,self.observation_space_container.target_window[0].center,self.observation_space_container.target_window[0].radius):
+            reward += TARGET_REWARD
             if len(self.observation_space_container.remaining_targets) == 0:
-                # we are done.
                 reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
                 done = True
-            # But if we do have more targets,
             else:
-                # we must shift the targets.
-                self.observation_space_container.shift_window()
+                self.observation_space_container.shift_target_window()
         
         else:
-            # If target is not hit, then we give a reward if drill is approaching it.
-            # Find the vector that points from drill and to target
-            # We also have the heading vector
-            # The angle between these two vectors decides the reward
-
-            # The reward is multiplied by 0 if angle is pi
-            # 1 if 0*pi
-            # -1 if -1*pi degree
-
             # Approach vector
             appr_vec = current_target_pos - drill_pos
 
@@ -186,8 +183,7 @@ class DrillEnv(gym.Env):
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
             #adjustment =(1-abs(10*self.angVel))**3
             # adjustment = 0 if angVel = +-MAX      #adjustment = 1 if angVel = 0
-            reward += reward_factor*4# * adjustment 
-        
+            reward += reward_factor*ANGLE_REWARD_FACTOR# * adjustment 
 
         return reward, done
     def get_angle_relative_to_target(self):
