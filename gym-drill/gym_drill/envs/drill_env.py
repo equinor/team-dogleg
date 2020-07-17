@@ -249,10 +249,10 @@ class DrillEnv(gym.Env):
 
     def get_vertical_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
-                
-        curr_target_ver_pos_vector = np.array([current_target.center.y,current_target.center.z])
 
-        curr_drill_ver_pos_vector = np.array([self.bitLocation.y,self.bitLocation.z])
+        curr_target_ver_pos_vector = np.array([current_target.center.x,current_target.center.z])
+
+        curr_drill_ver_pos_vector = np.array([self.bitLocation.x,self.bitLocation.z])
         appr_vec = curr_target_ver_pos_vector - curr_drill_ver_pos_vector
 
         head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
@@ -458,7 +458,7 @@ class DrillEnv(gym.Env):
         # Set axis 
         axes = plt.gca()
         axes.set_xlim(0,SCREEN_X)
-        axes.set_ylim(0,SCREEN_Y)
+        axes.set_ylim(SCREEN_Y,0)
 
         plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path in horizontal plane (x,y)")

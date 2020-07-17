@@ -120,7 +120,7 @@ model.save(save_as) #Saving the wisdom for later
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (5):
+for episode in range (2):
 	done = False
 	num_steps = 0
 	while done == False:
@@ -133,7 +133,7 @@ for episode in range (5):
 		num_steps +=1
 		#print(obs)
 	print(num_steps)
-	#env.display_3d_environment()
+	env.display_3d_environment()
 	env.display_vertical_plane_of_environment()
 	env.display_horizontal_plane_of_environment()
 	state = env.reset()
