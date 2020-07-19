@@ -68,11 +68,11 @@ EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELAT
 
 # Rewards
 STEP_PENALTY = -0.0
-ANGULAR_VELOCITY_PENALTY = -1.0
-ANGULAR_ACCELERATION_PENALTY = -2.0
+ANGULAR_VELOCITY_PENALTY = 0.0
+ANGULAR_ACCELERATION_PENALTY = 0.0
 OUTSIDE_SCREEN_PENALTY = -30.0
 TARGET_REWARD = 100.0
-HAZARD_PENALTY = -100.0
+HAZARD_PENALTY = -200.0
 ANGLE_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
@@ -168,27 +168,27 @@ class DrillEnv(gym.Env):
 
         
         if self.horizontal_angAcc != 0:
-            reward -= ANGULAR_ACCELERATION_PENALTY
+            reward += ANGULAR_ACCELERATION_PENALTY
         
         if self.horizontal_angVel != 0:
-            reward -= ANGULAR_VELOCITY_PENALTY
+            reward += ANGULAR_VELOCITY_PENALTY
         
         if self.vertical_angAcc != 0:
-            reward -= ANGULAR_ACCELERATION_PENALTY
+            reward += ANGULAR_ACCELERATION_PENALTY
         
         if self.vertical_angVel != 0:
-            reward -= ANGULAR_VELOCITY_PENALTY
+            reward += ANGULAR_VELOCITY_PENALTY
         
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y and 0 < self.bitLocation.z < SCREEN_Z):
-            reward  -= OUTSIDE_SCREEN_PENALTY
+            reward  += OUTSIDE_SCREEN_PENALTY
             done = True   
         
         # Check if we hit a hazard
         for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius):
-                reward -= HAZARD_PENALTY
+                reward += HAZARD_PENALTY
                 #done = True
                      
 
