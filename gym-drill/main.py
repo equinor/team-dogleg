@@ -49,6 +49,8 @@ model.save(save_as) #Saving the wisdom for later
 """
 #PPO2-approach
 
+#PPO2-approach
+"""
 model_to_load = "PPO2_drill_model"
 save_as = "PPO2_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
@@ -57,7 +59,7 @@ tensorboard_run_name = "PP02"
 model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
 #model = PPO2.load(model_to_load, env, tensorboard_log=tensorboard_folder)               #2) Load an existing one from your own files
 print("PPO2: I start training now")
-model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 #A2C-approach
@@ -66,6 +68,8 @@ model_to_load = "A2C_drill_model"
 save_as = "A2C_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
 tensorboard_run_name = "A2C"
+print("Making vectorized env")
+
 env = make_vec_env(env_name,n_envs=4)
 #Chose one of the two lines below (#1 or #2):
 model = A2C(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
@@ -73,9 +77,9 @@ model = A2C(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)      
 print("A2C: I start training now")
 model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
-
+"""
 #ACER-approach
-
+"""
 model_to_load = "ACER_drill_model"
 save_as = "ACER_drill_model"
 tensorboard_folder = "./algorithm_performance_comparison/"
@@ -115,11 +119,10 @@ print("TRPO: I start training now")
 model.learn(total_timesteps=2000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 """
-
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (3):
+for episode in range (10):
 	done = False
 	while done == False:
 		action, _states = model.predict(obs)
