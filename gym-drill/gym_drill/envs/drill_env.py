@@ -145,10 +145,11 @@ class DrillEnv(gym.Env):
         
         # Check if we hit a hazard
         for h in self.observation_space_container.hazard_window:
-            if es._is_within(self.bitLocation,h.center,h.radius):
+            if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
                 reward += HAZARD_PENALTY 
-                done = True
-
+                h.is_hit = True
+                #done = True
+                
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
 
