@@ -14,7 +14,7 @@ from stable_baselines.common.vec_env import DummyVecEnv
 from stable_baselines.deepq.policies import MlpPolicy as DQN_MlpPolicy
 from stable_baselines.deepq.policies import LnMlpPolicy 
 from stable_baselines.common.policies import MlpPolicy
-from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR, TRPO
+from stable_baselines import DQN, PPO2, A2C, ACER, ACKTR
 
 # Ignore the crazy amount of warnings
 import warnings
@@ -22,18 +22,20 @@ import tensorflow as tf
 warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 warnings.simplefilter(action='ignore', category=Warning)
+print("-------------------------------------------------------------------------")
 
 # Creating an environment with default settings. See register function for details
 ENV_name = 'drill-v0'
 ENV = gym.make(ENV_name)
 
 # Foldernames
-TENSORBOARD_FOLDER_DQN = "./tensorboard_logs/DQN/"
+TENSORBOARD_FOLDER_DQN = "../tensorboard_logs/DQN/"
+TENSORBOARD_FOLDER_PPO2 = "../tensorboard_logs/PPO2/"
 
 def train_new_DQN(total_timesteps,save_name):
 	model = DQN(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
-	save_location = "./trained_models/" + save_name
+	save_location = "../trained_models/" + save_name
 	model.save(save_location)
 	print("Done training with DQN algorithm.")
 	print("Results have been saved in ", save_location)
@@ -44,17 +46,40 @@ def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_ini
 	model = DQN.load(model_to_load, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
-	save_location = "./trained_models/" + save_name
+	save_location = "../trained_models/" + save_name
 	model.save(save_location)
 	print("Done training with DQN algorithm.")
 	print("Results have been saved in ", save_location)
 
-def get_trained_model(model_to_load):
-	model = DQN.load(model_to_load, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+def get_trained_DQN_model(model_to_load):
+	model = DQN.load(model_to_load, ENV)
+	return model
+
+def train_new_PPO2(total_timesteps,save_name):
+	model = PPO2(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_PPO2)
+	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
+	save_location = "../trained_models/" + save_name
+	model.save(save_location)
+	print("Done training with PPO2 algorithm.")
+	print("Results have been saved in ", save_location)
+
+# To load from trained_models folder do: ./trained_models/NAME
+def train_existing_PPO2(model_to_load,total_timesteps,save_name):
+	print("Loading existing model from ", model_to_load)
+	model = PPO2.load(model_to_load, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+	print("Model loaded and training starts...")
+	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
+	save_location = "../trained_models/" + save_name
+	model.save(save_location)
+	print("Done training with DQN algorithm.")
+	print("Results have been saved in ", save_location)
+
+def get_trained_PPO2_model(model_to_load):
+	model = PPO2.load(model_to_load, ENV)
 	return model
     	
 # Will display model from trained_models folder. To override, specify FOLDERNAME in source_folder
-def display_agent(model,*,num_episodes = 5,source_folder = "./trained_models/",vector = False):
+def display_agent(model,*,num_episodes = 5,source_folder = "../trained_models/",vector = False):
 	if not vector:
 		try:
 			model_to_load = source_folder + model 
@@ -104,81 +129,9 @@ def benchmark_environment(targets,hazards,model,*,
 		env.display_environment()
 	else:
 		path = env.get_path()
-	
+			
 	env.close()
-
-def main():
-	train_new_DQN(10,"final_test")
-	display_agent("final_test")
-	"""
-	#PPO2-approach
-
-	model_to_load = "PPO2_drill_model"
-	save_as = "PPO2_drill_model"
-	tensorboard_folder = "./algorithm_performance_comparison/"
-	tensorboard_run_name = "PP02"
-	#Chose one of the two lines below (#1 or #2):
-	model = PPO2(MlpPolicy, ENV, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
-	#model = PPO2.load(model_to_load, ENV, tensorboard_log=tensorboard_folder)               #2) Load an existing one from your own files
-	print("PPO2: I start training now")
-	model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
-	model.save(save_as) #Saving the wisdom for later 
-
-	#A2C-approach
-
-	model_to_load = "A2C_drill_model"
-	save_as = "A2C_drill_model"
-	tensorboard_folder = "./algorithm_performance_comparison/"
-	tensorboard_run_name = "A2C"
-	ENV = make_vec_ENV(ENV_name,n_ENVs=4)
-	#Chose one of the two lines below (#1 or #2):
-	model = A2C(MlpPolicy, ENV, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
-	#model = A2C.load(model_to_load, ENV, tensorboard_log=tensorboard_folder)               #2) Load an existing one from your own files
-	print("A2C: I start training now")
-	model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
-	model.save(save_as) #Saving the wisdom for later 
-
-	#ACER-approach
-
-	model_to_load = "ACER_drill_model"
-	save_as = "ACER_drill_model"
-	tensorboard_folder = "./algorithm_performance_comparison/"
-	tensorboard_run_name = "ACER"
-	ENV = make_vec_ENV(ENV_name,n_ENVs=4)
-	#Chose one of the two lines below (#1 or #2):
-	model = ACER(MlpPolicy, ENV, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
-	#model = ACER.load(model_to_load, ENV, tensorboard_log=tensorboard_folder)               #2) Load an existing one from your own files
-	print("ACER: I start training now")
-	model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
-	model.save(save_as) #Saving the wisdom for later 
-
-	#ACKTR-approach
-
-	model_to_load = "ACKTR_drill_model"
-	save_as = "ACKTR_drill_model"
-	tensorboard_folder = "./algorithm_performance_comparison/"
-	tensorboard_run_name = "ACKTR"
-	ENV = make_vec_ENV(ENV_name,n_ENVs=4)
-	#Chose one of the two lines below (#1 or #2):
-	model = ACKTR(MlpPolicy, ENV, verbose=1, tensorboard_log=tensorboard_folder)              	#1) Make a new model
-	#model = ACKTR.load(model_to_load, ENV, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
-	print("ACKTR: I start training now")
-	model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
-	model.save(save_as) #Saving the wisdom for later 
-	"""
-	#TRPO-approach 
-	"""
-	model_to_load = "TRPO_drill_model_1000"
-	save_as = "TRPO_drill_model_1000"
-	tensorboard_folder = "./algorithm_performance_comparison_1000/"
-	tensorboard_run_name = "TRPO"
-	#Chose one of the two lines below (#1 or #2):
-	model = TRPO(MlpPolicy, ENV, verbose=0, tensorboard_log=tensorboard_folder)              	#1) Make a new model
-	#model = TRPO.load(model_to_load, ENV, tensorboard_log=tensorboard_folder)                 #2) Load an existing one from your own files
-	print("TRPO: I start training now")
-	model.learn(total_timesteps=2000000, tb_log_name = tensorboard_run_name) #Where the learning happens
-	model.save(save_as) #Saving the wisdom for later 
-	"""
+	
 
 if __name__ == '__main__':
-	main()
+	print("You are running this specifc file!")

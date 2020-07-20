@@ -3,7 +3,7 @@ import gym
 import gym_drill
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
-import gymdrill.agent_training as at
+import agent_training as at
 
 BENCHMARK_MODEL = "./trained_models/final_test"
 
