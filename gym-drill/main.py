@@ -36,16 +36,16 @@ print("action space", env.action_space)
 
 #DQN-approach
 
-model_to_load = "temp_test"
+model_to_load = "3D_1907"
 save_as = "3D_1907"
-tensorboard_folder = "./3D_fresh/"
+tensorboard_folder = "./3d_week5/"
 tensorboard_run_name = "DQN"
-#policy_kwargs = dict(act_fun=tf.nn.tanh, layers=[64,64,64,32])
+policy_kwargs = dict(act_fun=tf.nn.tanh, layers=[64,64,64,32])
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)           #1) Make a new model
-#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+#model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)           #1) Make a new model
+model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=3000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.learn(total_timesteps=3000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 """
@@ -117,7 +117,7 @@ print("TRPO: I start training now")
 model.learn(total_timesteps=500000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 """
-"""
+
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
@@ -128,7 +128,7 @@ for episode in range (2):
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
 		#env.render()
-		print('rel.hori: ',round(obs[30]*(180/np.pi),0), '  rel.vert: ', round(obs[31]*(180/np.pi),0))
+		#print('rel.hori: ',round(obs[30]*(180/np.pi),0), '  rel.vert: ', round(obs[31]*(180/np.pi),0))
 		#env.observation_space_container.display_targets()
 		#print(rewards)
 		num_steps +=1
@@ -143,4 +143,3 @@ for episode in range (2):
 	print('[EPISODE ENDED]')
 
 print("done")
-"""
