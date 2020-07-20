@@ -68,11 +68,11 @@ EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELAT
 
 # Rewards
 STEP_PENALTY = -0.0
-ANGULAR_VELOCITY_PENALTY = -1.0
-ANGULAR_ACCELERATION_PENALTY = -2.0
+ANGULAR_VELOCITY_PENALTY = 0.0
+ANGULAR_ACCELERATION_PENALTY = 0.0
 OUTSIDE_SCREEN_PENALTY = -30.0
 TARGET_REWARD = 100.0
-HAZARD_PENALTY = -100.0
+HAZARD_PENALTY = -200.0
 ANGLE_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
@@ -162,21 +162,21 @@ class DrillEnv(gym.Env):
         reward = STEP_PENALTY
         
         if self.horizontal_angAcc != 0:
-            reward -= ANGULAR_ACCELERATION_PENALTY
+            reward += ANGULAR_ACCELERATION_PENALTY
         
         if self.horizontal_angVel != 0:
-            reward -= ANGULAR_VELOCITY_PENALTY
+            reward += ANGULAR_VELOCITY_PENALTY
         
         if self.vertical_angAcc != 0:
-            reward -= ANGULAR_ACCELERATION_PENALTY
+            reward += ANGULAR_ACCELERATION_PENALTY
         
         if self.vertical_angVel != 0:
-            reward -= ANGULAR_VELOCITY_PENALTY
+            reward += ANGULAR_VELOCITY_PENALTY
         
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y and 0 < self.bitLocation.z < SCREEN_Z):
-            reward  -= OUTSIDE_SCREEN_PENALTY
+            reward  += OUTSIDE_SCREEN_PENALTY
             done = True   
         
         # Check if we hit a hazard
@@ -549,13 +549,13 @@ class DrillEnv(gym.Env):
         cnt = 1
         for target in self.targets:
 
-            plot_ball(target.center.x,target.center.y,target.center.z,target.radius,colors_order[cnt],ax)
+            plot_ball(target.center.x,target.center.y,target.center.z,target.radius,colors_order[cnt],ax,str(cnt))
             #label = "Target #" + str(cnt)
             
             cnt += 1
 
         for hazard in self.hazards:
-            plot_ball(hazard.center.x,hazard.center.y,hazard.center.z,hazard.radius,'k',ax)
+            plot_ball(hazard.center.x,hazard.center.y,hazard.center.z,hazard.radius,'k',ax,'')
 
         # Set axis 
         #ax = plt.gca()
@@ -570,7 +570,7 @@ class DrillEnv(gym.Env):
         plt.show()
 
    
-def plot_ball(x0,y0,z0,r,c,ax):
+def plot_ball(x0,y0,z0,r,c,ax, name):
     
     # Make data
     u = np.linspace(0, 2 * np.pi, 100)
@@ -580,6 +580,7 @@ def plot_ball(x0,y0,z0,r,c,ax):
     z = z0 + r * np.outer(np.ones(np.size(u)), np.cos(v))
     # Plot the surface
     ax.plot_surface(x, y, z, color=c)
+    ax.text(x0+ r, y0 + r, z0 + r, name, None)
 
 if __name__ == '__main__':
     print("Testing init of targets and hazards")    
