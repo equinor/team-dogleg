@@ -40,7 +40,7 @@ TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_BOUND_Z = [0.25*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [40,100]
 
-NUM_TARGETS = 4
+NUM_TARGETS = 3
 TARGET_WINDOW_SIZE = 3
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
 
@@ -279,26 +279,50 @@ class DrillEnv(gym.Env):
             self.horizontal_angAcc += ANGACC_INCREMENT
         
 
-        # Update angular velocity, if within limits
+        # Update angular velocity
 
-        if abs(self.horizontal_angVel + self.horizontal_angAcc) <= MAX_ANGVEL:
+            # horizontal
+        if abs(self.horizontal_angVel + self.horizontal_angAcc) < MAX_ANGVEL:
             self.horizontal_angVel += self.horizontal_angAcc
 
-        if abs(self.vertical_angVel + self.vertical_angAcc) <= MAX_ANGVEL:
+        elif (self.horizontal_angVel + self.horizontal_angAcc) <= -MAX_ANGVEL:
+            self.horizontal_angVel = -MAX_ANGVEL
+            self.horizontal_angAcc = 0
+        
+        elif (self.horizontal_angVel + self.horizontal_angAcc) >= MAX_ANGVEL:
+            self.horizontal_angVel = MAX_ANGVEL
+            self.horizontal_angAcc = 0
+
+            # vertical
+        if abs(self.vertical_angVel + self.vertical_angAcc) < MAX_ANGVEL:
             self.vertical_angVel += self.vertical_angAcc
+
+        elif (self.vertical_angVel + self.vertical_angAcc) <= -MAX_ANGVEL:
+            self.vertical_angVel = -MAX_ANGVEL
+            self.vertical_angAcc = 0
+        
+        elif (self.vertical_angVel + self.vertical_angAcc) >= MAX_ANGVEL:
+            self.vertical_angVel = MAX_ANGVEL
+            self.vertical_angAcc = 0
 
 
         # Update heading.
 
         self.horizontal_heading = (self.horizontal_heading + self.horizontal_angVel) % (2 * np.pi)
 
-        if abs(self.vertical_heading + self.vertical_angVel) <= MAX_VERT_ANGLE and abs(self.vertical_heading + self.vertical_angVel) >= MIN_VERT_ANGLE:
+        
+        if ((self.vertical_heading + self.vertical_angVel) < MAX_VERT_ANGLE) and ((self.vertical_heading + self.vertical_angVel) > MIN_VERT_ANGLE):
             self.vertical_heading= self.vertical_heading + self.vertical_angVel
 
-            if abs(self.vertical_heading + self.vertical_angVel) == MAX_VERT_ANGLE or abs(self.vertical_heading + self.vertical_angVel) == MIN_VERT_ANGLE:
-                self.vertical_angVel = 0
-                self.vertical_angAcc = 0
+        elif ((self.vertical_heading + self.vertical_angVel) >= MAX_VERT_ANGLE):
+            self.vertical_heading = MAX_VERT_ANGLE
+            self.vertical_angVel = 0
+            self.vertical_angAcc = 0
 
+        elif ((self.vertical_heading + self.vertical_angVel) <= MIN_VERT_ANGLE):
+            self.vertical_heading = MIN_VERT_ANGLE
+            self.vertical_angVel = 0
+            self.vertical_angAcc = 0
 
 
 
