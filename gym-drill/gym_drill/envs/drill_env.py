@@ -22,20 +22,20 @@ ANGACC_INCREMENT = 0.01
 DRILL_SPEED = 5.0
 
 # Screen size, environment should be square
-SCREEN_X = 1000
-SCREEN_Y = 1000
+SCREEN_X = 2000
+SCREEN_Y = 2000
 
 # Target specs
 TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
 TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
-TARGET_RADII_BOUND = [20,50]
+TARGET_RADII_BOUND = [40,70]
 
 NUM_TARGETS = 6
 
 # Hazard specs. Can be in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
-HAZARD_RADII_BOUND = [20,50]
+HAZARD_RADII_BOUND = [40,70]
 
 NUM_HAZARDS = 6 # MUST BE EQUAL OR GREATER THAN HAZARD WINDOW SIZE
 
@@ -55,7 +55,7 @@ EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, an
 STEP_PENALTY = -1.0
 ANGULAR_VELOCITY_PENALTY = 0.0
 ANGULAR_ACCELERATION_PENALTY = 0.0
-OUTSIDE_SCREEN_PENALTY = -30.0
+OUTSIDE_SCREEN_PENALTY = -50.0
 TARGET_REWARD = 100.0
 HAZARD_PENALTY = -200.0
 ANGLE_REWARD_FACTOR = 2
@@ -147,7 +147,7 @@ class DrillEnv(gym.Env):
         for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius):
                 reward += HAZARD_PENALTY 
-                #done = True
+                done = True
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
