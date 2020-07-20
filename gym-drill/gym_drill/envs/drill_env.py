@@ -101,9 +101,7 @@ class DrillEnv(gym.Env):
 
             #self.angAcc = bitInitialization[2]
         self.horizontal_angAcc = bitInitialization[4]
-        self.vertical_angAcc =bitInitialization[5]
-
-       
+        self.vertical_angAcc =bitInitialization[5]      
 
         # For resetting the environment
 
@@ -116,10 +114,7 @@ class DrillEnv(gym.Env):
         self.initial_vertical_angVel = bitInitialization[3]
 
         self.initial_horizontal_angAcc = bitInitialization[4]
-        self.initial_vertical_angAcc = bitInitialization[5]
-        
-
-
+        self.initial_vertical_angAcc = bitInitialization[5]      
 
         # Init targets. See _init_targets function
         self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startLocation)
@@ -165,7 +160,6 @@ class DrillEnv(gym.Env):
     def get_reward_and_done_signal(self):
         done = False      
         reward = STEP_PENALTY
-
         
         if self.horizontal_angAcc != 0:
             reward += ANGULAR_ACCELERATION_PENALTY
@@ -187,10 +181,10 @@ class DrillEnv(gym.Env):
         
         # Check if we hit a hazard
         for h in self.observation_space_container.hazard_window:
-            if es._is_within(self.bitLocation,h.center,h.radius):
-                reward += HAZARD_PENALTY
+            if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
+                reward -= HAZARD_PENALTY
                 #done = True
-                     
+                h.is_hit = True
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        

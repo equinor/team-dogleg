@@ -8,6 +8,6 @@ class Hazard:
         self.radius = rad
 
         self.penalty = HAZARD_PENALTY
-
+        self.is_hit = False
     def __str__(self):
         return "Center:" + str(self.center) +". Radii:" + str(self.radius)
