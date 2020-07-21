@@ -29,7 +29,8 @@ ENV_name = 'drill-v0'
 ENV = gym.make(ENV_name)
 
 # Foldernames
-TRAINED_MODEL_FOLDER = "app/trained_models/"
+TRAINED_MODEL_FOLDER_DOCKER = "app/trained_models/"
+TRAINED_MODEL_FOLDER_LOCAL = "../trained_models/"
 
 TENSORBOARD_FOLDER_DQN = "/tensorboard_logs/DQN/"
 TENSORBOARD_FOLDER_PPO2 = "/tensorboard_logs/PPO2/"
@@ -37,10 +38,8 @@ TENSORBOARD_FOLDER_PPO2 = "/tensorboard_logs/PPO2/"
 def train_new_DQN(total_timesteps,save_name):
 	model = DQN(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
-	save_location = TRAINED_MODEL_FOLDER + save_name
-	model.save(save_location)
 	print("Done training with DQN algorithm.")
-	print("Results have been saved in ", save_location)
+	save_model(save_name)
 
 # To load from trained_models folder do: ./trained_models/NAME
 def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_initial_eps=0.02,learning_rate= 0.0005):
@@ -48,10 +47,8 @@ def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_ini
 	model = DQN.load(model_to_load, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
-	save_location = TRAINED_MODEL_FOLDER + save_name
-	model.save(save_location)
 	print("Done training with DQN algorithm.")
-	print("Results have been saved in ", save_location)
+	save_model(save_name)
 
 def get_trained_DQN_model(model_to_load):
 	model = DQN.load(model_to_load, ENV)
@@ -60,28 +57,35 @@ def get_trained_DQN_model(model_to_load):
 def train_new_PPO2(total_timesteps,save_name):
 	model = PPO2(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_PPO2)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
-	save_location = TRAINED_MODEL_FOLDER + save_name
-	model.save(save_location)
 	print("Done training with PPO2 algorithm.")
-	print("Results have been saved in ", save_location)
+	save_model(save_name)
 
 # To load from trained_models folder do: ./trained_models/NAME
 def train_existing_PPO2(model_to_load,total_timesteps,save_name):
 	print("Loading existing model from ", model_to_load)
 	model = PPO2.load(model_to_load, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	print("Model loaded and training starts...")
-	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
-	save_location = TRAINED_MODEL_FOLDER + save_name
+	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
+	print("Done training with PPO2 algorithm.")
 	model.save(save_location)
-	print("Done training with DQN algorithm.")
-	print("Results have been saved in ", save_location)
 
 def get_trained_PPO2_model(model_to_load):
 	model = PPO2.load(model_to_load, ENV)
 	return model
     	
+def save_model(save_name,*,folder_name = TRAINED_MODEL_FOLDER_DOCKER):
+	save_location = folder_name + save_name
+	try:
+		model.save(save_location)
+	except FileNotFoundError:
+		# We are not running from Docker.
+		save_location = TRAINED_MODEL_FOLDER_LOCAL + save_name
+		model.save(save_location)
+
+	print("Results have been saved in ", save_location)
+
 # Will display model from trained_models folder. To override, specify FOLDERNAME in source_folder
-def display_agent(model,*,num_episodes = 5,source_folder = TRAINED_MODEL_FOLDER,vector = False):
+def display_agent(model,*,num_episodes = 5,source_folder = TRAINED_MODEL_FOLDER_DOCKER,vector = False):
 	if not vector:
 		try:
 			model_to_load = source_folder + model 
