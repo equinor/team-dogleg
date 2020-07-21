@@ -108,3 +108,9 @@ def _create_unique_random_hazard(start_pos,x_bound,y_bound,z_bound,r_bound,exist
 
 def _is_within(bitPosition,targetPosition,targetRadius):
     return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 +(bitPosition.z - targetPosition.z)**2 < targetRadius**2
+
+def angle_between_vectors(v1, v2):
+    # Returns the angle in radians between vectors 'v1' and 'v2'
+    v1_u = v1 / np.linalg.norm(v1)
+    v2_u = v2 / np.linalg.norm(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))

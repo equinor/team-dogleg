@@ -27,25 +27,25 @@ BIT_INITIALIZATION = [np.pi/4,0.0, 0.0, 0.0, 0.0, 0.0] #initial heading is also 
 
 
 env_name = 'drill-v0'
-env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION, activate_hazards=True)
+env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION, activate_hazards=False)
 
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
 
 #Using Stable-Baselines to teach an agent 
+policy_kwargs = dict(act_fun=tf.nn.relu, layers=[64,64,64,32])
 
 #DQN-approach
 
-model_to_load = "3D_1907"
-save_as = "3D_1907"
-tensorboard_folder = "./3d_week5/"
+model_to_load = "3D_2007"
+save_as = "3D_2107"
+tensorboard_folder ="./3d_1rel/"
 tensorboard_run_name = "DQN"
-policy_kwargs = dict(act_fun=tf.nn.tanh, layers=[64,64,64,32])
 #Chose one of the two lines below (#1 or #2):
-#model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)           #1) Make a new model
-model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)           #1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
 print("DQN: I start training now")
-#model.learn(total_timesteps=3000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=150000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 """
@@ -128,7 +128,7 @@ for episode in range (2):
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
 		#env.render()
-		#print('rel.hori: ',round(obs[30]*(180/np.pi),0), '  rel.vert: ', round(obs[31]*(180/np.pi),0))
+		print('relative angle: ',round(obs[22]*(180/np.pi),0), '	reward: ',round(rewards,2))
 		#env.observation_space_container.display_targets()
 		#print(rewards)
 		num_steps +=1

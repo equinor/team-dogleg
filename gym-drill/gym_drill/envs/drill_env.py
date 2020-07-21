@@ -61,10 +61,9 @@ TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUN
 # Additional data
 DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
 TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
-RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
+RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
 
-EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND,RELATIVE_VERTICAL_ANGLE_BOUND ] # [Distance, angle between current direction and target direction]
+EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
 # Rewards
 STEP_PENALTY = -0.0
@@ -206,6 +205,20 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
+            current_target = self.observation_space_container.target_window[0]
+            approach_vector = [current_target.center.x - self.bitLocation.x, current_target.center.y - self.bitLocation.y, current_target.center.z - self.bitLocation.z]
+            movement_vector = np.array([
+                np.sin(self.vertical_heading) * np.cos(self.horizontal_heading),
+                np.sin(self.vertical_heading) * np.sin(self.horizontal_heading),
+                np.cos(self.vertical_heading)
+                ])
+            relative_angle = es.angle_between_vectors(approach_vector, movement_vector)
+            reward_factor = np.cos(relative_angle)
+            reward += reward_factor*ANGLE_REWARD_FACTOR
+
+
+            # When using both relative angles (Not optimal solution)
+            """
             # Approach vector
             appr_vec = current_target_pos - drill_pos
 
@@ -223,11 +236,12 @@ class DrillEnv(gym.Env):
             angle_between_vectors = np.math.atan2(np.linalg.det([appr_ver_vec, head_vec]), np.dot(appr_ver_vec, head_vec))
             reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
             reward += reward_factor*ANGLE_REWARD_FACTOR
+            """
             
         
 
         return reward, done
-    
+    """
     def get_horizontal_angle_relative_to_target(self): #I GUESS THAT THESE TWO FUNCTIONS SHOULD BE USED IN THE REWARD-FUNCTION ABOVE
         current_target = self.observation_space_container.target_window[0]
                 
@@ -253,6 +267,7 @@ class DrillEnv(gym.Env):
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
+    """
     
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
@@ -346,10 +361,18 @@ class DrillEnv(gym.Env):
         # Extra data
         current_target = self.observation_space_container.target_window[0]
         distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)-current_target.radius
-        relative_horizontal_angle = self.get_horizontal_angle_relative_to_target()
-        relative_vertical_angle = self.get_vertical_angle_relative_to_target()
+        approach_vector = [current_target.center.x - self.bitLocation.x, current_target.center.y - self.bitLocation.y, current_target.center.z - self.bitLocation.z]
+        movement_vector = np.array([
+            np.sin(self.vertical_heading) * np.cos(self.horizontal_heading),
+            np.sin(self.vertical_heading) * np.sin(self.horizontal_heading),
+            np.cos(self.vertical_heading)
+            ])
+        relative_angle = es.angle_between_vectors(approach_vector, movement_vector)
 
-        state_list =  state_list + [distance_to_target,relative_horizontal_angle, relative_vertical_angle]
+        #relative_horizontal_angle = self.get_horizontal_angle_relative_to_target()
+        #relative_vertical_angle = self.get_vertical_angle_relative_to_target()
+
+        state_list =  state_list + [distance_to_target, relative_angle]#relative_horizontal_angle, relative_vertical_angle]
         return tuple(state_list)        
 
     def reset(self):
@@ -422,8 +445,8 @@ class DrillEnv(gym.Env):
 
         print("Extra data:")
         print("Distance: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)])
-        print("Relative horizontal angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+1])
-        print("Relative vertical angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+2])
+        print("Relative angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+1])
+
 
 
     def display_horizontal_plane_of_environment(self):

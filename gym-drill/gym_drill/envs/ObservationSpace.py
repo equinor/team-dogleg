@@ -9,7 +9,7 @@ from gym import spaces
 
 # Designited slots in the observation space
 TARGET_WINDOW_SIZE = 3
-HAZARD_WINDOW_SIZE = 2 # MUST HAVE AT LEAST TWO HAZARDS
+HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST TWO HAZARDS
 
 # Targets are assumed to be ordered
 class ObservationSpace:
@@ -50,8 +50,10 @@ class ObservationSpace:
 
         # Extra data
         self.target_distance_bound = extra_data[0]
-        self.relative_horizontal_angle_bound = extra_data[1]
-        self.relative_vertical_angle_bound = extra_data[2]
+        self.relative_angle_bound = extra_data[1]
+
+        #self.relative_horizontal_angle_bound = extra_data[1]
+        #self.relative_vertical_angle_bound = extra_data[2]
 
     def display_targets(self):
         print("The current target window looks like this:")
@@ -106,8 +108,9 @@ class ObservationSpace:
 
         text = text + "The extra data bounds are: \n" \
         + "Target distance: " + str(self.target_distance_bound) +"\n" \
-        + "Relative horizontal angle " + str(self.relative_horizontal_angle_bound) + "\n" \
-        + "Relative vertical angle " + str(self.relative_vertical_angle_bound)     
+        + "Relative angle " + str(self.relative_angle_bound)
+        #+ "Relative horizontal angle " + str(self.relative_horizontal_angle_bound) + "\n" \
+        #+ "Relative vertical angle " + str(self.relative_vertical_angle_bound)     
         
         return text      
     
@@ -158,8 +161,8 @@ class ObservationSpace:
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_z[1],self.hazard_bound_r[1]])       
         
         # Add extra data
-        lower = np.append(lower,[self.target_distance_bound[0],self.relative_horizontal_angle_bound[0],self.relative_vertical_angle_bound[0]])
-        upper = np.append(upper,[self.target_distance_bound[1],self.relative_horizontal_angle_bound[1],self.relative_vertical_angle_bound[1]])
+        lower = np.append(lower,[self.target_distance_bound[0],self.relative_angle_bound[0]])
+        upper = np.append(upper,[self.target_distance_bound[1],self.relative_angle_bound[1]])
         
         return spaces.Box(lower,upper,dtype=np.float64)    
 
@@ -196,9 +199,8 @@ if __name__ == '__main__':
     # Additional data
     DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
     TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-    RELATIVE_HORIZONTAL_ANGLE_BOUND = [-np.pi,np.pi]
-    RELATIVE_VERTICAL_ANGLE_BOUND = [-np.pi,np.pi]
-    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_HORIZONTAL_ANGLE_BOUND, RELATIVE_VERTICAL_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+    RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
+    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
     
     for _ in range(4):
@@ -227,7 +229,7 @@ if __name__ == '__main__':
     
     box = obs_space.get_space_box()
     print(box)
-    print("Expected dimension of the obs space is: ", 9 + 4*TARGET_WINDOW_SIZE + 4*(HAZARD_WINDOW_SIZE) + 3) # Only 3 extra data
+    print("Expected dimension of the obs space is: ", 9 + 4*TARGET_WINDOW_SIZE + 4*(HAZARD_WINDOW_SIZE) + 2) # Only 2 extra data
     """
     print("Test shifting of window")
     print("State before shifting")
