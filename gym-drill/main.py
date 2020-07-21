@@ -2,7 +2,6 @@ import agent_training as train
 import sys
 import warnings  
 
-
 # Verifies input and assigns kwargs
 def handle_kwargs(kwargs):
     try:
@@ -13,7 +12,7 @@ def handle_kwargs(kwargs):
     
     try:
         name = kwargs[2]
-        algorithm = kwargs[3]
+        algorithm = str(kwargs[3]).upper()
     except IndexError:
         raise IndexError("A model name and an algorithm must be specified!")
     verify_algorithm(algorithm)
@@ -51,25 +50,30 @@ def handle_kwargs(kwargs):
     return action, name, algorithm, timesteps, new_save_name
 
 def verify_arg_len(kwargs):
-    try:
-        assert kwargs[1] == "train" and len(kwargs) <= 4
-    except AssertionError:
-        print("Training mode only supports a maximum of 4 arguments")
+    if kwargs[1] == "train":
+        try:
+            assert len(kwargs) <= 4
+        except AssertionError:
+            print("Training mode only supports a maximum of 4 arguments")
+    
+    elif kwargs[1] == "retrain":
+        try:
+            assert len(kwargs) <= 5 
+        except AssertionError:
+            print("Retraining mode only supports a maximum of 5 arguments")
 
-    try:
-        assert kwargs[1] == "retrain" and len(kwargs) <= 5 
-    except AssertionError:
-        print("Retraining mode only supports a maximum of 5 arguments") 
-    try:
-        assert kwargs[1] == "load" and len(kwargs) <= 6
-    except AssertionError:
-        print("Loading mode only supports a maximum of 6 arguments")
+    elif kwargs[1] == "load":
+        try:
+            assert len(kwargs) <= 6
+        except AssertionError:
+            print("Loading mode only supports a maximum of 6 arguments")
 
 def verify_algorithm(algorithm):
     try:
         assert algorithm == "DQN" or algorithm == "PPO2"
     except AssertionError:
-        print(str(algorithm), " is not a valid algorithm. Must be either DQN og PPO2.")
+        print(str(algorithm), "is not a valid algorithm. Must be either DQN og PPO2.")
+        sys.exit()
 
 if __name__ == '__main__':    
     try: 

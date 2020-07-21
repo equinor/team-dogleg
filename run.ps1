@@ -1,3 +1,5 @@
+# A powershell script to easier run Dockerized container
+
 param (
     # Mode switches
     [switch]$build = $false,
@@ -33,7 +35,7 @@ function run_container {
 }
 
 function run_python_script($filename,$action,$name,$algorithm,$timesteps,$new_save_name){
-    docker exec -it $container_running_name python $filename -u $action $name $algorithm $timesteps $new_save_name
+    docker exec -it $container_running_name python $filename $action $name $algorithm $timesteps $new_save_name
 }
 function run {
     run_container ; if($?) {run_python_script $python_filename $action $name $algorithm $timesteps $new_save_name}    
@@ -41,8 +43,6 @@ function run {
 function delete_running($name) {
      docker rm -f $name
 }
-
-
 
 if ($build -or $b) {build_container}
 elseif ($run -or $r) {run}
