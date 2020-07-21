@@ -2,6 +2,8 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+import matplotlib as mpl
+mpl.use("WebAgg")
 import matplotlib.pyplot as plt
 from datetime import datetime
 from random import uniform

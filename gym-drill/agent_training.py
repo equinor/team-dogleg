@@ -88,16 +88,23 @@ def save_model(model,save_name,*,folder_name = TRAINED_MODEL_FOLDER_DOCKER):
 	print("Results have been saved in ", save_location)
 
 # Will display model from trained_models folder. To override, specify FOLDERNAME in source_folder
-def display_agent(model,*,num_episodes = 5,source_folder = TRAINED_MODEL_FOLDER_DOCKER,vector = False):
+def display_agent(model,*,num_episodes = 1,source_folder = TRAINED_MODEL_FOLDER_DOCKER,vector = False):
 	if not vector:
 		try:
 			model_to_load = source_folder + model 
-			trained_model = DQN.load(model_to_load, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+			trained_model = DQN.load(model_to_load, ENV)
+		except FileNotFoundError:
+			pass
 		except Exception as e:
-			print("Failed to load model.")
-			print("If model is not inside the trained_model folder, override the source_folder to match the desired folder")
-			print(str(e))
-			os._exit(0)
+			try:
+				source_folder = TRAINED_MODEL_FOLDER_LOCAL
+				model_to_load = source_folder + model
+				trained_model = DQN.load(model_to_load, ENV)
+			except Exception as e:
+				print("Failed to load model.")
+				print("If model is not inside the trained_model folder, override the source_folder to match the desired folder")
+				print(str(e))
+				os._exit(0)
 
 		# Show the result of the training
 		obs = ENV.reset()
@@ -138,8 +145,7 @@ def benchmark_environment(targets,hazards,model,*,
 	else:
 		path = env.get_path()
 			
-	env.close()
-	
+	env.close()	
 
 if __name__ == '__main__':
 	print("You are running this specifc file!")
