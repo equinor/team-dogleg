@@ -218,56 +218,10 @@ class DrillEnv(gym.Env):
 
 
             # When using both relative angles (Not optimal solution)
-            """
-            # Approach vector
-            appr_vec = current_target_pos - drill_pos
-
-            # Heading vector.  [JUST GIVING IT A TRY DOING THIS FOR EACH ANGLE IN THE 3D CASE]
-            
-            appr_hor_vec = [appr_vec[0],appr_vec[1]]
-            appr_ver_vec = [appr_vec[1],appr_vec[2]]
-                #horizontal angle
-            head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
-            angle_between_vectors = np.math.atan2(np.linalg.det([appr_hor_vec, head_vec]), np.dot(appr_hor_vec, head_vec))
-            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
-            reward += reward_factor*ANGLE_REWARD_FACTOR
-                #vertical angle
-            head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
-            angle_between_vectors = np.math.atan2(np.linalg.det([appr_ver_vec, head_vec]), np.dot(appr_ver_vec, head_vec))
-            reward_factor = np.cos(angle_between_vectors) # value between -1 and +1 
-            reward += reward_factor*ANGLE_REWARD_FACTOR
-            """
-            
         
 
         return reward, done
-    """
-    def get_horizontal_angle_relative_to_target(self): #I GUESS THAT THESE TWO FUNCTIONS SHOULD BE USED IN THE REWARD-FUNCTION ABOVE
-        current_target = self.observation_space_container.target_window[0]
-                
-        curr_target_hor_pos_vector = np.array([current_target.center.x,current_target.center.y])
 
-        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
-        appr_vec = curr_target_hor_pos_vector - curr_drill_hor_pos_vector
-
-        head_vec = np.array([np.sin(self.horizontal_heading), np.cos(self.horizontal_heading)])
-        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-
-        return angle_between_vectors
-
-    def get_vertical_angle_relative_to_target(self):
-        current_target = self.observation_space_container.target_window[0]
-
-        curr_target_ver_pos_vector = np.array([current_target.center.x,current_target.center.z])
-
-        curr_drill_ver_pos_vector = np.array([self.bitLocation.x,self.bitLocation.z])
-        appr_vec = curr_target_ver_pos_vector - curr_drill_ver_pos_vector
-
-        head_vec = np.array([np.sin(self.vertical_heading), np.cos(self.vertical_heading)])
-        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-
-        return angle_between_vectors
-    """
     
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
@@ -369,10 +323,7 @@ class DrillEnv(gym.Env):
             ])
         relative_angle = es.angle_between_vectors(approach_vector, movement_vector)
 
-        #relative_horizontal_angle = self.get_horizontal_angle_relative_to_target()
-        #relative_vertical_angle = self.get_vertical_angle_relative_to_target()
-
-        state_list =  state_list + [distance_to_target, relative_angle]#relative_horizontal_angle, relative_vertical_angle]
+        state_list =  state_list + [distance_to_target, relative_angle]
         return tuple(state_list)        
 
     def reset(self):

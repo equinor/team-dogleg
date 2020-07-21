@@ -54,7 +54,6 @@ def _findNearest(start_location,candidates):
 # Orders the target based upon a given start location
 # start_location is type Coordinate, all_targets is list of type targets
 def _orderTargets(start_location,all_targets):
-    #target_order = [None] * len(all_targets) # Maybe better with = [] and use append()
     target_order = [] 
     loop_counter = 0    
 

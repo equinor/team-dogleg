@@ -32,8 +32,10 @@ env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_I
 print("Obs space", env.observation_space)
 print("action space", env.action_space)
 
-#Using Stable-Baselines to teach an agent 
-policy_kwargs = dict(act_fun=tf.nn.relu, layers=[64,64,64,32])
+#Using the Stable-Baselines library to teach an agent 
+
+#Custom network architecture 
+policy_kwargs = dict(act_fun=tf.nn.relu, layers=[64,64,64,32]) # Use as argument when doing model =...(policy_kwargs = policy_kwargs)
 
 #DQN-approach
 """
@@ -42,8 +44,8 @@ save_as = "3D_2107"
 tensorboard_folder ="./3d_1rel/"
 tensorboard_run_name = "DQN"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)           #1) Make a new model
-#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)              #2) Load an existing one from your own files
+model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)          								#1) Make a new model
+#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)				#2) Load an existing one from your own files
 print("DQN: I start training now")
 model.learn(total_timesteps=150000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 

@@ -9,7 +9,7 @@ from gym import spaces
 
 # Designited slots in the observation space
 TARGET_WINDOW_SIZE = 3
-HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST TWO HAZARDS
+HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST THIS MANY HAZARDS
 
 # Targets are assumed to be ordered
 class ObservationSpace:
@@ -20,7 +20,7 @@ class ObservationSpace:
         self.lower_y = space_bounds[2]
         self.upper_y = space_bounds[3]
         self.lower_z = space_bounds[4]
-        self.upper_z = space_bounds[5]  #have to adjust space_bounds as well
+        self.upper_z = space_bounds[5]
 
         # Bit related
         self.lower_horizontal_heading = bit_bounds[0]
@@ -51,9 +51,6 @@ class ObservationSpace:
         # Extra data
         self.target_distance_bound = extra_data[0]
         self.relative_angle_bound = extra_data[1]
-
-        #self.relative_horizontal_angle_bound = extra_data[1]
-        #self.relative_vertical_angle_bound = extra_data[2]
 
     def display_targets(self):
         print("The current target window looks like this:")
@@ -109,9 +106,7 @@ class ObservationSpace:
         text = text + "The extra data bounds are: \n" \
         + "Target distance: " + str(self.target_distance_bound) +"\n" \
         + "Relative angle " + str(self.relative_angle_bound)
-        #+ "Relative horizontal angle " + str(self.relative_horizontal_angle_bound) + "\n" \
-        #+ "Relative vertical angle " + str(self.relative_vertical_angle_bound)     
-        
+
         return text      
     
     def find_closest_hazards(self,bitPostion):
@@ -200,7 +195,7 @@ if __name__ == '__main__':
     DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
     TARGET_DISTANCE_BOUND = [0,DIAGONAL]
     RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
-    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND]
 
     
     for _ in range(4):
@@ -209,14 +204,6 @@ if __name__ == '__main__':
         hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_center.z,hazard_radius)
         hazards.append(hazard_candidate)
      
-    """
-    print("Here are the targets")
-    for _ in targets:
-        print(_)
-    print("here are the hazards")
-    for _ in hazards:
-        print(_)
-    """
 
     print("Creating obs_space")
     print()
