@@ -10,6 +10,3 @@ RUN pip install --no-cache-dir -r $PROJECT_PATH/requirements.txt
 
 COPY gym-drill $PROJECT_PATH
 RUN pip install --no-cache-dir -e $PROJECT_PATH
-
-
-CMD ["python","-u","main.py","train","test_docker","DQN","10"]
