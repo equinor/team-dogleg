@@ -207,6 +207,14 @@ class DrillEnv(gym.Env):
         if abs(self.angVel + self.angAcc) < MAX_ANGVEL:
             self.angVel += self.angAcc
 
+        elif (self.angVel + self.angAcc) <= -MAX_ANGVEL:
+            self.angVel = -MAX_ANGVEL
+            self.angAcc = 0
+
+        elif (self.angVel + self.angAcc) >= MAX_ANGVEL:
+            self.angVel = MAX_ANGVEL
+            self.angAcc = 0
+
         # Update heading.
         self.heading = (self.heading + self.angVel) % (2 * np.pi)
 
