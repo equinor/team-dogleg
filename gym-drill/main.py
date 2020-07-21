@@ -12,7 +12,7 @@ def handle_kwargs(kwargs):
     
     try:
         name = kwargs[2]
-        algorithm = str(kwargs[3]).upper()
+        algorithm = kwargs[3]
     except IndexError:
         raise IndexError("A model name and an algorithm must be specified!")
     verify_algorithm(algorithm)
@@ -71,6 +71,7 @@ def verify_arg_len(kwargs):
 def verify_algorithm(algorithm):
     try:
         assert algorithm == "DQN" or algorithm == "PPO2"
+        #assert algorithm == "dqn" or algorithm == "ppo2"
     except AssertionError:
         print(str(algorithm), "is not a valid algorithm. Must be either DQN og PPO2.")
         sys.exit()
@@ -96,8 +97,8 @@ if __name__ == '__main__':
 
     elif action == "load":
         if algorithm == "DQN":
-            model = train.get_trained_DQN_model(name)
-            train.display_agent(model)
+            #model = train.get_trained_DQN_model(name)
+            train.display_agent(name)
             # show model
         elif algorithm == "PPO2":
             model = train.get_trained_PPO2_model()

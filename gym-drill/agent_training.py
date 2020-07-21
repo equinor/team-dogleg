@@ -43,15 +43,17 @@ def train_new_DQN(total_timesteps,save_name):
 
 # To load from trained_models folder do: ./trained_models/NAME
 def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_initial_eps=0.02,learning_rate= 0.0005):
-	print("Loading existing model from ", model_to_load)
-	model = DQN.load(model_to_load, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+	load_location = TRAINED_MODEL_FOLDER_DOCKER + model_to_load
+	print("Loading existing model from ", load_location)
+	model = DQN.load(load_location, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
 	print("Done training with DQN algorithm.")
 	save_model(model,save_name)
 
 def get_trained_DQN_model(model_to_load):
-	model = DQN.load(model_to_load, ENV)
+	load_location = TRAINED_MODEL_FOLDER_DOCKER + model_to_load
+	model = DQN.load(load_location, ENV)
 	return model
 
 def train_new_PPO2(total_timesteps,save_name):
@@ -62,8 +64,9 @@ def train_new_PPO2(total_timesteps,save_name):
 
 # To load from trained_models folder do: ./trained_models/NAME
 def train_existing_PPO2(model_to_load,total_timesteps,save_name):
-	print("Loading existing model from ", model_to_load)
-	model = PPO2.load(model_to_load, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+	load_location = TRAINED_MODEL_FOLDER_DOCKER + model_to_load
+	print("Loading existing model from ", load_location)
+	model = PPO2.load(load_location, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
 	print("Done training with PPO2 algorithm.")
@@ -106,7 +109,6 @@ def display_agent(model,*,num_episodes = 5,source_folder = TRAINED_MODEL_FOLDER_
 			ENV.display_environment()
 			state = ENV.reset()
 			
-			ENV.close()
 			print('[EPISODE ENDED]')
 
 	else:
