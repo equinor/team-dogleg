@@ -1,8 +1,15 @@
 FROM python:3.7
 
-RUN pip install gym numpy matplotlib tensorflow==1.15 stable-baselines flask
+#RUN pip install gym numpy matplotlib tensorflow==1.15 stable-baselines
 
-WORKDIR /usr/src/app
-COPY gym-drill ./
+ENV PROJECT_PATH=/usr/src
+WORKDIR $PROJECT_PATH
 
-CMD ["python","-u","FlaskApp.py"]
+COPY requirements.txt $PROJECT_PATH
+RUN pip install --no-cache-dir -r $PROJECT_PATH/requirements.txt
+
+COPY gym-drill $PROJECT_PATH
+RUN pip install --no-cache-dir -e $PROJECT_PATH
+
+
+CMD ["python","-u","main.py","train","test_docker","DQN","10"]
