@@ -35,9 +35,9 @@ SCREEN_Y = 2000
 SCREEN_Z = 2000
 
 # Target specs
-TARGET_BOUND_X = [0.25*SCREEN_X,0.85*SCREEN_X]
-TARGET_BOUND_Y = [0.2*SCREEN_Y,0.75*SCREEN_Y]
-TARGET_BOUND_Z = [0.25*SCREEN_Z,0.85*SCREEN_Z]
+TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
+TARGET_BOUND_Y = [0.25*SCREEN_Y,0.75*SCREEN_Y]
+TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [40,100]
 
 NUM_TARGETS = 3
@@ -61,7 +61,7 @@ TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUN
 # Additional data
 DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
 TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
+RELATIVE_ANGLE_BOUND = [0,np.pi]
 
 EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
@@ -72,7 +72,7 @@ ANGULAR_ACCELERATION_PENALTY = 0.0
 OUTSIDE_SCREEN_PENALTY = -30.0
 TARGET_REWARD = 100.0
 HAZARD_PENALTY = -200.0
-ANGLE_REWARD_FACTOR = 0.5
+ANGLE_REWARD_FACTOR = 1
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 
@@ -213,7 +213,7 @@ class DrillEnv(gym.Env):
                 np.cos(self.vertical_heading)
                 ])
             relative_angle = es.angle_between_vectors(approach_vector, movement_vector)
-            reward_factor = np.cos(relative_angle)
+            reward_factor = np.cos(relative_angle) #- np.cos(np.pi/4) #Only give positive angle-rewards if relative_angle < 45 degrees
             reward += reward_factor*ANGLE_REWARD_FACTOR
 
 
@@ -385,7 +385,7 @@ class DrillEnv(gym.Env):
         self.bitLocation.y = self.start_y
         self.bitLocation.z = self.start_z
 
-        self.horizontal_heading = uniform(0,np.pi/2)
+        self.horizontal_heading = uniform(0,2*np.pi)
         self.vertical_heading = uniform(0,np.pi/4)
 
         self.horizontal_angVel = self.initial_horizontal_angVel

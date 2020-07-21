@@ -22,8 +22,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(100,100,100)
-BIT_INITIALIZATION = [np.pi/4,0.0, 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
+STARTLOCATION = Coordinate(1000,1000,0)
+BIT_INITIALIZATION = [random.uniform(0,2*np.pi),random.uniform(0,np.pi/4), 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
 env_name = 'drill-v0'
@@ -36,7 +36,7 @@ print("action space", env.action_space)
 policy_kwargs = dict(act_fun=tf.nn.relu, layers=[64,64,64,32])
 
 #DQN-approach
-
+"""
 model_to_load = "3D_2007"
 save_as = "3D_2107"
 tensorboard_folder ="./3d_1rel/"
@@ -47,21 +47,21 @@ model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_lo
 print("DQN: I start training now")
 model.learn(total_timesteps=150000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
-
 """
+
 #PPO2-approach
 
 model_to_load = "PPO2_drill_model"
 save_as = "PPO2_drill_model"
-tensorboard_folder = "./algorithm_performance_comparison/"
+tensorboard_folder = "./3d_1rel/"
 tensorboard_run_name = "PP02"
 #Chose one of the two lines below (#1 or #2):
-model = PPO2(MlpPolicy, env, verbose=1, tensorboard_log=tensorboard_folder)              #1) Make a new model
+model = PPO2(MlpPolicy, env, verbose=0, tensorboard_log=tensorboard_folder)              #1) Make a new model
 #model = PPO2.load(model_to_load, env, tensorboard_log=tensorboard_folder)               #2) Load an existing one from your own files
 print("PPO2: I start training now")
-model.learn(total_timesteps=100, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=3500000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
-
+"""
 #A2C-approach
 
 model_to_load = "A2C_drill_model"
@@ -127,11 +127,11 @@ for episode in range (2):
 	while done == False:
 		action, _states = model.predict(obs)
 		obs, rewards, done, info = env.step(action)
-		#env.render()
-		print('relative angle: ',round(obs[22]*(180/np.pi),0), '	reward: ',round(rewards,2))
+		num_steps +=1
+		if num_steps % 10==0:
+			print('step #',num_steps,'	relative angle: ',round(obs[22]*(180/np.pi),0), '	step-reward: ',round(rewards,2),	'distance to target: ',round(obs[21],0))
 		#env.observation_space_container.display_targets()
 		#print(rewards)
-		num_steps +=1
 		#print(obs)
 	print(num_steps)
 	env.display_3d_environment()
