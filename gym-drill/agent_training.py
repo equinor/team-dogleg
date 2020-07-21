@@ -39,7 +39,7 @@ def train_new_DQN(total_timesteps,save_name):
 	model = DQN(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
 	print("Done training with DQN algorithm.")
-	save_model(save_name)
+	save_model(model,save_name)
 
 # To load from trained_models folder do: ./trained_models/NAME
 def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_initial_eps=0.02,learning_rate= 0.0005):
@@ -48,7 +48,7 @@ def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_ini
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
 	print("Done training with DQN algorithm.")
-	save_model(save_name)
+	save_model(model,save_name)
 
 def get_trained_DQN_model(model_to_load):
 	model = DQN.load(model_to_load, ENV)
@@ -58,7 +58,7 @@ def train_new_PPO2(total_timesteps,save_name):
 	model = PPO2(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_PPO2)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
 	print("Done training with PPO2 algorithm.")
-	save_model(save_name)
+	save_model(model,save_name)
 
 # To load from trained_models folder do: ./trained_models/NAME
 def train_existing_PPO2(model_to_load,total_timesteps,save_name):
@@ -67,13 +67,13 @@ def train_existing_PPO2(model_to_load,total_timesteps,save_name):
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
 	print("Done training with PPO2 algorithm.")
-	model.save(save_location)
+	save_model(model,save_location)
 
 def get_trained_PPO2_model(model_to_load):
 	model = PPO2.load(model_to_load, ENV)
 	return model
     	
-def save_model(save_name,*,folder_name = TRAINED_MODEL_FOLDER_DOCKER):
+def save_model(model,save_name,*,folder_name = TRAINED_MODEL_FOLDER_DOCKER):
 	save_location = folder_name + save_name
 	try:
 		model.save(save_location)
