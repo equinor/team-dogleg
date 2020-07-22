@@ -16,15 +16,18 @@ from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
 from gym_drill.envs import environment_config as cfg
 
+ENVIRONMENT_FILENAME = "environments.txt"
+
 class DrillEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True):
-        self.start_x = startLocation.x
-        self.start_y = startLocation.y
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True,random_envs=True):
+        self.activate_hazards = activate_hazards
+        self.random_envs = random_envs        
+        
         # Save the starting position as "first" step. Needed for plotting in matplotlib
         self.step_history = [[self.start_x,self.start_y]]        
 
@@ -35,19 +38,13 @@ class DrillEnv(gym.Env):
         self.angAcc = bitInitialization[2]
 
         # For resetting the environment
-        self.initialBitLocation = startLocation
+        self.start_x = startLocation.x
+        self.start_y = startLocation.y
         self.initialHeading = bitInitialization[0]
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
 
-        # Init targets. See _init_targets function
-        self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startLocation)
-        self.activate_hazards = activate_hazards
-        if self.activate_hazards:
-            #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startLocation,self.targets)
-        else:
-            self.hazards = []
+        self.create_targets_and_hazards()
 
         self.action_space = spaces.Discrete(3)       
         
@@ -65,6 +62,18 @@ class DrillEnv(gym.Env):
         self.total_reward = 0      
         es._init_log()
         """
+    def create_targets_and_hazards(self):
+        if self.random_envs:
+            self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startLocation)
+            if self.activate_hazards:
+                self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startLocation,self.targets)
+            else:
+                self.hazards = []
+        else:
+            self.targets,self.hazards = es.read_env_from_file(ENVIRONMENT_FILENAME,2)
+            # Overwrite hazards if not activated
+            if not self.activate_hazards:
+                self.hazards = []
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -79,7 +88,6 @@ class DrillEnv(gym.Env):
         #self.total_reward += reward
         return np.array(self.state), reward, done, {}
 
-    
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
         done = False      
@@ -202,7 +210,7 @@ class DrillEnv(gym.Env):
         # Save previous run to log
         #self.write_to_log()
         #self.episode_counter += 1
-        self.total_reward = 0
+        #self.total_reward = 0
         
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
@@ -214,14 +222,7 @@ class DrillEnv(gym.Env):
         # Save the starting position as "first" step
         self.step_history = [[self.start_x,self.start_y]]       
 
-        # Need to init new targets
-        self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,self.bitLocation)             
-        
-        # Init new hazards
-        if self.activate_hazards:
-            self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
-        else:
-            self.hazards = []
+        self.create_targets_and_hazards()
 
         # Re-configure the observation space
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
@@ -320,10 +321,14 @@ class DrillEnv(gym.Env):
         plt.legend()
         plt.show()
     
+
     def load_predefined_env(self,targets,hazards):
         self.targets = targets
-        self.hazards = hazards
-
+        if self.activate_hazards:
+            self.hazards = hazards
+        else:
+            self.hazards = []
+        
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards)
         self.observation_space = self.observation_space_container.get_space_box()        
 
