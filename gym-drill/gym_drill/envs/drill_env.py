@@ -27,12 +27,12 @@ MAX_ANGACC = 0.05
 
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.01
-DRILL_SPEED = 10.0
+DRILL_SPEED = 10
 
 # Screen size, environment should be square
-SCREEN_X = 2000
-SCREEN_Y = 2000
-SCREEN_Z = 2000
+SCREEN_X = 1000
+SCREEN_Y = 1000
+SCREEN_Z = 1000
 
 # Target specs
 TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
@@ -41,7 +41,7 @@ TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [40,100]
 
 NUM_TARGETS = 3
-TARGET_WINDOW_SIZE = 3
+TARGET_WINDOW_SIZE = 1
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
 
 # Hazard specs. Can be in entire screen
@@ -50,7 +50,7 @@ HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_BOUND_Z = [0,SCREEN_Z]
 HAZARD_RADII_BOUND = [40,100]
 
-NUM_HAZARDS = 4
+NUM_HAZARDS = 0
 
 # Observation space specs (vectorized bounds)
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] 
@@ -60,19 +60,19 @@ TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUN
 
 # Additional data
 DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
-TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-RELATIVE_ANGLE_BOUND = [0,np.pi]
+HEIGHT_DIFF_BOUND = [-SCREEN_Z,SCREEN_Z]
+RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
 
-EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
+EXTRA_DATA_BOUNDS = [HEIGHT_DIFF_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
 # Rewards
 STEP_PENALTY = -0.0
 ANGULAR_VELOCITY_PENALTY = 0.0
 ANGULAR_ACCELERATION_PENALTY = 0.0
-OUTSIDE_SCREEN_PENALTY = -30.0
+OUTSIDE_SCREEN_PENALTY = 0.0
 TARGET_REWARD = 100.0
 HAZARD_PENALTY = -200.0
-ANGLE_REWARD_FACTOR = 1
+ANGLE_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 
@@ -205,24 +205,26 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
-            current_target = self.observation_space_container.target_window[0]
-            approach_vector = [current_target.center.x - self.bitLocation.x, current_target.center.y - self.bitLocation.y, current_target.center.z - self.bitLocation.z]
-            movement_vector = np.array([
-                np.sin(self.vertical_heading) * np.cos(self.horizontal_heading),
-                np.sin(self.vertical_heading) * np.sin(self.horizontal_heading),
-                np.cos(self.vertical_heading)
-                ])
-            relative_angle = es.angle_between_vectors(approach_vector, movement_vector)
-            reward_factor = np.cos(relative_angle) #- np.cos(np.pi/4) #Only give positive angle-rewards if relative_angle < 45 degrees
-            reward += reward_factor*ANGLE_REWARD_FACTOR
-
-
-            # When using both relative angles (Not optimal solution)
-        
-
+            reward_factor = np.cos(self.get_horizontal_angle_relative_to_target()) # value between -1 and +1 
+            reward += reward_factor*ANGLE_REWARD_FACTOR #reward for having a correct horizontal-angle
+            height_diff = current_target_pos[2]-self.bitLocation.z
+            if height_diff != 0:
+                reward += np.cos(self.vertical_heading)*(height_diff/abs(height_diff))*0.5 #should be global constant #reward for going in the right directen (up/down)
         return reward, done
 
-    
+    def get_horizontal_angle_relative_to_target(self):
+        current_target = self.observation_space_container.target_window[0]
+                
+        curr_target_hor_pos_vector = np.array([current_target.center.x,current_target.center.y])
+
+        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
+        appr_vec = curr_target_hor_pos_vector - curr_drill_hor_pos_vector
+
+        head_vec = np.array([np.cos(self.horizontal_heading), np.sin(self.horizontal_heading)])
+        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+
+        return angle_between_vectors
+
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         
@@ -314,16 +316,11 @@ class DrillEnv(gym.Env):
             state_list.append(hazard.radius)
         # Extra data
         current_target = self.observation_space_container.target_window[0]
-        distance_to_target = Coordinate.getEuclideanDistance(current_target.center,self.bitLocation)-current_target.radius
-        approach_vector = [current_target.center.x - self.bitLocation.x, current_target.center.y - self.bitLocation.y, current_target.center.z - self.bitLocation.z]
-        movement_vector = np.array([
-            np.sin(self.vertical_heading) * np.cos(self.horizontal_heading),
-            np.sin(self.vertical_heading) * np.sin(self.horizontal_heading),
-            np.cos(self.vertical_heading)
-            ])
-        relative_angle = es.angle_between_vectors(approach_vector, movement_vector)
+        height_diff = current_target.center.z - self.bitLocation.z
 
-        state_list =  state_list + [distance_to_target, relative_angle]
+        relative_angle = self.get_horizontal_angle_relative_to_target()
+
+        state_list =  state_list + [height_diff, relative_angle]
         return tuple(state_list)        
 
     def reset(self):

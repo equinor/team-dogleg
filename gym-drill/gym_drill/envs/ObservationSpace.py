@@ -8,7 +8,7 @@ import gym
 from gym import spaces
 
 # Designited slots in the observation space
-TARGET_WINDOW_SIZE = 3
+TARGET_WINDOW_SIZE = 1
 HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST THIS MANY HAZARDS
 
 # Targets are assumed to be ordered
@@ -49,7 +49,7 @@ class ObservationSpace:
         self.hazard_bound_r = hazard_bounds[3]
 
         # Extra data
-        self.target_distance_bound = extra_data[0]
+        self.height_diff_bound = extra_data[0]
         self.relative_angle_bound = extra_data[1]
 
     def display_targets(self):
@@ -104,7 +104,7 @@ class ObservationSpace:
             text = text + str(h) + "\n"    
 
         text = text + "The extra data bounds are: \n" \
-        + "Target distance: " + str(self.target_distance_bound) +"\n" \
+        + "Target distance: " + str(self.height_diff_bound) +"\n" \
         + "Relative angle " + str(self.relative_angle_bound)
 
         return text      
@@ -156,8 +156,8 @@ class ObservationSpace:
             upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_z[1],self.hazard_bound_r[1]])       
         
         # Add extra data
-        lower = np.append(lower,[self.target_distance_bound[0],self.relative_angle_bound[0]])
-        upper = np.append(upper,[self.target_distance_bound[1],self.relative_angle_bound[1]])
+        lower = np.append(lower,[self.height_diff_bound[0],self.relative_angle_bound[0]])
+        upper = np.append(upper,[self.height_diff_bound[1],self.relative_angle_bound[1]])
         
         return spaces.Box(lower,upper,dtype=np.float64)    
 
