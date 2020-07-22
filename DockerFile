@@ -1,6 +1,8 @@
 FROM python:3.7
 
 #RUN pip install gym numpy matplotlib tensorflow==1.15 stable-baselines
+EXPOSE 8988
+EXPOSE 6006
 
 ENV PROJECT_PATH=/usr/src
 WORKDIR $PROJECT_PATH

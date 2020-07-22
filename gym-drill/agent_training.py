@@ -93,8 +93,6 @@ def display_agent(model,*,num_episodes = 1,source_folder = TRAINED_MODEL_FOLDER_
 		try:
 			model_to_load = source_folder + model 
 			trained_model = DQN.load(model_to_load, ENV)
-		except FileNotFoundError:
-			pass
 		except Exception as e:
 			try:
 				source_folder = TRAINED_MODEL_FOLDER_LOCAL

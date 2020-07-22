@@ -12,7 +12,7 @@ def handle_kwargs(kwargs):
     
     try:
         name = kwargs[2]
-        algorithm = kwargs[3]
+        algorithm = str(kwargs[3]).upper()
     except IndexError:
         raise IndexError("A model name and an algorithm must be specified!")
     verify_algorithm(algorithm)
