@@ -2,7 +2,7 @@
 Team repo for Team Dogleg - Virtual summer internship 2020
 
 ## Run locally
-It is recommended to [run using docker](run-with-docker-using-windows), however if you don't have Docker available it is possible to run it *normally* on you computer.
+It is recommended to [run using docker](#run-with-docker-using-windows), however if you don't have Docker available it is possible to run it *normally* on you computer.
 
 ### Installations
 
@@ -11,7 +11,7 @@ Install the requried dependencies:
 ```
 ~$ pip install -r requirements.txt
 ```
-Note that some of the packages are only compatable with Python versions 3.7 or lower. Verify your Python verison with ```python -v``` and downgrade or consider [running with Docker](run-with-docker-using-windows) if the version is insufficient.
+Note that some of the packages are only compatable with Python versions 3.7 or lower. Verify your Python verison with ```python -v``` and downgrade or consider [running with Docker](#run-with-docker-using-windows) if the version is insufficient.
 
 ### Run the program
 
@@ -29,7 +29,7 @@ An asterisk next to the argument indicates that the argument is not required. Th
 
 - The ``<action>`` argument has 3 valid values: "train", "retrain" and "load". These will train a new agent, retrain an existing agent or load and display an existing agent, respectively.
 - The ``<save_name>`` argument can take any string that is a valid filename on your system. When running with ``<action> == <train>`` this will be the saved name of the newly trained agent. When running with "retrain" or "load" this will be the name of the existing agent to retrain or load.
-- The ``<algorithm>`` argument specifies which algorithm to use when training. This argument is not case sensitive. For valid algorithms to pass as an argument see [available algorithms](available-algorithms). When retraining and loading this algorithm must match the algorithm of the existing agent. To keep track of what algorithm is used on a particular agent a naming convention indicating this is recommended.  
+- The ``<algorithm>`` argument specifies which algorithm to use when training. This argument is not case sensitive. For valid algorithms to pass as an argument see [available algorithms](#available-algorithms). When retraining and loading this algorithm must match the algorithm of the existing agent. To keep track of what algorithm is used on a particular agent a naming convention indicating this is recommended.  
 
 
 
@@ -88,7 +88,7 @@ Build the Docker container using the ``-build`` flag:
 This will create a Docker container named ```auto_well_path```.
 
 #### Run the Docker container
-Having built the container, you can run it be passing the ``-run`` flag. Running the container will in this case be the same as running the program. Therefore the arguments introduced in the [running the program locally section](run-the-program) must be passed.
+Having built the container, you can run it be passing the ``-run`` flag. Running the container will in this case be the same as running the program. Therefore the arguments introduced in the [running the program locally section](#run-the-program) must be passed.
 
 ```
 ~$ ./run.ps1 -run <action> <save_name> <algorithm> <timesteps>* <new_save_name>*
@@ -129,3 +129,6 @@ More algorithms comming soon!
 
 - List all your docker images by running `docker image`
 - Delete a docker image using `docker image rm [IMAGE ID]`. You can find the ID of the image by listing all images using `docker image`
+
+
+
