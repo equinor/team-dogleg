@@ -47,12 +47,11 @@ class DrillEnv(gym.Env):
             #print("Initiating environment with hazards")
             self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startLocation,self.targets)
         else:
-            #print("Initiating environment without hazards")
             self.hazards = []
 
-        self.action_space = spaces.Discrete(3)        
-
-        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.action_space = spaces.Discrete(3)       
+        
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -71,8 +70,9 @@ class DrillEnv(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
         
-    def step(self, action):    
+    def step(self, action):
         self.update_bit(action)
+        self.observation_space_container.update_hazard_window(self.bitLocation)
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
@@ -98,12 +98,13 @@ class DrillEnv(gym.Env):
             done = True   
         
         # Check if we hit a hazard
-        for h in self.hazards:
-            if es._is_within(self.bitLocation,h.center,h.radius):
+        for h in self.observation_space_container.hazard_window:
+            if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
                 reward += cfg.HAZARD_PENALTY 
+                h.is_hit = True
                 #done = True
-
-        if len(self.step_history)>cfg.NUM_MAX_STEPS:
+                
+        if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
 
         # Find the values of the current target
@@ -159,6 +160,14 @@ class DrillEnv(gym.Env):
         if abs(self.angVel + self.angAcc) < cfg.MAX_ANGVEL:
             self.angVel += self.angAcc
 
+        elif (self.angVel + self.angAcc) <= -MAX_ANGVEL:
+            self.angVel = -MAX_ANGVEL
+            self.angAcc = 0
+
+        elif (self.angVel + self.angAcc) >= MAX_ANGVEL:
+            self.angVel = MAX_ANGVEL
+            self.angAcc = 0
+
         # Update heading.
         self.heading = (self.heading + self.angVel) % (2 * np.pi)
 
@@ -176,8 +185,8 @@ class DrillEnv(gym.Env):
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.radius)
-        # Get all hazards
-        for hazard in self.observation_space_container.hazards:
+        # Get hazards inside window
+        for hazard in self.observation_space_container.hazard_window:
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
             state_list.append(hazard.radius)
@@ -210,14 +219,12 @@ class DrillEnv(gym.Env):
         
         # Init new hazards
         if self.activate_hazards:
-            #print("Initiating environment with hazards")
-            self.hazards = es._init_hazards(cfg.NUM_HAZARDS,[0.25*cfg.SCREEN_X,0.85*cfg.SCREEN_X],[0.2*cfg.SCREEN_Y,0.75*cfg.SCREEN_Y],cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+            self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
         else:
-            #print("Initiating environment without hazards")
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards)
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,cfg.EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -239,6 +246,22 @@ class DrillEnv(gym.Env):
         if self.viewer:
             self.viewer.close()
             self.viewer = None
+
+    def display_state(self):
+        print("Bit location:", Coordinate(self.state[0],self.state[1]))
+        print("Bit angles: ", self.state[2:5])
+        print("Targets inside window: ")
+        for i in range(len(self.observation_space_container.target_window)):
+            t = TargetBall(self.state[5+3*i],self.state[6+3*i],self.state[7+3*i])
+            print(t)
+        print("Hazards inside window")
+        for i in range(len(self.observation_space_container.hazard_window)):
+            h = Hazard(self.state[5+3*i],self.state[6+3*i],self.state[7+3*i])
+            print(h)
+
+        print("Extra data:")
+        print("Distance: ",self.state[5+3*len(self.observation_space_container.target_window)+ 3*len(self.observation_space_container.hazard_window)])
+        print("Relative angle: ",self.state[5+3*len(self.observation_space_container.target_window)+ 3*len(self.observation_space_container.hazard_window)+1])
 
     def display_environment(self):
         # Get data
@@ -313,8 +336,9 @@ class DrillEnv(gym.Env):
        
 
 if __name__ == '__main__':
+    startpos = Coordinate(100,900)
+    """
     print("Testing init of targets and hazards")    
-    startpos = Coordinate(100,400)
 
     print("Creating targets")
     t = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startpos)
@@ -365,19 +389,31 @@ if __name__ == '__main__':
     
     plt.title("Test random generated hazard and targets")
     plt.show()
-    
+    """
     print("Verify Environemnt")
     import random
-    BIT_INITIALIZATION = [3.5*np.pi/4,0.0,0.0]
+    BIT_INITIALIZATION = [np.pi/2,0.0,0.0]
 
-    env = DrillEnv(startpos,BIT_INITIALIZATION)
+    env = DrillEnv(startpos,BIT_INITIALIZATION,activate_hazards=True)
 
     action_size = env.action_space.n
     action = random.choice(range(action_size))
     env.step(action)
     print("I took one step, this is what the current state is:")
     print(env.state)
-    print(len(env.state))
-    print(env.observation_space)
-
+    env.observation_space_container.display_hazards()
+    env.display_environment()
+    
+    for _ in range (5000):
+        action = random.choice(range(action_size))
+        env.step(action)
+    print("50 steps later")
+    env.display_state()
+    env.observation_space_container.display_hazards()
+    env.display_environment()
    
+    print("Resetting")
+    env.reset()
+    env.display_state()
+    env.observation_space_container.display_hazards()
+    env.display_environment()

@@ -13,7 +13,7 @@ def _init_log(*,filename="drill_log.txt"):
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)
     f.close()
-    #print("Log created!")
+
 
 
 # Returns an ordered list of randomly generated targets within the bounds given. 
@@ -39,6 +39,7 @@ def _init_hazards(num_hazards,x_bound,y_bound,r_bound,start_pos,existing_targets
 
 # Finds nearest between 1 point and a list of candidate points
 # startlocation is type Coordinate, and candidates is list of types Targets
+# Also works with Hazards
 def _findNearest(start_location,candidates):
     current_shortest_distance = -1 # Init with an impossible distance
     current_closest_target_index = 0
@@ -101,7 +102,7 @@ def _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obst
     hazard_candidate = Hazard(hazard_center.x,hazard_center.y,hazard_radius)  
     
     for obstacle in existing_obstacles:
-        if _is_overlapping(obstacle,hazard_candidate) or _is_within(start_pos,hazard_center,hazard_radius):
+        if _is_overlapping(obstacle,hazard_candidate) or _is_within(start_pos,hazard_center,(hazard_radius+10)):
             hazard_candidate = _create_unique_random_hazard(start_pos,x_bound,y_bound,r_bound,existing_obstacles)
             break
     
