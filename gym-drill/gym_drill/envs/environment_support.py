@@ -3,6 +3,7 @@ A place to implement smaller custom support functions to be used in the environm
 """
 import numpy as np
 from datetime import datetime
+import sys
 
 from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.Target import TargetBall
@@ -13,6 +14,58 @@ def _init_log(*,filename="drill_log.txt"):
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)
     f.close()
+
+# Returns position of Targets and Hazard as specified in filename
+# Line number has zero indexing and line 0 cannot be used as it is the documentation line.
+def _read_env_from_file(filename,line_number):
+    if line_number == 0:
+        print("Cannot read environments specification from line 0 as it is used for documentation")
+        print("Line number must be 1 or higher!")
+        sys.exit()
+
+    targets = []
+    hazards = []
+    file = open(filename)
+    environment_line = ""
+    # We iterate to the desired line to avoid loading all lines into memory
+    for i, line in enumerate(file):
+        if i == line_number:
+            environment_line = line
+            break
+    target_string = environment_line.split("-")[0] 
+    hazard_string = environment_line.split("-")[1] 
+    
+    target_list_string = target_string.split(";")
+    hazard_list_string = hazard_string.split(";")
+    
+    for t in target_list_string:
+        # "10,10,5"
+        l = t.split(",")
+        try:
+            x = int(l[0])
+            y = int(l[1])
+            z = int(l[2])
+            r = int(l[3])
+        except Exception:
+            raise ValueError("Coordinates in file are not numbers!")
+        target_ball = TargetBall(x,y,z,r)
+        targets.append(target_ball)
+        
+    for h in hazard_list_string:
+        # "10,10,5"
+        l = h.split(",")
+        try:
+            x = int(l[0])
+            y = int(l[1])
+            z = int(l[2])
+            r = int(l[3])
+        except Exception:
+            raise ValueError("Coordinates in file are not numbers!")
+        hazard_ball = Hazard(x,y,z,r)
+        hazards.append(hazard_ball)
+    
+    return targets, hazards
+
 
 # Returns an ordered list of randomly generated targets within the bounds given. 
 def _init_targets(num_targets,x_bound,y_bound,z_bound,r_bound,start_location):
@@ -108,3 +161,10 @@ def _create_unique_random_hazard(start_pos,x_bound,y_bound,z_bound,r_bound,exist
 
 def _is_within(bitPosition,targetPosition,targetRadius):
     return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 +(bitPosition.z - targetPosition.z)**2 < targetRadius**2
+
+if __name__ == '__main__':
+    targets, hazards = _read_env_from_file("environments.txt",1)
+    for t in targets:
+        print(t)
+    for h in hazards:
+        print(h)
