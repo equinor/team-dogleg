@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 #Setting up the environment
-STARTLOCATION = Coordinate(500,500,0)
+STARTLOCATION = Coordinate(1000,1000,0)
 BIT_INITIALIZATION = [random.uniform(0,2*np.pi),random.uniform(0,np.pi/4), 0.0, 0.0, 0.0, 0.0] #initial heading is also set to random in the reset function (drill_env.py)
 
 
@@ -39,15 +39,15 @@ policy_kwargs = dict(act_fun=tf.nn.relu, layers=[64,64,64,32]) # Use as argument
 
 #DQN-approach
 
-model_to_load = "3D_DQN_v2.0_230709"
-save_as = "3D_DQN_v2.0_2307_remake"
+model_to_load = "3D_remake_harder1"
+save_as = "3D_remake_harder0.5"
 tensorboard_folder = "./3d_lego/"
-tensorboard_run_name = "DQNv3"
+tensorboard_run_name = "DQNv3_harder0.5"
 #Chose one of the two lines below (#1 or #2):
 model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)          								#1) Make a new model
 #model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)				#2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=200000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 

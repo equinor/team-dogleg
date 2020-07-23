@@ -27,23 +27,23 @@ MAX_ANGACC = 0.02
 
 # The allowed increment. We either add or remove this value to the angular acceleration
 ANGACC_INCREMENT = 0.02
-DRILL_SPEED = 5
+DRILL_SPEED = 10
 
 # Screen size, environment should be square
-SCREEN_X = 1000
-SCREEN_Y = 1000
-SCREEN_Z = 1000
+SCREEN_X = 2000
+SCREEN_Y = 2000
+SCREEN_Z = 2000
 
 # Target specs
 
 TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
 TARGET_BOUND_Y = [0.25*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
-TARGET_RADII_BOUND = [40,100]
+TARGET_RADII_BOUND = [40,50]
 
 
-NUM_TARGETS = 3 
-TARGET_WINDOW_SIZE = 2
+NUM_TARGETS = 3
+TARGET_WINDOW_SIZE = 1
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
 
 # Hazard specs. Can be in entire screen

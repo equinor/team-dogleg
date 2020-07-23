@@ -145,23 +145,6 @@ class ObservationSpace:
         else:
             print("No more targets to add to window, we are done!")    
     
-        """
-            # Target related
-        self.target_window = targets[:TARGET_WINDOW_SIZE]
-        self.remaining_targets = targets[1:]
-        self.target_z_dist_bound = target_bounds[0]
-        self.target_xy_dist_bound = target_bounds[1]
-        self.target_rel_hor_ang_bound = target_bounds[2]
-        self.target_r_bound = target_bounds[3]
-
-        # Hazard related
-        self.hazards = hazards
-        self.hazard_window = self.find_closest_hazards(bit_starting_pos)
-        self.hazard_z_dist_bound = hazard_bounds[0]
-        self.hazard__xy_dist_bound = hazard_bounds[1]
-        self.hazard_rel_hor_ang_bound = hazard_bounds[2]
-        self.hazard_r_bound = hazard_bounds[3]
-        """
 
     def get_space_box(self):#This has to be updated to fit the 3D environment
         lower = np.array([self.lower_horizontal_heading,self.lower_vertical_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
