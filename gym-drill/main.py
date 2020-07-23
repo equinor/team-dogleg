@@ -39,16 +39,16 @@ policy_kwargs = dict(act_fun=tf.nn.relu, layers=[64,64,64,32]) # Use as argument
 
 #DQN-approach
 
-model_to_load = "3D_2007"
-save_as = "3D_DQN_2307"
-tensorboard_folder ="./3d_v2.0/"
-tensorboard_run_name = "DQN"
+model_to_load = "3D_DQN_v2.0_2307"
+save_as = "3D_DQN_v2.0_2307"
+tensorboard_folder ="./3d_lego/"
+tensorboard_run_name = "DQN_v2"
 #Chose one of the two lines below (#1 or #2):
-model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)          								#1) Make a new model
-#model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)				#2) Load an existing one from your own files
+#model = DQN(LnMlpPolicy, env, verbose=1,exploration_fraction=0.2, tensorboard_log=tensorboard_folder)          								#1) Make a new model
+model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)				#2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=1000, tb_log_name = tensorboard_run_name) #Where the learning happens
-model.save(save_as) #Saving the wisdom for later 
+#model.learn(total_timesteps=2000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+#model.save(save_as) #Saving the wisdom for later 
 
 
 #PPO2-approach
@@ -123,7 +123,7 @@ model.save(save_as) #Saving the wisdom for later
 print("Im done training and I will show you the results")
 #Show the result of the training
 obs = env.reset()
-for episode in range (2):
+for episode in range (10):
 	done = False
 	num_steps = 0
 	while done == False:
