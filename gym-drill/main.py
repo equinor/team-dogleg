@@ -136,9 +136,11 @@ for episode in range (10):
 		#print(rewards)
 		#print(obs)
 	print(num_steps)
+
 	env.display_3d_environment()
-	env.display_vertical_plane_of_environment()
-	env.display_horizontal_plane_of_environment()
+	env.display_planes()
+	#env.display_vertical_plane_of_environment()
+	#env.display_horizontal_plane_of_environment()
 	state = env.reset()
 	
 	env.close()

@@ -27,42 +27,56 @@ def _read_env_from_file(filename,line_number):
     hazards = []
     file = open(filename)
     environment_line = ""
+
     # We iterate to the desired line to avoid loading all lines into memory
     for i, line in enumerate(file):
         if i == line_number:
             environment_line = line
             break
-    target_string = environment_line.split("-")[0] 
-    hazard_string = environment_line.split("-")[1] 
     
+    target_string = environment_line.split("-")[0]
     target_list_string = target_string.split(";")
-    hazard_list_string = hazard_string.split(";")
-    
     for t in target_list_string:
         # "10,10,5"
         l = t.split(",")
         try:
-            x = int(l[0])
-            y = int(l[1])
-            z = int(l[2])
-            r = int(l[3])
+            x =l[0]
+            y = l[1]
+            z = l[2]
+            r = l[3]
+            x = int(x)
+            y = int(y)
+            z = int(z)
+            r = int(r)
+
         except Exception:
             raise ValueError("Coordinates in file are not numbers!")
         target_ball = TargetBall(x,y,z,r)
-        targets.append(target_ball)
+        targets.append(target_ball)   
+    
+    try: 
+        hazard_string = environment_line.split("-")[1]
+        hazard_list_string = hazard_string.split(";")
         
-    for h in hazard_list_string:
-        # "10,10,5"
-        l = h.split(",")
-        try:
-            x = int(l[0])
-            y = int(l[1])
-            z = int(l[2])
-            r = int(l[3])
-        except Exception:
-            raise ValueError("Coordinates in file are not numbers!")
-        hazard_ball = Hazard(x,y,z,r)
-        hazards.append(hazard_ball)
+        for h in hazard_list_string:
+            # "10,10,5"
+            l = h.split(",")
+            try:
+                x = l[0]
+                y = l[1]
+                z = l[2]
+                r = l[3]
+                x = int(x)
+                y = int(y)
+                z = int(z)
+                r = int(r)
+            except Exception:
+                raise ValueError("Coordinates in file are not numbers!")
+            
+            hazard_ball = Hazard(x,y,z,r)
+            hazards.append(hazard_ball)
+    except Exception:
+        hazards = []   
     
     return targets, hazards
 
