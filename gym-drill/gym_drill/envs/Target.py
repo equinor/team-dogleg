@@ -1,7 +1,5 @@
 from gym_drill.envs.Coordinate import Coordinate
 
-TARGET_REWARD = 100
-
 class TargetBall():
     def __init__(self, x, y, z, rad):
         self.center = Coordinate(x,y,z)

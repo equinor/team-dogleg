@@ -82,7 +82,10 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True,random_envs=True):
+        self.activate_hazards = activate_hazards
+        self.random_envs = random_envs
+
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         self.start_z = startLocation.z
@@ -102,33 +105,19 @@ class DrillEnv(gym.Env):
         self.horizontal_angAcc = bitInitialization[4]
         self.vertical_angAcc =bitInitialization[5]      
 
-        # For resetting the environment
-
-        self.initialBitLocation = startLocation
-        
+        # For resetting the environment        
         self.initial_horizontal_heading = bitInitialization[0]
-        self.initial_vertical_heading = bitInitialization[1]
-        
+        self.initial_vertical_heading = bitInitialization[1]        
         self.initial_horizontal_angVel = bitInitialization[2]
         self.initial_vertical_angVel = bitInitialization[3]
-
         self.initial_horizontal_angAcc = bitInitialization[4]
         self.initial_vertical_angAcc = bitInitialization[5]      
 
-        # Init targets. See _init_targets function
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startLocation)
-        self.activate_hazards = activate_hazards
-        if self.activate_hazards:
-            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startLocation,self.targets)
-        else:
-            #print("Initiating environment without hazards")
-            self.hazards = []
-
-        self.action_space = spaces.Discrete(9)        
-
+        # Setting up environment and obs_space
+        self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
-      
         self.observation_space = self.observation_space_container.get_space_box()        
+        self.action_space = spaces.Discrete(9)     
 
         self.seed()
         self.viewer = None
@@ -140,6 +129,18 @@ class DrillEnv(gym.Env):
         self.total_reward = 0      
         es._init_log()
         """
+    def create_targets_and_hazards(self):
+        if self.random_envs:
+            self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startLocation)
+            if self.activate_hazards:
+                self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startLocation,self.targets)
+            else:
+                self.hazards = []
+        else:
+            self.targets,self.hazards = es.read_env_from_file(ENVIRONMENT_FILENAME,2)
+            # Overwrite hazards if not activated
+            if not self.activate_hazards:
+                self.hazards = []
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -182,8 +183,8 @@ class DrillEnv(gym.Env):
         for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
                 reward -= HAZARD_PENALTY
-                #done = True
                 h.is_hit = True
+                #done = True
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
@@ -346,14 +347,7 @@ class DrillEnv(gym.Env):
         # Save the starting position as "first" step
         self.step_history = [[self.start_x,self.start_y,self.start_z]]       
 
-        # Need to init new targets
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,self.bitLocation)             
-        
-        # Init new hazards
-        if self.activate_hazards:
-            self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],[0.25*SCREEN_Z,0.85*SCREEN_Z],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
-        else:
-            self.hazards = []
+        self.create_targets_and_hazards()
 
         # Re-configure the observation space
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
