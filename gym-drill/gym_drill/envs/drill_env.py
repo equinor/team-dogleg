@@ -23,11 +23,11 @@ MAX_VERT_ANGLE = np.pi
 
 # Max values for angular velocity and acceleration
 MAX_ANGVEL = 0.1
-MAX_ANGACC = 0.05
+MAX_ANGACC = 0.02
 
 # The allowed increment. We either add or remove this value to the angular acceleration
-ANGACC_INCREMENT = 0.01
-DRILL_SPEED = 10
+ANGACC_INCREMENT = 0.02
+DRILL_SPEED = 5
 
 # Screen size, environment should be square
 SCREEN_X = 1000
@@ -35,16 +35,19 @@ SCREEN_Y = 1000
 SCREEN_Z = 1000
 
 # Target specs
+
 TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
 TARGET_BOUND_Y = [0.25*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [40,100]
 
-NUM_TARGETS = 1
+
+NUM_TARGETS = 3 
 TARGET_WINDOW_SIZE = 1
 NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
 
 # Hazard specs. Can be in entire screen
+
 HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_BOUND_Z = [0,SCREEN_Z]
@@ -52,18 +55,17 @@ HAZARD_RADII_BOUND = [40,100]
 
 NUM_HAZARDS = 0
 
+# Common specs for both targets and hazards
+VER_DIST_BOUND = [-SCREEN_Z, SCREEN_Z]
+HOR_DIST_BOUND = [0,np.sqrt(SCREEN_X**2+SCREEN_Y**2)]
+REL_HOR_ANGLE_BOUND = [-np.pi,np.pi]
+
 # Observation space specs (vectorized bounds)
 SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] 
 BIT_BOUNDS = [0,2*np.pi,0,np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC,-MAX_ANGACC,MAX_ANGACC]
-HAZARD_BOUNDS = [HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND]
-TARGET_BOUNDS = [TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z, TARGET_RADII_BOUND]
+HAZARD_BOUNDS = [VER_DIST_BOUND,HOR_DIST_BOUND,REL_HOR_ANGLE_BOUND,HAZARD_RADII_BOUND]
+TARGET_BOUNDS = [VER_DIST_BOUND,HOR_DIST_BOUND,REL_HOR_ANGLE_BOUND,TARGET_RADII_BOUND]
 
-# Additional data
-DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
-HEIGHT_DIFF_BOUND = [-SCREEN_Z,SCREEN_Z]
-RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
-
-EXTRA_DATA_BOUNDS = [HEIGHT_DIFF_BOUND,RELATIVE_ANGLE_BOUND] # [Distance, angle between current direction and target direction]
 
 # Rewards
 STEP_PENALTY = -0.0
@@ -126,7 +128,7 @@ class DrillEnv(gym.Env):
 
         self.action_space = spaces.Discrete(9)        
 
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
 
@@ -189,8 +191,9 @@ class DrillEnv(gym.Env):
             done= True                        
 
         # Find the values of the current target
-        current_target_pos = np.array([self.state[9], self.state[10], self.state[11]])
-        current_target_rad = self.state[12]
+        current_target = self.observation_space_container.target_window[0] #object of target class
+        current_target_pos = np.array([current_target.center.x, current_target.center.y, current_target.center.z])
+        current_target_rad = current_target.radius
         drill_pos = np.array([self.bitLocation.x, self.bitLocation.y, self.bitLocation.z])
 
         # Check if target is hit
@@ -205,13 +208,26 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
-            reward_factor = np.cos(self.get_horizontal_angle_relative_to_target()) # value between -1 and +1 
+            reward_factor = np.cos(self.get_relative_horizontal_angle(current_target)) # value between -1 and +1 
             reward += reward_factor*ANGLE_REWARD_FACTOR #reward for having a correct horizontal-angle
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
                 reward += np.cos(self.vertical_heading)*(height_diff/abs(height_diff))*0.5 #should be global constant #reward for going in the right directen (up/down)
         return reward, done
 
+
+    def get_xy_dist(self,obj):
+        return np.sqrt((obj.center.x -self.bitLocation.x)**2+(obj.center.y - self.bitLocation.y)**2)
+        
+    def get_relative_horizontal_angle(self,obj):
+        object_hor_pos_vector = np.array([obj.center.x,obj.center.y])
+        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
+        appr_vec = object_hor_pos_vector - curr_drill_hor_pos_vector
+        head_vec = np.array([np.cos(self.horizontal_heading), np.sin(self.horizontal_heading)])
+        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+
+        return angle_between_vectors
+    """
     def get_horizontal_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
                 
@@ -224,7 +240,7 @@ class DrillEnv(gym.Env):
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
-
+    """
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         
@@ -301,27 +317,45 @@ class DrillEnv(gym.Env):
     # Returns tuple of current state
     def get_state(self):
         # Core bit data
-        state_list = [self.bitLocation.x, self.bitLocation.y, self.bitLocation.z, self.horizontal_heading,self.vertical_heading, self.horizontal_angVel,self.vertical_angVel, self.horizontal_angAcc,self.vertical_angAcc]
+        state_list = [self.horizontal_heading,self.vertical_heading, self.horizontal_angVel,self.vertical_angVel, self.horizontal_angAcc,self.vertical_angAcc]
         # Target data that are inside the window
         for target in self.observation_space_container.target_window: # This will cause bug
+            """
             state_list.append(target.center.x)
             state_list.append(target.center.y)
             state_list.append(target.center.z)
             state_list.append(target.radius)
+            """
+            state_list.append(target.center.z-self.bitLocation.z)
+            state_list.append(self.get_xy_dist(target))
+            state_list.append(self.get_relative_horizontal_angle(target))
+            state_list.append(target.radius)
+
+
         # Get all hazards inside window
         for hazard in self.observation_space_container.hazard_window:
+            """
             state_list.append(hazard.center.x)
             state_list.append(hazard.center.y)
             state_list.append(hazard.center.z)
             state_list.append(hazard.radius)
+            """
+            state_list.append(hazard.center.z-self.bitLocation.z)
+            state_list.append(self.get_xy_dist(hazard))
+            state_list.append(self.get_relative_horizontal_angle(hazard))
+            state_list.append(hazard.radius)
+
         # Extra data
+        """
         current_target = self.observation_space_container.target_window[0]
         height_diff = current_target.center.z - self.bitLocation.z
 
         relative_angle = self.get_horizontal_angle_relative_to_target()
 
         state_list =  state_list + [height_diff, relative_angle]
-        return tuple(state_list)        
+        """
+        return tuple(state_list) 
+            
 
     def reset(self):
         # Save previous run to log
@@ -356,7 +390,7 @@ class DrillEnv(gym.Env):
             self.hazards = []
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,self.targets,self.hazards,self.bitLocation)
+        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -380,21 +414,21 @@ class DrillEnv(gym.Env):
             self.viewer = None
     
     def display_state(self):
-        print("Bit location:", Coordinate(self.state[0],self.state[1],self.state[2]))
-        print("Bit angles: ", self.state[3:8])
+        print("Bit location:", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
+        print("Bit angles: ", self.state[0:5])
         print("Targets inside window: ")
         for i in range(len(self.observation_space_container.target_window)):
-            t = TargetBall(self.state[9+4*i],self.state[10+4*i],self.state[11+4*i],self.state[12+4*i])
+            t = TargetBall(self.state[6+4*i],self.state[7+4*i],self.state[8+4*i],self.state[9+4*i])
             print(t)
         print("Hazards inside window")
         for i in range(len(self.observation_space_container.hazard_window)):
-            h = Hazard(self.state[21+4*i],self.state[22+4*i],self.state[23+4*i],self.state[24+4*i])
+            h = Hazard(self.state[6+TARGET_WINDOW_SIZE*4+4*i],self.state[7+TARGET_WINDOW_SIZE*4+4*i],self.state[8+TARGET_WINDOW_SIZE*4+4*i],self.state[9+TARGET_WINDOW_SIZE*4+4*i])
             print(h)
-
+        """
         print("Extra data:")
         print("Distance: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)])
         print("Relative angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+1])
-
+        """
 
 
     def display_horizontal_plane_of_environment(self):
@@ -589,7 +623,7 @@ if __name__ == '__main__':
     print("Creating Hazards")    
     h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startpos,t)
     for eden_hazard in h:
-        print(eden_hazard) #haha
+        print(eden_hazard)
     
     # plot circles from targetballs, colors just to verify the order of the balls
     theta = np.linspace(0, 2*np.pi, 100)

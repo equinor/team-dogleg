@@ -11,9 +11,9 @@ from gym import spaces
 TARGET_WINDOW_SIZE = 1
 HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST THIS MANY HAZARDS
 
-# Targets are assumed to be ordered
+# Targets are assumed to be ordered ObservationSpace(TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
 class ObservationSpace:
-    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,extra_data,targets,hazards, bit_starting_pos):
+    def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,targets,hazards, bit_starting_pos):
         # Spacial
         self.lower_x = space_bounds[0]
         self.upper_x = space_bounds[1]
@@ -35,23 +35,24 @@ class ObservationSpace:
         # Target related
         self.target_window = targets[:TARGET_WINDOW_SIZE]
         self.remaining_targets = targets[1:]
-        self.target_bound_x = target_bounds[0]
-        self.target_bound_y = target_bounds[1]
-        self.target_bound_z = target_bounds[2]
-        self.target_bound_r = target_bounds[3]
+        self.target_z_dist_bound = target_bounds[0]
+        self.target_xy_dist_bound = target_bounds[1]
+        self.target_rel_hor_ang_bound = target_bounds[2]
+        self.target_r_bound = target_bounds[3]
 
         # Hazard related
         self.hazards = hazards
         self.hazard_window = self.find_closest_hazards(bit_starting_pos)
-        self.hazard_bound_x = hazard_bounds[0]
-        self.hazard_bound_y = hazard_bounds[1]
-        self.hazard_bound_z = hazard_bounds[2]
-        self.hazard_bound_r = hazard_bounds[3]
+        self.hazard_z_dist_bound = hazard_bounds[0]
+        self.hazard_xy_dist_bound = hazard_bounds[1]
+        self.hazard_rel_hor_ang_bound = hazard_bounds[2]
+        self.hazard_r_bound = hazard_bounds[3]
 
         # Extra data
+        """
         self.height_diff_bound = extra_data[0]
         self.relative_angle_bound = extra_data[1]
-
+        """
     def display_targets(self):
         print("The current target window looks like this:")
         for w in self.target_window:
@@ -87,7 +88,7 @@ class ObservationSpace:
         text = text + "There are " + str(len(self.remaining_targets))+  " remaining targets. These are: \n" 
         for t in self.remaining_targets:
             text = text + str(t) + "\n"       
-                
+        """
         text = text + "Target bounds are: \n" + "x: " + str(self.target_bound_x) + "\n" \
         + "y: " + str(self.target_bound_y) + "\n" \
         + "z: " + str(self.target_bound_z) + "\n" \
@@ -97,6 +98,7 @@ class ObservationSpace:
         + "z: " + str(self.hazard_bound_z) + "\n" \
         + "r: " + str(self.hazard_bound_r) + "\n" \
         + "The hazards inside the window are: \n"
+        
         for h in self.hazard_window:
             text = text + str(h) + "\n"
         text = text + "There are a total of" + str(len(self.hazards)) + " hazards, these are \n" 
@@ -106,7 +108,7 @@ class ObservationSpace:
         text = text + "The extra data bounds are: \n" \
         + "Target distance: " + str(self.height_diff_bound) +"\n" \
         + "Relative angle " + str(self.relative_angle_bound)
-
+        """
         return text      
     
     def find_closest_hazards(self,bitPostion):
@@ -143,22 +145,41 @@ class ObservationSpace:
         else:
             print("No more targets to add to window, we are done!")    
     
+        """
+            # Target related
+        self.target_window = targets[:TARGET_WINDOW_SIZE]
+        self.remaining_targets = targets[1:]
+        self.target_z_dist_bound = target_bounds[0]
+        self.target_xy_dist_bound = target_bounds[1]
+        self.target_rel_hor_ang_bound = target_bounds[2]
+        self.target_r_bound = target_bounds[3]
+
+        # Hazard related
+        self.hazards = hazards
+        self.hazard_window = self.find_closest_hazards(bit_starting_pos)
+        self.hazard_z_dist_bound = hazard_bounds[0]
+        self.hazard__xy_dist_bound = hazard_bounds[1]
+        self.hazard_rel_hor_ang_bound = hazard_bounds[2]
+        self.hazard_r_bound = hazard_bounds[3]
+        """
+
     def get_space_box(self):#This has to be updated to fit the 3D environment
-        lower = np.array([self.lower_x,self.lower_y,self.lower_z,self.lower_horizontal_heading,self.lower_vertical_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
-        upper = np.array([self.upper_x,self.upper_y,self.upper_z,self.upper_horizontal_heading,self.upper_vertical_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
+        lower = np.array([self.lower_horizontal_heading,self.lower_vertical_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
+        upper = np.array([self.upper_horizontal_heading,self.upper_vertical_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
 
         for _ in range(TARGET_WINDOW_SIZE):
-            lower = np.append(lower,[self.target_bound_x[0],self.target_bound_y[0],self.target_bound_z[0],self.target_bound_r[0]])
-            upper = np.append(upper,[self.target_bound_x[1],self.target_bound_y[1],self.target_bound_z[1],self.target_bound_r[1]])
+            lower = np.append(lower,[self.target_z_dist_bound[0],self.target_xy_dist_bound[0],self.target_rel_hor_ang_bound[0],self.target_r_bound[0]])
+            upper = np.append(upper,[self.target_z_dist_bound[1],self.target_xy_dist_bound[1],self.target_rel_hor_ang_bound[1],self.target_r_bound[1]])
 
         for _ in range(HAZARD_WINDOW_SIZE):
-            lower = np.append(lower,[self.hazard_bound_x[0],self.hazard_bound_y[0],self.hazard_bound_z[0],self.hazard_bound_r[0]])
-            upper = np.append(upper,[self.hazard_bound_x[1],self.hazard_bound_y[1],self.hazard_bound_z[1],self.hazard_bound_r[1]])       
+            lower = np.append(lower,[self.hazard_z_dist_bound[0],self.hazard_xy_dist_bound[0],self.hazard_rel_hor_ang_bound[0],self.hazard_r_bound[0]])
+            upper = np.append(upper,[self.hazard_z_dist_bound[1],self.hazard_xy_dist_bound[1],self.hazard_rel_hor_ang_bound[1],self.hazard_r_bound[1]])       
         
         # Add extra data
+        """
         lower = np.append(lower,[self.height_diff_bound[0],self.relative_angle_bound[0]])
         upper = np.append(upper,[self.height_diff_bound[1],self.relative_angle_bound[1]])
-        
+        """
         return spaces.Box(lower,upper,dtype=np.float64)    
 
 
@@ -207,7 +228,7 @@ if __name__ == '__main__':
 
     print("Creating obs_space")
     print()
-    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,EXTRA_DATA_BOUNDS,targets,hazards,Coordinate(1000,1000,1000))
+    obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,targets,hazards,Coordinate(1000,1000,1000))
     #print(obs_space)
     print("test hazard window")
     obs_space.update_hazard_window(Coordinate(600,600,600))
