@@ -2,14 +2,11 @@ from gym_drill.envs.Coordinate import Coordinate
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
+from gym_drill.envs import environment_config as cfg
 
 import numpy as np
 import gym
 from gym import spaces
-
-# Designited slots in the observation space
-TARGET_WINDOW_SIZE = 3
-HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST THIS MANY HAZARDS
 
 # Targets are assumed to be ordered ObservationSpace(TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
 class ObservationSpace:
@@ -33,7 +30,7 @@ class ObservationSpace:
         self.upper_ang_acc = bit_bounds[7]
 
         # Target related
-        self.target_window = targets[:TARGET_WINDOW_SIZE]
+        self.target_window = targets[:cfg.TARGET_WINDOW_SIZE]
         self.remaining_targets = targets[1:]
         self.target_z_dist_bound = target_bounds[0]
         self.target_xy_dist_bound = target_bounds[1]
@@ -80,7 +77,7 @@ class ObservationSpace:
         + str(self.upper_vertical_heading) + "] \n" \
         + "Angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
         + "Angular acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
-        + "There are " + str(TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" 
+        + "There are " + str(cfg.TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" 
         
         for t in self.target_window:
             text = text + str(t) + "\n"
@@ -118,7 +115,7 @@ class ObservationSpace:
             candidates.append(h)
 
         window = []
-        for _ in range(HAZARD_WINDOW_SIZE):
+        for _ in range(cfg.HAZARD_WINDOW_SIZE):
             closest_index = es._findNearest(bitPostion,candidates)
             window.append(candidates[closest_index])
             candidates.pop(closest_index)
@@ -132,14 +129,14 @@ class ObservationSpace:
     # Shifts window. The last target will be loaded 3 times (fill the entire window)
     # When there are no more remaining_targets, nothing will happen 
     def shift_target_window(self):
-        if len(self.remaining_targets) >= TARGET_WINDOW_SIZE:
-            self.target_window = self.remaining_targets[:TARGET_WINDOW_SIZE]
+        if len(self.remaining_targets) >= cfg.TARGET_WINDOW_SIZE:
+            self.target_window = self.remaining_targets[:cfg.TARGET_WINDOW_SIZE]
             self.remaining_targets.pop(0)
         elif len(self.remaining_targets) > 0:
             # Load like normal
-            self.target_window = self.remaining_targets[:TARGET_WINDOW_SIZE]
+            self.target_window = self.remaining_targets[:cfg.TARGET_WINDOW_SIZE]
             self.remaining_targets.pop(0)
-            while len(self.target_window) < TARGET_WINDOW_SIZE:
+            while len(self.target_window) < cfg.TARGET_WINDOW_SIZE:
                 # Add the last element of target_window, until window is big enough
                 self.target_window.append(self.target_window[-1:][0])
         else:
@@ -150,11 +147,11 @@ class ObservationSpace:
         lower = np.array([self.lower_horizontal_heading,self.lower_vertical_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
         upper = np.array([self.upper_horizontal_heading,self.upper_vertical_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
 
-        for _ in range(TARGET_WINDOW_SIZE):
+        for _ in range(cfg.TARGET_WINDOW_SIZE):
             lower = np.append(lower,[self.target_z_dist_bound[0],self.target_xy_dist_bound[0],self.target_rel_hor_ang_bound[0],self.target_r_bound[0]])
             upper = np.append(upper,[self.target_z_dist_bound[1],self.target_xy_dist_bound[1],self.target_rel_hor_ang_bound[1],self.target_r_bound[1]])
 
-        for _ in range(HAZARD_WINDOW_SIZE):
+        for _ in range(cfg.HAZARD_WINDOW_SIZE):
             lower = np.append(lower,[self.hazard_z_dist_bound[0],self.hazard_xy_dist_bound[0],self.hazard_rel_hor_ang_bound[0],self.hazard_r_bound[0]])
             upper = np.append(upper,[self.hazard_z_dist_bound[1],self.hazard_xy_dist_bound[1],self.hazard_rel_hor_ang_bound[1],self.hazard_r_bound[1]])       
         
@@ -220,7 +217,7 @@ if __name__ == '__main__':
     
     box = obs_space.get_space_box()
     print(box)
-    print("Expected dimension of the obs space is: ", 6 + 4*TARGET_WINDOW_SIZE + 4*(HAZARD_WINDOW_SIZE) + 0) # Only 0 extra data
+    print("Expected dimension of the obs space is: ", 6 + 4*cfg.TARGET_WINDOW_SIZE + 4*(cfg.HAZARD_WINDOW_SIZE) + 0) # Only 0 extra data
     
     print("Test shifting of window")
     print("State before shifting")
