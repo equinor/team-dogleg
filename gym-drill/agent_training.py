@@ -126,7 +126,9 @@ def display_agent(model,*,num_episodes = 1,source_folder = TRAINED_MODEL_FOLDER_
 			while not done:
 				action, _states = trained_model.predict(obs)
 				obs, rewards, done, info = ENV.step(action)
+			print("Showing 3D plot at: http://127.0.0.1:8988/")
 			ENV.display_3d_environment()
+			print("Showing Planes plot at: http://127.0.0.1:8988/")
 			ENV.display_planes()
 			state = ENV.reset()
 			

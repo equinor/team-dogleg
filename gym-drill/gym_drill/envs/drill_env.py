@@ -2,6 +2,8 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
+import matplotlib as mpl # To remove plotting in the browser remove this line
+mpl.use("WebAgg") # and remove this line
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
