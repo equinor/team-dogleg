@@ -32,7 +32,7 @@ register(
     entry_point='gym_drill.envs:DrillEnv',
     kwargs={
         # Default values
-        "startLocation" : Coordinate(100.0,300.0),
+        "startLocation" : Coordinate(1000,1000,0),
         "bitInitialization" : [3*np.pi/4,0.0,0.0]
 
     }

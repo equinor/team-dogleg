@@ -15,71 +15,7 @@ from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
 from gym_drill.envs import rdwellpath as rwp
-
-# PARAMETERS RELATED TO THE MODEL AND OBSERVATION SPACE
-
-# Min and max vertical angle
-MIN_VERT_ANGLE = 0
-MAX_VERT_ANGLE = np.pi
-
-# Max values for angular velocity and acceleration
-MAX_ANGVEL = 0.1
-MAX_ANGACC = 0.02
-
-# The allowed increment. We either add or remove this value to the angular acceleration
-ANGACC_INCREMENT = 0.02
-DRILL_SPEED = 10
-
-# Screen size, environment should be square
-SCREEN_X = 2000
-SCREEN_Y = 2000
-SCREEN_Z = 2000
-
-# Target specs
-
-TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
-TARGET_BOUND_Y = [0.25*SCREEN_Y,0.75*SCREEN_Y]
-TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
-TARGET_RADII_BOUND = [40,50]
-
-
-NUM_TARGETS = 3
-TARGET_WINDOW_SIZE = 1
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
-
-# Hazard specs. Can be in entire screen
-
-HAZARD_BOUND_X = [0,SCREEN_X]
-HAZARD_BOUND_Y = [0,SCREEN_Y]
-HAZARD_BOUND_Z = [0,SCREEN_Z]
-HAZARD_RADII_BOUND = [40,100]
-
-NUM_HAZARDS = 0
-
-# Common specs for both targets and hazards
-VER_DIST_BOUND = [-SCREEN_Z, SCREEN_Z]
-HOR_DIST_BOUND = [0,np.sqrt(SCREEN_X**2+SCREEN_Y**2)]
-REL_HOR_ANGLE_BOUND = [-np.pi,np.pi]
-
-# Observation space specs (vectorized bounds)
-SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] 
-BIT_BOUNDS = [0,2*np.pi,0,np.pi,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGVEL,MAX_ANGVEL,-MAX_ANGACC,MAX_ANGACC,-MAX_ANGACC,MAX_ANGACC]
-HAZARD_BOUNDS = [VER_DIST_BOUND,HOR_DIST_BOUND,REL_HOR_ANGLE_BOUND,HAZARD_RADII_BOUND]
-TARGET_BOUNDS = [VER_DIST_BOUND,HOR_DIST_BOUND,REL_HOR_ANGLE_BOUND,TARGET_RADII_BOUND]
-
-
-# Rewards
-STEP_PENALTY = -0.0
-ANGULAR_VELOCITY_PENALTY = 0.0
-ANGULAR_ACCELERATION_PENALTY = 0.0
-OUTSIDE_SCREEN_PENALTY = 0.0
-TARGET_REWARD = 100.0
-HAZARD_PENALTY = -200.0
-ANGLE_REWARD_FACTOR = 0.5
-FINISHED_EARLY_FACTOR = 1 # Point per unused step
-
-NUM_MONTE_CARLO_ENVS = int(1e3)
-ENVIRONMENT_FILENAME = "environments.txt"
+from gym_drill.envs import environment_config as cfg
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -120,11 +56,11 @@ class DrillEnv(gym.Env):
         
         # Generate feasible environments to train in using a Monte Carlo simulation 
         if self.monte_carlo:
-            print("Running", str(NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
-            rwp.random_targetset_to_file(ENVIRONMENT_FILENAME,NUM_MONTE_CARLO_ENVS,NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],120,200)      
+            print("Running", str(cfg.NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
+            rwp.random_targetset_to_file(cfg.ENVIRONMENT_FILENAME,cfg.NUM_MONTE_CARLO_ENVS,cfg.NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],120,200)      
 
         self.create_targets_and_hazards()
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
         self.observation_space = self.observation_space_container.get_space_box()        
         self.action_space = spaces.Discrete(9)     
 
@@ -140,14 +76,14 @@ class DrillEnv(gym.Env):
         """
     def create_targets_and_hazards(self):
         if not self.monte_carlo:
-            self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,self.bitLocation)
+            self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_BOUND_Z,cfg.TARGET_RADII_BOUND,self.bitLocation)
             if self.activate_hazards:
-                self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+                self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_BOUND_Z,cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
             else:
                 self.hazards = []
         else:
-            linenr = np.random.randint(1,NUM_MONTE_CARLO_ENVS)
-            self.targets,self.hazards = es._read_env_from_file(ENVIRONMENT_FILENAME,linenr)
+            linenr = np.random.randint(1,cfg.NUM_MONTE_CARLO_ENVS)
+            self.targets,self.hazards = es._read_env_from_file(cfg.ENVIRONMENT_FILENAME,linenr)
             # Overwrite hazards if not activated
             if not self.activate_hazards:
                 self.hazards = []
@@ -169,34 +105,34 @@ class DrillEnv(gym.Env):
     # Returns the reward for the step and if episode is over
     def get_reward_and_done_signal(self):
         done = False      
-        reward = STEP_PENALTY
+        reward = cfg.STEP_PENALTY
         
         if self.horizontal_angAcc != 0:
-            reward += ANGULAR_ACCELERATION_PENALTY
+            reward += cfg.ANGULAR_ACCELERATION_PENALTY
         
         if self.horizontal_angVel != 0:
-            reward += ANGULAR_VELOCITY_PENALTY
+            reward += cfg.ANGULAR_VELOCITY_PENALTY
         
         if self.vertical_angAcc != 0:
-            reward += ANGULAR_ACCELERATION_PENALTY
+            reward += cfg.ANGULAR_ACCELERATION_PENALTY
         
         if self.vertical_angVel != 0:
-            reward += ANGULAR_VELOCITY_PENALTY
+            reward += cfg.ANGULAR_VELOCITY_PENALTY
         
 
         # If drill is no longer on screen, game over.
-        if not (0 < self.bitLocation.x < SCREEN_X and 0 < self.bitLocation.y < SCREEN_Y and 0 < self.bitLocation.z < SCREEN_Z):
-            reward  += OUTSIDE_SCREEN_PENALTY
+        if not (0 < self.bitLocation.x < cfg.SCREEN_X and 0 < self.bitLocation.y < cfg.SCREEN_Y and 0 < self.bitLocation.z < cfg.SCREEN_Z):
+            reward  += cfg.OUTSIDE_SCREEN_PENALTY
             done = True   
         
         # Check if we hit a hazard
         for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
-                reward -= HAZARD_PENALTY
+                reward -= cfg.HAZARD_PENALTY
                 h.is_hit = True
                 #done = True
 
-        if len(self.step_history)>NUM_MAX_STEPS:
+        if len(self.step_history)>cfg.NUM_MAX_STEPS:
             done= True                        
 
         # Find the values of the current target
@@ -208,17 +144,17 @@ class DrillEnv(gym.Env):
         # Check if target is hit
         if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
         #if es._is_within(self.bitLocation,self.observation_space_container.target_window[0].center,self.observation_space_container.target_window[0].radius):
-            reward += TARGET_REWARD
+            reward += cfg.TARGET_REWARD
 
             if len(self.observation_space_container.remaining_targets) == 0:
-                reward += (NUM_MAX_STEPS-len(self.step_history))*FINISHED_EARLY_FACTOR
+                reward += (cfg.NUM_MAX_STEPS-len(self.step_history))*cfg.FINISHED_EARLY_FACTOR
                 done = True
             else:
                 self.observation_space_container.shift_target_window()
         
         else:
             reward_factor = np.cos(self.get_relative_horizontal_angle(current_target)) # value between -1 and +1 
-            reward += reward_factor*ANGLE_REWARD_FACTOR #reward for having a correct horizontal-angle
+            reward += reward_factor*cfg.ANGLE_REWARD_FACTOR #reward for having a correct horizontal-angle
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
                 reward += np.cos(self.vertical_heading)*(height_diff/abs(height_diff))*0.5 #should be global constant #reward for going in the right directen (up/down)
@@ -253,44 +189,44 @@ class DrillEnv(gym.Env):
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         # Update angular acceleration, if within limits
-        if action < 3 and self.vertical_angAcc < MAX_ANGACC:            #indexes of action space:
-            self.vertical_angAcc += ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
-        elif action > 5 and self.vertical_angAcc > -MAX_ANGACC:         #   3       4       5 | (3-5): don't accelate in the vertical plane
-            self.vertical_angAcc -= ANGACC_INCREMENT                    #   6       7       8 | (6-8): accelerate downwards
+        if action < 3 and self.vertical_angAcc < cfg.MAX_ANGACC:            #indexes of action space:
+            self.vertical_angAcc += cfg.ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
+        elif action > 5 and self.vertical_angAcc > -cfg.MAX_ANGACC:         #   3       4       5 | (3-5): don't accelate in the vertical plane
+            self.vertical_angAcc -= cfg.ANGACC_INCREMENT                    #   6       7       8 | (6-8): accelerate downwards
                                                                         #---------------------
                                                                         #(0,3,6): accelerate left 
                                                                         #        (1,4,7): don't accelerate in the horizontal plane
                                                                         #                (2,5,8): accelerate right
-        if (action == 0 or action == 3 or action == 6) and self.horizontal_angAcc > -MAX_ANGACC:
-            self.horizontal_angAcc -= ANGACC_INCREMENT
-        elif (action == 2 or action == 5 or action == 8) and self.horizontal_angAcc < MAX_ANGACC:
-            self.horizontal_angAcc += ANGACC_INCREMENT
+        if (action == 0 or action == 3 or action == 6) and self.horizontal_angAcc > -cfg.MAX_ANGACC:
+            self.horizontal_angAcc -= cfg.ANGACC_INCREMENT
+        elif (action == 2 or action == 5 or action == 8) and self.horizontal_angAcc < cfg.MAX_ANGACC:
+            self.horizontal_angAcc += cfg.ANGACC_INCREMENT
         
 
         # Update angular velocity
 
             # horizontal
-        if abs(self.horizontal_angVel + self.horizontal_angAcc) < MAX_ANGVEL:
+        if abs(self.horizontal_angVel + self.horizontal_angAcc) < cfg.MAX_ANGVEL:
             self.horizontal_angVel += self.horizontal_angAcc
 
-        elif (self.horizontal_angVel + self.horizontal_angAcc) <= -MAX_ANGVEL:
-            self.horizontal_angVel = -MAX_ANGVEL
+        elif (self.horizontal_angVel + self.horizontal_angAcc) <= -cfg.MAX_ANGVEL:
+            self.horizontal_angVel = -cfg.MAX_ANGVEL
             self.horizontal_angAcc = 0
         
-        elif (self.horizontal_angVel + self.horizontal_angAcc) >= MAX_ANGVEL:
-            self.horizontal_angVel = MAX_ANGVEL
+        elif (self.horizontal_angVel + self.horizontal_angAcc) >= cfg.MAX_ANGVEL:
+            self.horizontal_angVel = cfg.MAX_ANGVEL
             self.horizontal_angAcc = 0
 
             # vertical
-        if abs(self.vertical_angVel + self.vertical_angAcc) < MAX_ANGVEL:
+        if abs(self.vertical_angVel + self.vertical_angAcc) < cfg.MAX_ANGVEL:
             self.vertical_angVel += self.vertical_angAcc
 
-        elif (self.vertical_angVel + self.vertical_angAcc) <= -MAX_ANGVEL:
-            self.vertical_angVel = -MAX_ANGVEL
+        elif (self.vertical_angVel + self.vertical_angAcc) <= -cfg.MAX_ANGVEL:
+            self.vertical_angVel = -cfg.MAX_ANGVEL
             self.vertical_angAcc = 0
         
-        elif (self.vertical_angVel + self.vertical_angAcc) >= MAX_ANGVEL:
-            self.vertical_angVel = MAX_ANGVEL
+        elif (self.vertical_angVel + self.vertical_angAcc) >= cfg.MAX_ANGVEL:
+            self.vertical_angVel = cfg.MAX_ANGVEL
             self.vertical_angAcc = 0
 
 
@@ -299,25 +235,25 @@ class DrillEnv(gym.Env):
         self.horizontal_heading = (self.horizontal_heading + self.horizontal_angVel) % (2 * np.pi)
 
         
-        if ((self.vertical_heading + self.vertical_angVel) < MAX_VERT_ANGLE) and ((self.vertical_heading + self.vertical_angVel) > MIN_VERT_ANGLE):
+        if ((self.vertical_heading + self.vertical_angVel) < cfg.MAX_VERT_ANGLE) and ((self.vertical_heading + self.vertical_angVel) > cfg.MIN_VERT_ANGLE):
             self.vertical_heading= self.vertical_heading + self.vertical_angVel
 
-        elif ((self.vertical_heading + self.vertical_angVel) >= MAX_VERT_ANGLE):
-            self.vertical_heading = MAX_VERT_ANGLE
+        elif ((self.vertical_heading + self.vertical_angVel) >= cfg.MAX_VERT_ANGLE):
+            self.vertical_heading = cfg.MAX_VERT_ANGLE
             self.vertical_angVel = 0
             self.vertical_angAcc = 0
 
-        elif ((self.vertical_heading + self.vertical_angVel) <= MIN_VERT_ANGLE):
-            self.vertical_heading = MIN_VERT_ANGLE
+        elif ((self.vertical_heading + self.vertical_angVel) <= cfg.MIN_VERT_ANGLE):
+            self.vertical_heading = cfg.MIN_VERT_ANGLE
             self.vertical_angVel = 0
             self.vertical_angAcc = 0
 
 
 
         # Update position
-        self.bitLocation.x += DRILL_SPEED * np.sin(self.vertical_heading)*np.cos(self.horizontal_heading)
-        self.bitLocation.y += DRILL_SPEED *np.sin(self.vertical_heading)*np.sin(self.horizontal_heading)
-        self.bitLocation.z += DRILL_SPEED * np.cos(self.vertical_heading)
+        self.bitLocation.x += cfg.DRILL_SPEED * np.sin(self.vertical_heading)*np.cos(self.horizontal_heading)
+        self.bitLocation.y += cfg.DRILL_SPEED *np.sin(self.vertical_heading)*np.sin(self.horizontal_heading)
+        self.bitLocation.z += cfg.DRILL_SPEED * np.cos(self.vertical_heading)
 
         self.step_history.append([self.bitLocation.x,self.bitLocation.y, self.bitLocation.z])
 
@@ -390,7 +326,7 @@ class DrillEnv(gym.Env):
         self.create_targets_and_hazards()
 
         # Re-configure the observation space
-        self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
+        self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
       
         self.observation_space = self.observation_space_container.get_space_box()        
         
@@ -422,7 +358,7 @@ class DrillEnv(gym.Env):
             print(t)
         print("Hazards inside window")
         for i in range(len(self.observation_space_container.hazard_window)):
-            h = Hazard(self.state[6+TARGET_WINDOW_SIZE*4+4*i],self.state[7+TARGET_WINDOW_SIZE*4+4*i],self.state[8+TARGET_WINDOW_SIZE*4+4*i],self.state[9+TARGET_WINDOW_SIZE*4+4*i])
+            h = Hazard(self.state[6+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[7+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[8+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[9+cfg.TARGET_WINDOW_SIZE*4+4*i])
             print(h)
         """
         print("Extra data:")
@@ -481,8 +417,8 @@ class DrillEnv(gym.Env):
 
         # Set axis 
         axes = plt.gca()
-        axes.set_xlim(0,SCREEN_X)
-        axes.set_ylim(SCREEN_Y,0)
+        axes.set_xlim(0,cfg.SCREEN_X)
+        axes.set_ylim(cfg.SCREEN_Y,0)
 
         plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path in horizontal plane (x,y)")
@@ -539,8 +475,8 @@ class DrillEnv(gym.Env):
 
         # Set axis 
         axes = plt.gca()
-        axes.set_xlim(0,SCREEN_X)
-        axes.set_ylim(SCREEN_Z,0)
+        axes.set_xlim(0,cfg.SCREEN_X)
+        axes.set_ylim(cfg.SCREEN_Z,0)
 
         plt.plot(x_positions,z_positions,"grey")
         plt.title("Well trajectory path in vertical plane (x,z)")
@@ -591,9 +527,9 @@ class DrillEnv(gym.Env):
 
         # Set axis 
         #ax = plt.gca()
-        ax.set_xlim(SCREEN_X,0)
-        ax.set_ylim(0,SCREEN_Y)
-        ax.set_zlim(SCREEN_Z,0)
+        ax.set_xlim(cfg.SCREEN_X,0)
+        ax.set_ylim(0,cfg.SCREEN_Y)
+        ax.set_zlim(cfg.SCREEN_Z,0)
         
         ax.set_xlabel("North")
         ax.set_ylabel("East")
@@ -619,12 +555,12 @@ if __name__ == '__main__':
     startpos = Coordinate(100,100,100)
 
     print("Creating targets")
-    t = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startpos)
+    t = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_BOUND_Z,cfg.TARGET_RADII_BOUND,startpos)
     for _ in t:
         print(_)
     
     print("Creating Hazards")    
-    h = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startpos,t)
+    h = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.TARGET_BOUND_Z,cfg.HAZARD_RADII_BOUND,startpos,t)
     for eden_hazard in h:
         print(eden_hazard)
     
@@ -662,8 +598,8 @@ if __name__ == '__main__':
 
     # Set axis 
     axes = plt.gca()
-    axes.set_xlim(0,SCREEN_X)
-    axes.set_ylim(0,SCREEN_Y)
+    axes.set_xlim(0,cfg.SCREEN_X)
+    axes.set_ylim(0,cfg.SCREEN_Y)
 
     
     plt.title("Test random generated hazard and targets")
