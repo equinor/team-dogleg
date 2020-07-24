@@ -8,7 +8,7 @@ import gym
 from gym import spaces
 
 # Designited slots in the observation space
-TARGET_WINDOW_SIZE = 1
+TARGET_WINDOW_SIZE = 3
 HAZARD_WINDOW_SIZE = 0 # MUST HAVE AT LEAST THIS MANY HAZARDS
 
 # Targets are assumed to be ordered ObservationSpace(TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
@@ -220,8 +220,8 @@ if __name__ == '__main__':
     
     box = obs_space.get_space_box()
     print(box)
-    print("Expected dimension of the obs space is: ", 9 + 4*TARGET_WINDOW_SIZE + 4*(HAZARD_WINDOW_SIZE) + 2) # Only 2 extra data
-    """
+    print("Expected dimension of the obs space is: ", 6 + 4*TARGET_WINDOW_SIZE + 4*(HAZARD_WINDOW_SIZE) + 0) # Only 0 extra data
+    
     print("Test shifting of window")
     print("State before shifting")
     obs_space.display_targets()
@@ -247,7 +247,7 @@ if __name__ == '__main__':
     obs_space.display_targets()
 
     print("im done")
-    """
+    
 
 
 

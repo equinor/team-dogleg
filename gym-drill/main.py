@@ -47,7 +47,7 @@ tensorboard_run_name = "DQNv3_big_2win_custom2"
 model = DQN(LnMlpPolicy, env, verbose=1,learning_rate=0.0003, exploration_fraction=0.2,policy_kwargs=policy_kwargs,exploration_final_eps=0.0,tensorboard_log=tensorboard_folder)          								#1) Make a new model
 #model = DQN.load(model_to_load, env, exploration_initial_eps=0.02, learning_rate= 0.0005, tensorboard_log=tensorboard_folder)				#2) Load an existing one from your own files
 print("DQN: I start training now")
-model.learn(total_timesteps=1000000, tb_log_name = tensorboard_run_name) #Where the learning happens
+model.learn(total_timesteps=1000, tb_log_name = tensorboard_run_name) #Where the learning happens
 model.save(save_as) #Saving the wisdom for later 
 
 
@@ -136,9 +136,11 @@ for episode in range (5):
 		#print(rewards)
 		#print(obs)
 	print(num_steps)
+
 	env.display_3d_environment()
-	env.display_vertical_plane_of_environment()
-	env.display_horizontal_plane_of_environment()
+	env.display_planes()
+	#env.display_vertical_plane_of_environment()
+	#env.display_horizontal_plane_of_environment()
 	state = env.reset()
 	
 	env.close()

@@ -14,6 +14,7 @@ from gym_drill.envs.ObservationSpace import ObservationSpace
 from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 from gym_drill.envs import environment_support as es
+from gym_drill.envs import rdwellpath as rwp
 
 # PARAMETERS RELATED TO THE MODEL AND OBSERVATION SPACE
 
@@ -77,6 +78,8 @@ HAZARD_PENALTY = -200.0
 ANGLE_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
+NUM_MONTE_CARLO_ENVS = int(1e3)
+ENVIRONMENT_FILENAME = "environments.txt"
 
 class DrillEnv(gym.Env):
     metadata = {
@@ -84,7 +87,10 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
     }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=True):
+        self.activate_hazards = activate_hazards
+        self.monte_carlo = monte_carlo
+
         self.start_x = startLocation.x
         self.start_y = startLocation.y
         self.start_z = startLocation.z
@@ -96,41 +102,31 @@ class DrillEnv(gym.Env):
         self.horizontal_heading = uniform(0,np.pi/2)
         self.vertical_heading = uniform(0,np.pi/4)
 
-            #self.angVel = bitInitialization[1]
+        #self.angVel = bitInitialization[1]
         self.horizontal_angVel = bitInitialization[2]
         self.vertical_angVel =bitInitialization[3]
 
-            #self.angAcc = bitInitialization[2]
+        #self.angAcc = bitInitialization[2]
         self.horizontal_angAcc = bitInitialization[4]
         self.vertical_angAcc =bitInitialization[5]      
 
-        # For resetting the environment
-
-        self.initialBitLocation = startLocation
-        
+        # For resetting the environment        
         self.initial_horizontal_heading = bitInitialization[0]
-        self.initial_vertical_heading = bitInitialization[1]
-        
+        self.initial_vertical_heading = bitInitialization[1]        
         self.initial_horizontal_angVel = bitInitialization[2]
         self.initial_vertical_angVel = bitInitialization[3]
-
         self.initial_horizontal_angAcc = bitInitialization[4]
-        self.initial_vertical_angAcc = bitInitialization[5]      
+        self.initial_vertical_angAcc = bitInitialization[5]
+        
+        # Generate feasible environments to train in using a Monte Carlo simulation 
+        if self.monte_carlo:
+            print("Running", str(NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
+            rwp.random_targetset_to_file(ENVIRONMENT_FILENAME,NUM_MONTE_CARLO_ENVS,NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],120,200)      
 
-        # Init targets. See _init_targets function
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,startLocation)
-        self.activate_hazards = activate_hazards
-        if self.activate_hazards:
-            self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,TARGET_BOUND_Z,HAZARD_RADII_BOUND,startLocation,self.targets)
-        else:
-            #print("Initiating environment without hazards")
-            self.hazards = []
-
-        self.action_space = spaces.Discrete(9)        
-
+        self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
-      
         self.observation_space = self.observation_space_container.get_space_box()        
+        self.action_space = spaces.Discrete(9)     
 
         self.seed()
         self.viewer = None
@@ -142,6 +138,19 @@ class DrillEnv(gym.Env):
         self.total_reward = 0      
         es._init_log()
         """
+    def create_targets_and_hazards(self):
+        if not self.monte_carlo:
+            self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,self.bitLocation)
+            if self.activate_hazards:
+                self.hazards = es._init_hazards(NUM_HAZARDS,HAZARD_BOUND_X,HAZARD_BOUND_Y,HAZARD_BOUND_Z,HAZARD_RADII_BOUND,self.bitLocation,self.targets)
+            else:
+                self.hazards = []
+        else:
+            linenr = np.random.randint(1,NUM_MONTE_CARLO_ENVS)
+            self.targets,self.hazards = es._read_env_from_file(ENVIRONMENT_FILENAME,linenr)
+            # Overwrite hazards if not activated
+            if not self.activate_hazards:
+                self.hazards = []
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -184,8 +193,8 @@ class DrillEnv(gym.Env):
         for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
                 reward -= HAZARD_PENALTY
-                #done = True
                 h.is_hit = True
+                #done = True
 
         if len(self.step_history)>NUM_MAX_STEPS:
             done= True                        
@@ -243,8 +252,6 @@ class DrillEnv(gym.Env):
     """
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
-        
-
         # Update angular acceleration, if within limits
         if action < 3 and self.vertical_angAcc < MAX_ANGACC:            #indexes of action space:
             self.vertical_angAcc += ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
@@ -380,14 +387,7 @@ class DrillEnv(gym.Env):
         # Save the starting position as "first" step
         self.step_history = [[self.start_x,self.start_y,self.start_z]]       
 
-        # Need to init new targets
-        self.targets = es._init_targets(NUM_TARGETS,TARGET_BOUND_X,TARGET_BOUND_Y,TARGET_BOUND_Z,TARGET_RADII_BOUND,self.bitLocation)             
-        
-        # Init new hazards
-        if self.activate_hazards:
-            self.hazards = es._init_hazards(NUM_HAZARDS,[0.25*SCREEN_X,0.85*SCREEN_X],[0.2*SCREEN_Y,0.75*SCREEN_Y],[0.25*SCREEN_Z,0.85*SCREEN_Z],HAZARD_RADII_BOUND,self.bitLocation,self.targets)
-        else:
-            self.hazards = []
+        self.create_targets_and_hazards()
 
         # Re-configure the observation space
         self.observation_space_container= ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
@@ -430,8 +430,9 @@ class DrillEnv(gym.Env):
         print("Relative angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+1])
         """
 
-
-    def display_horizontal_plane_of_environment(self):
+    def display_planes(self):
+        plt.subplot(2,1,1)
+    #def display_horizontal_plane_of_environment(self):
         # Get data
         x_positions = []
         y_positions = []
@@ -486,10 +487,11 @@ class DrillEnv(gym.Env):
         plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path in horizontal plane (x,y)")
         plt.legend()
-        plt.show()
+        #plt.show()
     
-    def display_vertical_plane_of_environment(self):
+    #def display_vertical_plane_of_environment(self):
         # Get data
+        plt.subplot(2,1,2)
         x_positions = []
         z_positions = []
         for position in self.step_history:
@@ -543,6 +545,7 @@ class DrillEnv(gym.Env):
         plt.plot(x_positions,z_positions,"grey")
         plt.title("Well trajectory path in vertical plane (x,z)")
         plt.legend()
+        
         plt.show()
     
 
