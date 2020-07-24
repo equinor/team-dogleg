@@ -1,5 +1,6 @@
-# Environment variables
+import numpy as np
 
+# Environment variables
 MIN_VERT_ANGLE = 0
 MAX_VERT_ANGLE = np.pi
 

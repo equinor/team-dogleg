@@ -21,9 +21,9 @@ class DrillEnv(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second': 50
-    }
+}
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=True):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False):
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
 
