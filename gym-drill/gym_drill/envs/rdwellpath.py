@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 # Screen size constants
 SCREEN_X = 1000
 SCREEN_Y = 1000
@@ -152,30 +153,26 @@ def generate_target_list(n_targets, start_pos, min_len, max_len):
                     break
             if i + 1 == max_len:
                 path_created = True
-                break # Fail safe   
+                break # Fail safe
 
     
     # Pick from only every x points to avoid target balls being too close
 
     every = 10
     n_steps_skipped = int(0.1 * len(pos_list))
-    #n_steps_skipped = 1
-    #print("len pos list", len(pos_list))
 
     idx_arr = np.random.choice(a=range(n_steps_skipped, len(pos_list), every), size=n_targets, replace=False)
-
     idx_arr = np.sort(idx_arr)
 
-    #print(idx_arr)
-
-
     ret_arr = np.zeros((n_targets, 4))
-    for i in range(n_targets):
-        ret_arr[i][0] = pos_list[i][0]
-        ret_arr[i][1] = pos_list[i][1]
-        ret_arr[i][2] = pos_list[i][2]
-
+    i = 0
+    for idx in idx_arr:
+        ret_arr[i][0] = pos_list[idx][0]
+        ret_arr[i][1] = pos_list[idx][1]
+        ret_arr[i][2] = pos_list[idx][2]
         ret_arr[i][3] = get_random_radius()
+        i += 1
+
 
     if SHOW_GENERATED_PLOTS:
         # Plot well path
@@ -191,8 +188,9 @@ def generate_target_list(n_targets, start_pos, min_len, max_len):
         ax.set_zlim(SCREEN_Z, 0)
 
         target_num = 1
-        for idx in idx_arr:
-            plot_sphere(ax, pos_list[idx], rad=40, name=str(target_num), color="#32cd32")
+        for target in ret_arr:
+            #print(target)
+            plot_sphere(ax, target[0:3], rad=target[3], name=str(target_num), color="#32cd32")
             target_num += 1
         
         # Get well path
@@ -202,8 +200,9 @@ def generate_target_list(n_targets, start_pos, min_len, max_len):
 
         ax.plot(xs, ys, zs)
         plt.show()
-
+    #print(ret_arr)
     return ret_arr
+
 
 
 def random_targetset_to_file(file_name, n_sets, n_targets, start_pos, min_len, max_len):
@@ -222,6 +221,6 @@ def random_targetset_to_file(file_name, n_sets, n_targets, start_pos, min_len, m
 
 
 if __name__ == "__main__":
-    random_targetset_to_file("deletethis.txt", 5, 5, [200, 100, 100], 120, 200)
+    random_targetset_to_file("deletethis.txt", 4, 5, [100, 100, 100], 140, 270)
 
 
