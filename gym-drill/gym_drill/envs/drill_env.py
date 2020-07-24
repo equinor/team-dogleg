@@ -26,7 +26,9 @@ class DrillEnv(gym.Env):
 
     def __init__(self,startLocation,bitInitialization,*,activate_hazards=True,random_envs=True):
         self.activate_hazards = activate_hazards
-        self.random_envs = random_envs        
+        self.random_envs = random_envs
+        self.start_x = startLocation.x
+        self.start_y = startLocation.y        
         
         # Save the starting position as "first" step. Needed for plotting in matplotlib
         self.step_history = [[self.start_x,self.start_y]]        
@@ -38,8 +40,6 @@ class DrillEnv(gym.Env):
         self.angAcc = bitInitialization[2]
 
         # For resetting the environment
-        self.start_x = startLocation.x
-        self.start_y = startLocation.y
         self.initialHeading = bitInitialization[0]
         self.initialAngVel = bitInitialization[1]
         self.initialAngAcc = bitInitialization[2]
@@ -64,9 +64,9 @@ class DrillEnv(gym.Env):
         """
     def create_targets_and_hazards(self):
         if self.random_envs:
-            self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,startLocation)
+            self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_RADII_BOUND,self.bitLocation)
             if self.activate_hazards:
-                self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,startLocation,self.targets)
+                self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
             else:
                 self.hazards = []
         else:
@@ -112,7 +112,7 @@ class DrillEnv(gym.Env):
                 h.is_hit = True
                 #done = True
                 
-        if len(self.step_history)>NUM_MAX_STEPS:
+        if len(self.step_history)>cfg.NUM_MAX_STEPS:
             done= True                        
 
         # Find the values of the current target
@@ -168,12 +168,12 @@ class DrillEnv(gym.Env):
         if abs(self.angVel + self.angAcc) < cfg.MAX_ANGVEL:
             self.angVel += self.angAcc
 
-        elif (self.angVel + self.angAcc) <= -MAX_ANGVEL:
-            self.angVel = -MAX_ANGVEL
+        elif (self.angVel + self.angAcc) <= -cfg.MAX_ANGVEL:
+            self.angVel = -cfg.MAX_ANGVEL
             self.angAcc = 0
 
-        elif (self.angVel + self.angAcc) >= MAX_ANGVEL:
-            self.angVel = MAX_ANGVEL
+        elif (self.angVel + self.angAcc) >= cfg.MAX_ANGVEL:
+            self.angVel = cfg.MAX_ANGVEL
             self.angAcc = 0
 
         # Update heading.
