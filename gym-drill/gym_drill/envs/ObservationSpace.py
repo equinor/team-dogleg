@@ -101,10 +101,14 @@ class ObservationSpace:
     
     def find_closest_hazards(self,bitPostion):
         # Need to make a independent copy that does not point to same memory location
-        candidates = [] 
+        candidates = []
+         
+        if len(self.hazards) == 0:
+            window = []
+            return window
+        
         for h in self.hazards:
-            candidates.append(h)
-
+            candidates.append(h)        
         window = []
         for _ in range(cfg.HAZARD_WINDOW_SIZE):
             closest_index = es._findNearest(bitPostion,candidates)
@@ -137,14 +141,14 @@ class ObservationSpace:
         lower = np.array([self.lower_azimuth_heading,self.lower_inclination_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
         upper = np.array([self.upper_azimuth_heading,self.upper_inclination_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
 
-        for _ in range(cfg.TARGET_WINDOW_SIZE):
+        for _ in range(len(self.target_window)):
             lower = np.append(lower,[self.target_z_dist_bound[0],self.target_horizontal_dist_bound[0],self.target_rel_azimuth_ang_bound[0],self.target_r_bound[0]])
             upper = np.append(upper,[self.target_z_dist_bound[1],self.target_horizontal_dist_bound[1],self.target_rel_azimuth_ang_bound[1],self.target_r_bound[1]])
 
-        for _ in range(cfg.HAZARD_WINDOW_SIZE):
+        for _ in range(len(self.hazard_window)):
             lower = np.append(lower,[self.hazard_z_dist_bound[0],self.hazard_horizontal_dist_bound[0],self.hazard_rel_azimuth_ang_bound[0],self.hazard_r_bound[0]])
             upper = np.append(upper,[self.hazard_z_dist_bound[1],self.hazard_horizontal_dist_bound[1],self.hazard_rel_azimuth_ang_bound[1],self.hazard_r_bound[1]])       
-        
+
         return spaces.Box(lower,upper,dtype=np.float64)    
 
 

@@ -1,14 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from gym_drill.envs import environment_config as cfg
 
 # Screen size constants
-SCREEN_X = 1000
-SCREEN_Y = 1000
-SCREEN_Z = 1000
+SCREEN_X = cfg.SCREEN_X
+SCREEN_Y = cfg.SCREEN_Y
+SCREEN_Z = cfg.SCREEN_Z
 
-STEP_SIZE = 10.0
+STEP_SIZE = cfg.DRILL_SPEED
 
 MAX_ANG_VEL = 3.0 * (np.pi / 180)
 MAX_ANG_ACC = 1.0 * (np.pi / 180)
@@ -17,8 +17,8 @@ ANG_ACC_INCREMENT = 0.25 * (np.pi / 180)
 
 PLOT_ENABLED = False
 
-MIN_TAR_RAD = 40
-MAX_TAR_RAD = 70
+MIN_TAR_RAD = cfg.TARGET_RADII_BOUND[0]
+MAX_TAR_RAD = cfg.TARGET_RADII_BOUND[1]
 
 SHOW_GENERATED_PLOTS = False
 
@@ -29,7 +29,6 @@ class TargetSet():
 
 def targetset_to_file(file_name, tset_list):
     with open(file_name, "w") as file:
-
         # For each set
         for tset in tset_list:
             # Add all targets as strings to list
@@ -157,7 +156,6 @@ def generate_target_list(n_targets, start_pos, min_len, max_len):
 
     
     # Pick from only every x points to avoid target balls being too close
-
     every = 10
     n_steps_skipped = int(0.1 * len(pos_list))
 
@@ -202,8 +200,6 @@ def generate_target_list(n_targets, start_pos, min_len, max_len):
         plt.show()
     #print(ret_arr)
     return ret_arr
-
-
 
 def random_targetset_to_file(file_name, n_sets, n_targets, start_pos, min_len, max_len):
     tset_list = []
