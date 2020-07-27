@@ -10,6 +10,9 @@ from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 
 def _init_log(*,filename="drill_log.txt"):
+    print("Initiating log..")
+    print("Running with log greatly reduces performance and is not recommended during longer training sessions!")
+    print("It is recommended to run with log when developing i.e the reward system of the environment.")
     f = open(filename,"w")
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)

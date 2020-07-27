@@ -25,7 +25,8 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
 }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False,activate_log=False):
+        self.activate_log = activate_log
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
         # Monte carlo does not currently support hazards
@@ -74,11 +75,11 @@ class DrillEnv(gym.Env):
         self.state = self.get_state()
 
         # Log related
-        """
-        self.episode_counter = 0 # Used to write to log
-        self.total_reward = 0      
-        es._init_log()
-        """
+        if self.activate_log:
+            self.episode_counter = 0 # Used to write to log
+            self.total_reward = 0      
+            es._init_log()
+
     def create_targets_and_hazards(self):
         if not self.monte_carlo:
             # Targets are drawn randomly with the target boundaries specified in the config file.
@@ -162,6 +163,11 @@ class DrillEnv(gym.Env):
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
                 reward += np.cos(self.inclination_heading)*(height_diff/abs(height_diff))*cfg.INCLINATION_REWARD_FACTOR #reward for going in the right directen (up/down)
+        
+        # Log related
+        if self.activate_log:
+            self.total_reward += reward
+
         return reward, done
 
 
@@ -195,8 +201,7 @@ class DrillEnv(gym.Env):
         
 
         # Update angular velocity
-
-            # inclination
+        # Inclination
         if abs(self.azimuth_angVel + self.azimuth_angAcc) < cfg.MAX_ANGVEL:
             self.azimuth_angVel += self.azimuth_angAcc
 
@@ -208,7 +213,7 @@ class DrillEnv(gym.Env):
             self.azimuth_angVel = cfg.MAX_ANGVEL
             self.azimuth_angAcc = 0
 
-            # azimuth
+        # Azimuth
         if abs(self.inclination_angVel + self.inclination_angAcc) < cfg.MAX_ANGVEL:
             self.inclination_angVel += self.inclination_angAcc
 
@@ -221,8 +226,7 @@ class DrillEnv(gym.Env):
             self.inclination_angAcc = 0
 
 
-        # Update heading.
-
+        # Update heading
         self.azimuth_heading = (self.azimuth_heading + self.azimuth_angVel) % (2 * np.pi)
 
         
@@ -275,9 +279,10 @@ class DrillEnv(gym.Env):
 
     def reset(self):
         # Save previous run to log
-        #self.write_to_log()
-        #self.episode_counter += 1
-        self.total_reward = 0
+        if self.activate_log:
+            self.write_to_log()
+            self.episode_counter += 1
+            self.total_reward = 0
         
         self.bitLocation.x = self.start_x
         self.bitLocation.y = self.start_y
@@ -307,7 +312,7 @@ class DrillEnv(gym.Env):
         
         return np.array(self.state)
     
-    """
+    
     def write_to_log(self,*,filename="drill_log.txt"):
         f = open(filename,"a")
         text = "Episode nr: " +str(self.episode_counter) + " lasted for " + str(len(self.step_history)) + " steps. My total reward was: " + str(self.total_reward)  +"\n"
@@ -315,7 +320,7 @@ class DrillEnv(gym.Env):
         f.write(text)
         f.close()
         #print("Log updated!")
-        """
+    
    
     def close(self):
         if self.viewer:
