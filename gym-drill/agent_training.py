@@ -36,8 +36,8 @@ policy_kwargs= dict(act_fun=tf.nn.relu,  layers=[64,64,64,32]) # Use as argument
 TRAINED_MODEL_FOLDER_DOCKER = "app/trained_models/"
 TRAINED_MODEL_FOLDER_LOCAL = "../trained_models/"
 
-TENSORBOARD_FOLDER_DQN = "/tensorboard_logs/DQN/"
-TENSORBOARD_FOLDER_PPO2 = "/tensorboard_logs/PPO2/"
+TENSORBOARD_FOLDER_DQN = "../tensorboard_logs/DQN/"
+TENSORBOARD_FOLDER_PPO2 = "../tensorboard_logs/PPO2/"
 
 def train_new_DQN(total_timesteps,save_name):
 	model = DQN(LnMlpPolicy, ENV, verbose=1, learning_rate=0.0003, exploration_fraction=0.2,policy_kwargs=policy_kwargs,exploration_final_eps=0.0,tensorboard_log=TENSORBOARD_FOLDER_DQN)
@@ -46,7 +46,7 @@ def train_new_DQN(total_timesteps,save_name):
 	save_model(model,save_name)
 
 # To load from trained_models folder do: ./trained_models/NAME
-def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_initial_eps=0.02,learning_rate= 0.0005):
+def train_existing_DQN(model_to_load,total_timesteps,save_name,*,exploration_initial_eps=0.0,learning_rate= 0.0003):
 	model = get_trained_DQN_model(model_to_load)
 	print("Model loaded and training starts...")
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
