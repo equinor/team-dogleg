@@ -100,11 +100,10 @@ class DrillEnv(gym.Env):
         reward, done = self.get_reward_and_done_signal()           
 
         self.state = self.get_state()
-        #self.total_reward += reward
         return np.array(self.state), reward, done, {}
 
     
-    # Returns the reward for the step and if episode is over
+
     def get_reward_and_done_signal(self):
         done = False      
         reward = cfg.STEP_PENALTY
@@ -127,25 +126,24 @@ class DrillEnv(gym.Env):
             reward  += cfg.OUTSIDE_SCREEN_PENALTY
             done = True   
         
-        # Check if we hit a hazard
+        # Check if we hit a hazard. atm we do not terminate the episode if we do
         for h in self.observation_space_container.hazard_window:
             if es._is_within(self.bitLocation,h.center,h.radius) and not h.is_hit:
                 reward -= cfg.HAZARD_PENALTY
                 h.is_hit = True
-                #done = True
 
         if len(self.step_history)>cfg.NUM_MAX_STEPS:
             done= True                        
 
         # Find the values of the current target
-        current_target = self.observation_space_container.target_window[0] #object of target class
+        current_target = self.observation_space_container.target_window[0]
         current_target_pos = np.array([current_target.center.x, current_target.center.y, current_target.center.z])
         current_target_rad = current_target.radius
         drill_pos = np.array([self.bitLocation.x, self.bitLocation.y, self.bitLocation.z])
 
         # Check if target is hit
-        if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
-        #if es._is_within(self.bitLocation,self.observation_space_container.target_window[0].center,self.observation_space_container.target_window[0].radius):
+        #if np.linalg.norm(current_target_pos - drill_pos) < current_target_rad:
+        if es._is_within(self.bitLocation,self.observation_space_container.target_window[0].center,self.observation_space_container.target_window[0].radius):
             reward += cfg.TARGET_REWARD
 
             if len(self.observation_space_container.remaining_targets) == 0:
@@ -155,15 +153,15 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
-            reward_factor = np.cos(self.get_relative_azimuth_angle(current_target)) # value between -1 and +1 
-            reward += reward_factor*cfg.ANGLE_REWARD_FACTOR #reward for having a correct azimuth-angle
+            pre_adjusted_azimuth_reward = np.cos(self.get_relative_azimuth_angle(current_target)) # value between -1 and +1 
+            reward += pre_adjusted_azimuth_reward*cfg.ANGLE_REWARD_FACTOR
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
-                reward += np.cos(self.inclination_heading)*(height_diff/abs(height_diff))*0.5 #should be global constant #reward for going in the right directen (up/down)
+                reward += np.cos(self.inclination_heading)*(height_diff/abs(height_diff))*cfg.INCLINATION_REWARD_FACTOR #reward for going in the right directen (up/down)
         return reward, done
 
 
-    def get_xy_dist(self,obj):
+    def get_horizontal_dist(self,obj):
         return np.sqrt((obj.center.x -self.bitLocation.x)**2+(obj.center.y - self.bitLocation.y)**2)
         
     def get_relative_azimuth_angle(self,obj):
@@ -174,31 +172,18 @@ class DrillEnv(gym.Env):
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
-    """
-    def get_azimuth_angle_relative_to_target(self):
-        current_target = self.observation_space_container.target_window[0]
-                
-        curr_target_hor_pos_vector = np.array([current_target.center.x,current_target.center.y])
 
-        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
-        appr_vec = curr_target_hor_pos_vector - curr_drill_hor_pos_vector
-
-        head_vec = np.array([np.cos(self.azimuth_heading), np.sin(self.azimuth_heading)])
-        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-
-        return angle_between_vectors
-    """
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         # Update angular acceleration, if within limits
-        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:            #indexes of action space:
-            self.inclination_angAcc += cfg.ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
-        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:         #   3       4       5 | (3-5): don't accelate in the vertical plane
-            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                    #   6       7       8 | (6-8): accelerate downwards
-                                                                        #---------------------
-                                                                        #(0,3,6): accelerate left 
-                                                                        #        (1,4,7): don't accelerate in the horizontal plane
-                                                                        #                (2,5,8): accelerate right
+        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:             #indexes of action space:
+            self.inclination_angAcc += cfg.ANGACC_INCREMENT                     #   0       1       2 | (0-2): accelerate upwards
+        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:          #   3       4       5 | (3-5): don't accelate in the vertical plane
+            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                     #   6       7       8 | (6-8): accelerate downwards
+                                                                                #---------------------
+                                                                                #(0,3,6): accelerate left 
+                                                                                #        (1,4,7): don't accelerate in the horizontal plane
+                                                                                #                (2,5,8): accelerate right
         if (action == 0 or action == 3 or action == 6) and self.azimuth_angAcc > -cfg.MAX_ANGACC:
             self.azimuth_angAcc -= cfg.ANGACC_INCREMENT
         elif (action == 2 or action == 5 or action == 8) and self.azimuth_angAcc < cfg.MAX_ANGACC:
@@ -264,41 +249,23 @@ class DrillEnv(gym.Env):
         # Core bit data
         state_list = [self.azimuth_heading,self.inclination_heading, self.azimuth_angVel,self.inclination_angVel, self.azimuth_angAcc,self.inclination_angAcc]
         # Target data that are inside the window
-        for target in self.observation_space_container.target_window: # This will cause bug
-            """
-            state_list.append(target.center.x)
-            state_list.append(target.center.y)
-            state_list.append(target.center.z)
-            state_list.append(target.radius)
-            """
+        for target in self.observation_space_container.target_window:
+
             state_list.append(target.center.z-self.bitLocation.z)
-            state_list.append(self.get_xy_dist(target))
+            state_list.append(self.get_horizontal_dist(target))
             state_list.append(self.get_relative_azimuth_angle(target))
             state_list.append(target.radius)
 
 
         # Get all hazards inside window
         for hazard in self.observation_space_container.hazard_window:
-            """
-            state_list.append(hazard.center.x)
-            state_list.append(hazard.center.y)
-            state_list.append(hazard.center.z)
-            state_list.append(hazard.radius)
-            """
+
             state_list.append(hazard.center.z-self.bitLocation.z)
-            state_list.append(self.get_xy_dist(hazard))
+            state_list.append(self.get_horizontal_dist(hazard))
             state_list.append(self.get_relative_azimuth_angle(hazard))
             state_list.append(hazard.radius)
 
-        # Extra data
-        """
-        current_target = self.observation_space_container.target_window[0]
-        height_diff = current_target.center.z - self.bitLocation.z
 
-        relative_angle = self.get_azimuth_angle_relative_to_target()
-
-        state_list =  state_list + [height_diff, relative_angle]
-        """
         return tuple(state_list) 
             
 
@@ -352,7 +319,7 @@ class DrillEnv(gym.Env):
             self.viewer = None
     
     def display_state(self):
-        print("Bit location:", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
+        print("Bit location (Not in ObsSpace):", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
         print("Bit angles: ", self.state[0:5])
         print("Targets inside window: ")
         for i in range(len(self.observation_space_container.target_window)):
@@ -362,16 +329,10 @@ class DrillEnv(gym.Env):
         for i in range(len(self.observation_space_container.hazard_window)):
             h = Hazard(self.state[6+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[7+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[8+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[9+cfg.TARGET_WINDOW_SIZE*4+4*i])
             print(h)
-        """
-        print("Extra data:")
-        print("Distance: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)])
-        print("Relative angle: ",self.state[9+4*len(self.observation_space_container.target_window)+ 4*len(self.observation_space_container.hazard_window)+1])
-        """
 
     def display_planes(self):
         plt.subplot(2,1,1)
-    #def display_azimuth_plane_of_environment(self):
-        # Get data
+
         x_positions = []
         y_positions = []
         for position in self.step_history:
@@ -425,10 +386,9 @@ class DrillEnv(gym.Env):
         plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path in horizontal plane (x,y)")
         plt.legend()
-        #plt.show()
+
     
-    #def display_inclination_plane_of_environment(self):
-        # Get data
+
         plt.subplot(2,1,2)
         x_positions = []
         z_positions = []
