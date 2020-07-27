@@ -111,7 +111,8 @@ def _findNearest(start_location,candidates):
     for candidate_index in range(len(candidates)):        
         candidate = candidates[candidate_index]     
         distance = Coordinate.getEuclideanDistance(candidate.center,start_location)
-        
+        distance -= candidate.radius
+
         if distance < current_shortest_distance or current_shortest_distance == -1:           
             current_shortest_distance = distance
             current_closest_target_index = candidate_index
@@ -181,8 +182,14 @@ def angle_between_vectors(v1, v2):
     v2_u = v2 / np.linalg.norm(v2)
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 if __name__ == '__main__':
-    targets, hazards = _read_env_from_file("environments.txt",1)
+
+    from gym_drill.envs import environment_config as cfg
+    #targets, hazards = _read_env_from_file("environments.txt",1)
+    #for t in targets:
+    #    print(t)
+    #for h in hazards:
+    #    print(h)
+
+    targets = _init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_BOUND_Z,cfg.TARGET_RADII_BOUND,Coordinate(100,100,900))
     for t in targets:
         print(t)
-    for h in hazards:
-        print(h)
