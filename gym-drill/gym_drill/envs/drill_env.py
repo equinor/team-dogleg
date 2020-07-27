@@ -28,6 +28,9 @@ class DrillEnv(gym.Env):
     def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False):
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
+        # Monte carlo does not currently support hazards
+        if self.monte_carlo:
+            self.activate_hazards = False
 
         self.start_x = startLocation.x
         self.start_y = startLocation.y
@@ -78,6 +81,7 @@ class DrillEnv(gym.Env):
         """
     def create_targets_and_hazards(self):
         if not self.monte_carlo:
+            # Targets are drawn randomly with the target boundaries specified in the config file.
             self.targets = es._init_targets(cfg.NUM_TARGETS,cfg.TARGET_BOUND_X,cfg.TARGET_BOUND_Y,cfg.TARGET_BOUND_Z,cfg.TARGET_RADII_BOUND,self.bitLocation)
             if self.activate_hazards:
                 self.hazards = es._init_hazards(cfg.NUM_HAZARDS,cfg.HAZARD_BOUND_X,cfg.HAZARD_BOUND_Y,cfg.HAZARD_BOUND_Z,cfg.HAZARD_RADII_BOUND,self.bitLocation,self.targets)
@@ -86,7 +90,7 @@ class DrillEnv(gym.Env):
         else:
             linenr = np.random.randint(1,cfg.NUM_MONTE_CARLO_ENVS)
             self.targets,self.hazards = es._read_env_from_file(cfg.ENVIRONMENT_FILENAME,linenr)
-            # Overwrite hazards if not activated
+            # Overwrite hazards to be empty if not activated
             if not self.activate_hazards:
                 self.hazards = []
 
@@ -542,7 +546,6 @@ class DrillEnv(gym.Env):
    
 
 def plot_sphere(x0, y0, z0, r, c, ax, name=''):
-
     # Make data
     u = np.linspace(0, 2 * np.pi, 12)
     v = np.linspace(0, np.pi, 8)
@@ -556,8 +559,7 @@ def plot_sphere(x0, y0, z0, r, c, ax, name=''):
 
 
 
-def plot_ball(x0,y0,z0,r,c,ax, name):
-    
+def plot_ball(x0,y0,z0,r,c,ax, name):    
     # Make data
     u = np.linspace(0, 2 * np.pi, 100)
     v = np.linspace(0, np.pi, 100)
