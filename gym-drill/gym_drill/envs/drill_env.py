@@ -37,24 +37,24 @@ class DrillEnv(gym.Env):
 
         # We init parameters here        
         self.bitLocation = startLocation
-        self.horizontal_heading = uniform(0,np.pi/2)
-        self.vertical_heading = uniform(0,np.pi/4)
+        self.azimuth_heading = uniform(0,np.pi/2)
+        self.inclination_heading = uniform(0,np.pi/4)
 
         #self.angVel = bitInitialization[1]
-        self.horizontal_angVel = bitInitialization[2]
-        self.vertical_angVel =bitInitialization[3]
+        self.azimuth_angVel = bitInitialization[2]
+        self.inclination_angVel =bitInitialization[3]
 
         #self.angAcc = bitInitialization[2]
-        self.horizontal_angAcc = bitInitialization[4]
-        self.vertical_angAcc =bitInitialization[5]      
+        self.azimuth_angAcc = bitInitialization[4]
+        self.inclination_angAcc =bitInitialization[5]      
 
         # For resetting the environment        
-        self.initial_horizontal_heading = bitInitialization[0]
-        self.initial_vertical_heading = bitInitialization[1]        
-        self.initial_horizontal_angVel = bitInitialization[2]
-        self.initial_vertical_angVel = bitInitialization[3]
-        self.initial_horizontal_angAcc = bitInitialization[4]
-        self.initial_vertical_angAcc = bitInitialization[5]
+        self.initial_azimuth_heading = bitInitialization[0]
+        self.initial_inclination_heading = bitInitialization[1]        
+        self.initial_azimuth_angVel = bitInitialization[2]
+        self.initial_inclination_angVel = bitInitialization[3]
+        self.initial_azimuth_angAcc = bitInitialization[4]
+        self.initial_inclination_angAcc = bitInitialization[5]
         
         # Generate feasible environments to train in using a Monte Carlo simulation 
         if self.monte_carlo:
@@ -109,16 +109,16 @@ class DrillEnv(gym.Env):
         done = False      
         reward = cfg.STEP_PENALTY
         
-        if self.horizontal_angAcc != 0:
+        if self.azimuth_angAcc != 0:
             reward += cfg.ANGULAR_ACCELERATION_PENALTY
         
-        if self.horizontal_angVel != 0:
+        if self.azimuth_angVel != 0:
             reward += cfg.ANGULAR_VELOCITY_PENALTY
         
-        if self.vertical_angAcc != 0:
+        if self.inclination_angAcc != 0:
             reward += cfg.ANGULAR_ACCELERATION_PENALTY
         
-        if self.vertical_angVel != 0:
+        if self.inclination_angVel != 0:
             reward += cfg.ANGULAR_VELOCITY_PENALTY
         
 
@@ -155,27 +155,27 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
-            reward_factor = np.cos(self.get_relative_horizontal_angle(current_target)) # value between -1 and +1 
-            reward += reward_factor*cfg.ANGLE_REWARD_FACTOR #reward for having a correct horizontal-angle
+            reward_factor = np.cos(self.get_relative_azimuth_angle(current_target)) # value between -1 and +1 
+            reward += reward_factor*cfg.ANGLE_REWARD_FACTOR #reward for having a correct azimuth-angle
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
-                reward += np.cos(self.vertical_heading)*(height_diff/abs(height_diff))*0.5 #should be global constant #reward for going in the right directen (up/down)
+                reward += np.cos(self.inclination_heading)*(height_diff/abs(height_diff))*0.5 #should be global constant #reward for going in the right directen (up/down)
         return reward, done
 
 
     def get_xy_dist(self,obj):
         return np.sqrt((obj.center.x -self.bitLocation.x)**2+(obj.center.y - self.bitLocation.y)**2)
         
-    def get_relative_horizontal_angle(self,obj):
+    def get_relative_azimuth_angle(self,obj):
         object_hor_pos_vector = np.array([obj.center.x,obj.center.y])
         curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
         appr_vec = object_hor_pos_vector - curr_drill_hor_pos_vector
-        head_vec = np.array([np.cos(self.horizontal_heading), np.sin(self.horizontal_heading)])
+        head_vec = np.array([np.cos(self.azimuth_heading), np.sin(self.azimuth_heading)])
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
     """
-    def get_horizontal_angle_relative_to_target(self):
+    def get_azimuth_angle_relative_to_target(self):
         current_target = self.observation_space_container.target_window[0]
                 
         curr_target_hor_pos_vector = np.array([current_target.center.x,current_target.center.y])
@@ -183,7 +183,7 @@ class DrillEnv(gym.Env):
         curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
         appr_vec = curr_target_hor_pos_vector - curr_drill_hor_pos_vector
 
-        head_vec = np.array([np.cos(self.horizontal_heading), np.sin(self.horizontal_heading)])
+        head_vec = np.array([np.cos(self.azimuth_heading), np.sin(self.azimuth_heading)])
         angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
 
         return angle_between_vectors
@@ -191,78 +191,78 @@ class DrillEnv(gym.Env):
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
         # Update angular acceleration, if within limits
-        if action < 3 and self.vertical_angAcc < cfg.MAX_ANGACC:            #indexes of action space:
-            self.vertical_angAcc += cfg.ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
-        elif action > 5 and self.vertical_angAcc > -cfg.MAX_ANGACC:         #   3       4       5 | (3-5): don't accelate in the vertical plane
-            self.vertical_angAcc -= cfg.ANGACC_INCREMENT                    #   6       7       8 | (6-8): accelerate downwards
+        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:            #indexes of action space:
+            self.inclination_angAcc += cfg.ANGACC_INCREMENT                    #   0       1       2 | (0-2): accelerate upwards
+        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:         #   3       4       5 | (3-5): don't accelate in the vertical plane
+            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                    #   6       7       8 | (6-8): accelerate downwards
                                                                         #---------------------
                                                                         #(0,3,6): accelerate left 
                                                                         #        (1,4,7): don't accelerate in the horizontal plane
                                                                         #                (2,5,8): accelerate right
-        if (action == 0 or action == 3 or action == 6) and self.horizontal_angAcc > -cfg.MAX_ANGACC:
-            self.horizontal_angAcc -= cfg.ANGACC_INCREMENT
-        elif (action == 2 or action == 5 or action == 8) and self.horizontal_angAcc < cfg.MAX_ANGACC:
-            self.horizontal_angAcc += cfg.ANGACC_INCREMENT
+        if (action == 0 or action == 3 or action == 6) and self.azimuth_angAcc > -cfg.MAX_ANGACC:
+            self.azimuth_angAcc -= cfg.ANGACC_INCREMENT
+        elif (action == 2 or action == 5 or action == 8) and self.azimuth_angAcc < cfg.MAX_ANGACC:
+            self.azimuth_angAcc += cfg.ANGACC_INCREMENT
         
 
         # Update angular velocity
 
-            # horizontal
-        if abs(self.horizontal_angVel + self.horizontal_angAcc) < cfg.MAX_ANGVEL:
-            self.horizontal_angVel += self.horizontal_angAcc
+            # inclination
+        if abs(self.azimuth_angVel + self.azimuth_angAcc) < cfg.MAX_ANGVEL:
+            self.azimuth_angVel += self.azimuth_angAcc
 
-        elif (self.horizontal_angVel + self.horizontal_angAcc) <= -cfg.MAX_ANGVEL:
-            self.horizontal_angVel = -cfg.MAX_ANGVEL
-            self.horizontal_angAcc = 0
+        elif (self.azimuth_angVel + self.azimuth_angAcc) <= -cfg.MAX_ANGVEL:
+            self.azimuth_angVel = -cfg.MAX_ANGVEL
+            self.azimuth_angAcc = 0
         
-        elif (self.horizontal_angVel + self.horizontal_angAcc) >= cfg.MAX_ANGVEL:
-            self.horizontal_angVel = cfg.MAX_ANGVEL
-            self.horizontal_angAcc = 0
+        elif (self.azimuth_angVel + self.azimuth_angAcc) >= cfg.MAX_ANGVEL:
+            self.azimuth_angVel = cfg.MAX_ANGVEL
+            self.azimuth_angAcc = 0
 
-            # vertical
-        if abs(self.vertical_angVel + self.vertical_angAcc) < cfg.MAX_ANGVEL:
-            self.vertical_angVel += self.vertical_angAcc
+            # azimuth
+        if abs(self.inclination_angVel + self.inclination_angAcc) < cfg.MAX_ANGVEL:
+            self.inclination_angVel += self.inclination_angAcc
 
-        elif (self.vertical_angVel + self.vertical_angAcc) <= -cfg.MAX_ANGVEL:
-            self.vertical_angVel = -cfg.MAX_ANGVEL
-            self.vertical_angAcc = 0
+        elif (self.inclination_angVel + self.inclination_angAcc) <= -cfg.MAX_ANGVEL:
+            self.inclination_angVel = -cfg.MAX_ANGVEL
+            self.inclination_angAcc = 0
         
-        elif (self.vertical_angVel + self.vertical_angAcc) >= cfg.MAX_ANGVEL:
-            self.vertical_angVel = cfg.MAX_ANGVEL
-            self.vertical_angAcc = 0
+        elif (self.inclination_angVel + self.inclination_angAcc) >= cfg.MAX_ANGVEL:
+            self.inclination_angVel = cfg.MAX_ANGVEL
+            self.inclination_angAcc = 0
 
 
         # Update heading.
 
-        self.horizontal_heading = (self.horizontal_heading + self.horizontal_angVel) % (2 * np.pi)
+        self.azimuth_heading = (self.azimuth_heading + self.azimuth_angVel) % (2 * np.pi)
 
         
-        if ((self.vertical_heading + self.vertical_angVel) < cfg.MAX_VERT_ANGLE) and ((self.vertical_heading + self.vertical_angVel) > cfg.MIN_VERT_ANGLE):
-            self.vertical_heading= self.vertical_heading + self.vertical_angVel
+        if ((self.inclination_heading + self.inclination_angVel) < cfg.MAX_INCL_ANGLE) and ((self.inclination_heading + self.inclination_angVel) > cfg.MIN_INCL_ANGLE):
+            self.inclination_heading= self.inclination_heading + self.inclination_angVel
 
-        elif ((self.vertical_heading + self.vertical_angVel) >= cfg.MAX_VERT_ANGLE):
-            self.vertical_heading = cfg.MAX_VERT_ANGLE
-            self.vertical_angVel = 0
-            self.vertical_angAcc = 0
+        elif ((self.inclination_heading + self.inclination_angVel) >= cfg.MAX_INCL_ANGLE):
+            self.inclination_heading = cfg.MAX_INCL_ANGLE
+            self.inclination_angVel = 0
+            self.inclination_angAcc = 0
 
-        elif ((self.vertical_heading + self.vertical_angVel) <= cfg.MIN_VERT_ANGLE):
-            self.vertical_heading = cfg.MIN_VERT_ANGLE
-            self.vertical_angVel = 0
-            self.vertical_angAcc = 0
+        elif ((self.inclination_heading + self.inclination_angVel) <= cfg.MIN_INCL_ANGLE):
+            self.inclination_heading = cfg.MIN_INCL_ANGLE
+            self.inclination_angVel = 0
+            self.inclination_angAcc = 0
 
 
 
         # Update position
-        self.bitLocation.x += cfg.DRILL_SPEED * np.sin(self.vertical_heading)*np.cos(self.horizontal_heading)
-        self.bitLocation.y += cfg.DRILL_SPEED *np.sin(self.vertical_heading)*np.sin(self.horizontal_heading)
-        self.bitLocation.z += cfg.DRILL_SPEED * np.cos(self.vertical_heading)
+        self.bitLocation.x += cfg.DRILL_SPEED * np.sin(self.inclination_heading)*np.cos(self.azimuth_heading)
+        self.bitLocation.y += cfg.DRILL_SPEED *np.sin(self.inclination_heading)*np.sin(self.azimuth_heading)
+        self.bitLocation.z += cfg.DRILL_SPEED * np.cos(self.inclination_heading)
 
         self.step_history.append([self.bitLocation.x,self.bitLocation.y, self.bitLocation.z])
 
     # Returns tuple of current state
     def get_state(self):
         # Core bit data
-        state_list = [self.horizontal_heading,self.vertical_heading, self.horizontal_angVel,self.vertical_angVel, self.horizontal_angAcc,self.vertical_angAcc]
+        state_list = [self.azimuth_heading,self.inclination_heading, self.azimuth_angVel,self.inclination_angVel, self.azimuth_angAcc,self.inclination_angAcc]
         # Target data that are inside the window
         for target in self.observation_space_container.target_window: # This will cause bug
             """
@@ -273,7 +273,7 @@ class DrillEnv(gym.Env):
             """
             state_list.append(target.center.z-self.bitLocation.z)
             state_list.append(self.get_xy_dist(target))
-            state_list.append(self.get_relative_horizontal_angle(target))
+            state_list.append(self.get_relative_azimuth_angle(target))
             state_list.append(target.radius)
 
 
@@ -287,7 +287,7 @@ class DrillEnv(gym.Env):
             """
             state_list.append(hazard.center.z-self.bitLocation.z)
             state_list.append(self.get_xy_dist(hazard))
-            state_list.append(self.get_relative_horizontal_angle(hazard))
+            state_list.append(self.get_relative_azimuth_angle(hazard))
             state_list.append(hazard.radius)
 
         # Extra data
@@ -295,7 +295,7 @@ class DrillEnv(gym.Env):
         current_target = self.observation_space_container.target_window[0]
         height_diff = current_target.center.z - self.bitLocation.z
 
-        relative_angle = self.get_horizontal_angle_relative_to_target()
+        relative_angle = self.get_azimuth_angle_relative_to_target()
 
         state_list =  state_list + [height_diff, relative_angle]
         """
@@ -312,14 +312,14 @@ class DrillEnv(gym.Env):
         self.bitLocation.y = self.start_y
         self.bitLocation.z = self.start_z
 
-        self.horizontal_heading = uniform(0,2*np.pi)
-        self.vertical_heading = uniform(0,np.pi/4)
+        self.azimuth_heading = uniform(0,2*np.pi)
+        self.inclination_heading = uniform(0,np.pi/4)
 
-        self.horizontal_angVel = self.initial_horizontal_angVel
-        self.vertical_angVel = self.initial_vertical_angVel
+        self.azimuth_angVel = self.initial_azimuth_angVel
+        self.inclination_angVel = self.initial_inclination_angVel
 
-        self.horizontal_angAcc = self.initial_horizontal_angAcc
-        self.vertical_angAcc = self.initial_vertical_angAcc
+        self.azimuth_angAcc = self.initial_azimuth_angAcc
+        self.inclination_angAcc = self.initial_inclination_angAcc
         
 
         # Save the starting position as "first" step
@@ -370,7 +370,7 @@ class DrillEnv(gym.Env):
 
     def display_planes(self):
         plt.subplot(2,1,1)
-    #def display_horizontal_plane_of_environment(self):
+    #def display_azimuth_plane_of_environment(self):
         # Get data
         x_positions = []
         y_positions = []
@@ -427,7 +427,7 @@ class DrillEnv(gym.Env):
         plt.legend()
         #plt.show()
     
-    #def display_vertical_plane_of_environment(self):
+    #def display_inclination_plane_of_environment(self):
         # Get data
         plt.subplot(2,1,2)
         x_positions = []
@@ -500,7 +500,7 @@ class DrillEnv(gym.Env):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.plot(x_positions,y_positions,z_positions)
-        #ax.invert_zaxis()
+        #ax.inINCL_zaxis()
 
         # Plot circles from targetballs, colors just to verify the order of the balls
         colors_order = {

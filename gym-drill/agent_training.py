@@ -26,10 +26,10 @@ print("-------------------------------------------------------------------------
 
 # Creating an environment with default settings. See register function for details
 ENV_name = 'drill-v0'
-ENV = gym.make(ENV_name)
+ENV = gym.make(ENV_name, activate_hazards = True)
 
 #Custom network architecture 
-policy_kwargs= dict(act_fun=tf.nn.relu,  layers=[64,64,64,32]) # Use as argument when doing model =...(policy_kwargs = policy_kwargs)
+policy_kwargs= dict(act_fun=tf.nn.relu,  layers=[64,64,64,64,64,64,32,16]) # Use as argument when doing model =...(policy_kwargs = policy_kwargs)
 
 
 # Foldernames

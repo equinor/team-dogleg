@@ -5,7 +5,7 @@ import numpy as np
 
 from gym_drill.envs.Coordinate import Coordinate
 
-STARTLOCATION = Coordinate(150,850)
+STARTLOCATION = Coordinate(1000,1000,1000)
 BIT_INITIALIZATION = [3.8*np.pi/4,0.0,0.0]
 
 env_name = 'drill-v0'
