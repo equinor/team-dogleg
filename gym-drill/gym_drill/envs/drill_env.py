@@ -519,13 +519,13 @@ class DrillEnv(gym.Env):
         cnt = 1
         for target in self.targets:
 
-            plot_ball(target.center.x,target.center.y,target.center.z,target.radius,colors_order[cnt],ax,str(cnt))
+            plot_sphere(target.center.x,target.center.y,target.center.z,target.radius,"green",ax,str(cnt))
             #label = "Target #" + str(cnt)
             
             cnt += 1
 
         for hazard in self.hazards:
-            plot_ball(hazard.center.x,hazard.center.y,hazard.center.z,hazard.radius,'k',ax,'')
+            plot_sphere(hazard.center.x,hazard.center.y,hazard.center.z,hazard.radius,"red",ax,'')
 
         # Set axis 
         #ax = plt.gca()
@@ -540,6 +540,22 @@ class DrillEnv(gym.Env):
         plt.show()
 
    
+
+def plot_sphere(x0, y0, z0, r, c, ax, name=''):
+
+    # Make data
+    u = np.linspace(0, 2 * np.pi, 12)
+    v = np.linspace(0, np.pi, 8)
+    x = x0 + r * np.outer(np.cos(u), np.sin(v))
+    y = y0 + r * np.outer(np.sin(u), np.sin(v))
+    z = z0 + r * np.outer(np.ones(np.size(u)), np.cos(v))
+
+    # Plot the surface
+    ax.plot_wireframe(x, y, z, color=c)
+    ax.text(x0 + r, y0 + r, z0 + r, name, None)
+
+
+
 def plot_ball(x0,y0,z0,r,c,ax, name):
     
     # Make data

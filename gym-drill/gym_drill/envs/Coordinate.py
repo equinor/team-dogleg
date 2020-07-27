@@ -29,4 +29,15 @@ class Coordinate:
 
     @classmethod
     def getEuclideanDistance(cls,p1,p2):
-        return np.abs(np.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2 + (p1.z - p2.z)**2))
+        return np.linalg.norm(np.array([p2.x - p1.x, p2.y - p1.y, p2.z - p1.z]))
+
+
+if __name__ == "__main__":
+    v1 = Coordinate(3, 3, 10)
+    v2 = Coordinate(-4, 2, 4)
+    dist = Coordinate.getEuclideanDistance(v1, v2)
+    if 0.99 < dist/9.273618495495704 < 1.01:
+        print("getEuclideanDistance seems to be working")
+    else:
+        print("getEuclideanDistance doesnt work")
+    
