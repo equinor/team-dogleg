@@ -1,4 +1,3 @@
-![alt text](https://dwglogo.com/wp-content/uploads/2019/03/2500px-equinor_logo.png)
 # Automate well trajectory planning using artificial intelligence - Team Dogleg
 Team repo for Team Dogleg, working on the case *Test reinforcement learning to automate well trajectories* - Equinor Virtual Summer Internship 2020. 
 
