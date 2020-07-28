@@ -10,6 +10,9 @@ from gym_drill.envs.Target import TargetBall
 from gym_drill.envs.Hazard import Hazard
 
 def _init_log(*,filename="drill_log.txt"):
+    print("Initiating log..")
+    print("Running with log greatly reduces performance and is not recommended during longer training sessions!")
+    print("It is recommended to run with log when developing i.e the reward system of the environment.")
     f = open(filename,"w")
     init_msg = "Log for training session started at " + str(datetime.now()) +"\n \n"
     f.write(init_msg)
@@ -34,7 +37,7 @@ def _read_env_from_file(filename,line_number):
             environment_line = line
             break
     
-    target_string = environment_line.split("-")[0]
+    target_string = environment_line.split("/")[0]
     target_list_string = target_string.split(";")
     for t in target_list_string:
         # "10,10,5"
@@ -50,12 +53,17 @@ def _read_env_from_file(filename,line_number):
             r = int(r)
 
         except Exception:
+            print(target_string)
+            print(target_list_string)
+            print("t;",t)
+            print("l;",l)
+        
             raise ValueError("Coordinates in file are not numbers!")
         target_ball = TargetBall(x,y,z,r)
         targets.append(target_ball)   
     
     try: 
-        hazard_string = environment_line.split("-")[1]
+        hazard_string = environment_line.split("/")[1]
         hazard_list_string = hazard_string.split(";")
         
         for h in hazard_list_string:
