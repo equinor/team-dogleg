@@ -1,6 +1,16 @@
 ## Custom Well Trajectory Environment
 
-Gym-Drill is a custom, OpenAI Gym compatible environment modelling a subsurface reservoar. Its main purpose is to be used in a reinforcement learning context to train an agent to find the best path from a given starting point, to a set of target balls. The environment inflicts a curvature constraint (dogleg severity limitation) on the agents well path. An option to include Hazards (hard constraints that the path cannot intersect) into the subsurface environment also exist. 
+Gym-Drill is a custom, OpenAI Gym compatible environment modelling a subsurface reservoar. Its main purpose is to be used in a reinforcement learning context to train an agent to find the best path from a given starting point, to a set of target balls. The environment inflicts a curvature constraint (dogleg severity limitation) on the agents well path. An option to include Hazards (hard constraints that the path cannot intersect) into the subsurface environment also exist.
+
+### Table of Contents
+
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Advanced use](#advanced-use)
+    - [Overwriting the starting conditions](#overwriting-the-starting-conditions)
+    - [Toggle hazards, Monte Carlo simulated training and episode log](#toggle-hazards,-monte-carlo-simulated-training-and-episode-log)
+    - [Adjust environment parameters](#adjust-environment-parameters)
+    - [Key functions to utilize when training](#key-functions-and-attributes-to-utilize-when-training)
 
 ### Installation
 
@@ -45,7 +55,7 @@ To initialize an instance of the environment with your own specificed parameters
 ```python
 env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
 ```
-where `STARTLOCATION` is of type [**Coordinate**](gym_drill/envs/Coordinate.py) and `BIT_INITIALIZATION` is a list/tuple on the form `[initialAngle, initialAngularVelocity, initialAngularAcceleration]`. An example of creating an environment with custom parameters would be:
+where `STARTLOCATION` is of type [**Coordinate**](gym_drill/envs/Coordinate.py) and `BIT_INITIALIZATION` is a list/tuple on the form ```[initial_azimuth_angle, initial_azimuth_angular_velocity, initial_azimuth_angular_acceleration,initial_inclination_angle, initial_inclination_angular_velocity, initial_inclination_angular_acceleration```. An example of creating an environment with custom parameters would be:
 
 ```python
 import gym
@@ -55,7 +65,7 @@ import numpy as np
 from gym_drill.envs.customAdditions import Coordinate
 
 STARTLOCATION = Coordinate(0.0,0.0,0.0)
-BIT_INITIALIZATION = [0.0,0.0,0.0]
+BIT_INITIALIZATION = [0.0,0.0,0.0,0.0,0.0,0.0]
 
 env_name = 'drill-v0'
 env = gym.make(env_name,startLocation = STARTLOCATION, bitInitialization = BIT_INITIALIZATION)
@@ -77,7 +87,18 @@ env = gym.make("drill-v0",activate_hazards = False,monte_carlo = False,activate_
 ```
 
 #### Adjust environment parameters
-physical attributes, movement limitations, rewards, what is contained in the observation space 
-#### Key functions to utilize when training
+
+The environment and an agent exeperience in the environment is described by a set of variables that control physical attributes, movement limitations, rewards, what is contained in the observation space and more. These are all stored in the [environment_config](gym_drill/envs/environment_config.py) file. If you feel like changing aspects of the environment for yourself by tweaking these variables all you have to do is update the values inside this file.
+#### Key functions and attributes to utilize when training
+As the environment is OpenAI gym compatible it has all the attributes and functions you would expect to be in an OpenAI gym environement pr [the documentation](https://gym.openai.com/docs/). These include, but are not limited to:
+
+- A ``reset()`` function which resets the environment to its initial state. Note that even if you are [overwriting the starting conditions](#overwriting-the-starting-conditions) the Azimuth and Inclination angle will be drawn randomly, to ensure that the training is not beeing overfitted for one particular starting angle.
+- A ``step()`` function that accepts an ``action`` and executes that action in the environment. In accordance with the documentation the ``step()`` function returns:
+    - An ``observation`` object, containing the new state of the environment after the action has been executed
+    - A ``reward`` (float), which is the reward the agent recieved for exectuing the particular action 
+    - A ``done`` signal (boolean) indicating wheter or not the episode is over
+    - An ``info`` (dictionary) message containing diagnostic information useful for debugging. 
+
+The only deviation from the functions describes in the documentation is that the ``render()`` function that most OpenAI gym environment use to display the environment has been replaced with two seperate functions. ``display_planes()`` for displaying the horizontal (xy) and vertical (zy) planes and ``display_3d_environment()`` which displays the path and environment in a 3D plot.
 
 *Last updated 28.07.2020*
