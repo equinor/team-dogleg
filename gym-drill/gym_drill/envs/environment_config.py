@@ -1,15 +1,23 @@
+"""
+This config file completely describes the "physical" aspects of the environemnt aswell as its rewards system
+"""
+
 import numpy as np
 
-# Environment variables
+# Limits on the angles. They should match the limits of angles describing a sphere in spherical coordinates
 MIN_INCL_ANGLE = 0
 MAX_INCL_ANGLE = np.pi
 
-# Max values for angular velocity and acceleration
+MAX_AZIMUTH_ANGLE = 2*np.pi
+
+# Max values for angular velocity and acceleration for both angles
 MAX_ANGVEL = 0.1
 MAX_ANGACC = 0.02
 
-# The allowed increment. We either add or remove this value to the angular acceleration
+# The allowed increment. We either add or remove this value to both angles angular acceleration 
 ANGACC_INCREMENT = 0.02
+
+# Step size. For each step the bit position gets updated with DRILL_SPEED multiplied with cos/sin of one of the angles
 DRILL_SPEED = 10
 
 # Screen size, environment should be square

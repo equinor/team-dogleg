@@ -1,8 +1,25 @@
-# team-dogleg
-Team repo for Team Dogleg - Virtual summer internship 2020
+# Automate well trajectory planning using artificial intelligence - Team Dogleg
+Team repo for Team Dogleg, working on the case *Test reinforcement learning to automate well trajectories*- Equinor Virtual Summer Internship 2020. 
 
-## Run locally
-It is recommended to [run using docker](#run-with-docker-using-windows), however if you don't have Docker available it is possible to run it *normally* on you computer.
+## Table of Contents
+
+- [What it is](#what-it-is)
+- [Quickstart](#quickstart)
+    - [Run locally](#run-locally)
+    - [Run with Docker using Windows](#run-with-docker-using-windows)
+    - 
+
+## What it is
+
+#### The problem
+Planning the trajectory of a subsurface well is to a large extent a manual process. This is resoruce demanding and will in many cases not yield
+
+## Quickstart
+
+To quickly train, retrain og load a trained model
+
+### Run locally
+It is recommended to [run using docker](#run-with-docker-using-windows), however if you don't have Docker available it is possible to run it *normally* on your computer.
 
 ### Installations
 

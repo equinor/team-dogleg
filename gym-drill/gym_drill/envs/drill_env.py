@@ -25,7 +25,7 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
 }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=True,activate_log=False):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False,activate_log=False):
         self.activate_log = activate_log
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
@@ -41,14 +41,12 @@ class DrillEnv(gym.Env):
 
         # We init parameters here        
         self.bitLocation = startLocation
-        self.azimuth_heading = uniform(0,np.pi/2)
-        self.inclination_heading = uniform(0,np.pi/4)
+        self.azimuth_heading = bitInitialization[0]
+        self.inclination_heading = bitInitialization[1]
 
-        #self.angVel = bitInitialization[1]
         self.azimuth_angVel = bitInitialization[2]
         self.inclination_angVel =bitInitialization[3]
 
-        #self.angAcc = bitInitialization[2]
         self.azimuth_angAcc = bitInitialization[4]
         self.inclination_angAcc =bitInitialization[5]      
 
@@ -170,20 +168,28 @@ class DrillEnv(gym.Env):
 
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
+        #indexes of action space:
+        #---------------------#
+        #   0       1       2 # (0-2): accelerate upwards
+        #   3       4       5 # (3-5): don't accelate in the vertical plane
+        #   6       7       8 # (6-8): accelerate downwards
+        #---------------------#
+        # (0,3,6): accelerate left
+        # (1,4,7): don't accelerate in the horizontal plane 
+        # (2,5,8): accelerate right
+        
         # Update angular acceleration, if within limits
-        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:             #indexes of action space:
-            self.inclination_angAcc += cfg.ANGACC_INCREMENT                     #   0       1       2 | (0-2): accelerate upwards
-        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:          #   3       4       5 | (3-5): don't accelate in the vertical plane
-            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                     #   6       7       8 | (6-8): accelerate downwards
-                                                                                #---------------------
-                                                                                #(0,3,6): accelerate left 
-                                                                                #        (1,4,7): don't accelerate in the horizontal plane
-                                                                                #                (2,5,8): accelerate right
+        # Inclinaition
+        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:             
+            self.inclination_angAcc += cfg.ANGACC_INCREMENT                     
+        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:          
+            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                
+        
+        # Azmuth             
         if (action == 0 or action == 3 or action == 6) and self.azimuth_angAcc > -cfg.MAX_ANGACC:
             self.azimuth_angAcc -= cfg.ANGACC_INCREMENT
         elif (action == 2 or action == 5 or action == 8) and self.azimuth_angAcc < cfg.MAX_ANGACC:
-            self.azimuth_angAcc += cfg.ANGACC_INCREMENT
-        
+            self.azimuth_angAcc += cfg.ANGACC_INCREMENT        
 
         # Update angular velocity
         # Inclination
@@ -210,10 +216,8 @@ class DrillEnv(gym.Env):
             self.inclination_angVel = cfg.MAX_ANGVEL
             self.inclination_angAcc = 0
 
-
         # Update heading
-        self.azimuth_heading = (self.azimuth_heading + self.azimuth_angVel) % (2 * np.pi)
-
+        self.azimuth_heading = (self.azimuth_heading + self.azimuth_angVel) % (cfg.MAX_AZIMUTH_ANGLE)
         
         if ((self.inclination_heading + self.inclination_angVel) < cfg.MAX_INCL_ANGLE) and ((self.inclination_heading + self.inclination_angVel) > cfg.MIN_INCL_ANGLE):
             self.inclination_heading= self.inclination_heading + self.inclination_angVel
@@ -227,8 +231,6 @@ class DrillEnv(gym.Env):
             self.inclination_heading = cfg.MIN_INCL_ANGLE
             self.inclination_angVel = 0
             self.inclination_angAcc = 0
-
-
 
         # Update position
         self.bitLocation.x += cfg.DRILL_SPEED * np.sin(self.inclination_heading)*np.cos(self.azimuth_heading)
