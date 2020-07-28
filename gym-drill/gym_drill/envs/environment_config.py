@@ -18,7 +18,7 @@ SCREEN_Y = 2000
 SCREEN_Z = 2000
 
 # Step budget agent has available 
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.5
 
 # Target specs specifying where a target can exist
 TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
@@ -26,9 +26,8 @@ TARGET_BOUND_Y = [0.25*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [40,50]
 
-NUM_TARGETS = 2
-TARGET_WINDOW_SIZE = 2
-
+NUM_TARGETS = 8
+TARGET_WINDOW_SIZE = 3
 
 # Hazard specs. Can exist in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -62,5 +61,6 @@ INCLINATION_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 # Generating environments with a Monte Carlo simulation
-NUM_MONTE_CARLO_ENVS = int(1e3)
+NUM_MONTE_CARLO_ENVS = int(1e4)
+MC_PATH_LENGTH_BOUND = [250,350]
 ENVIRONMENT_FILENAME = "environments.txt"

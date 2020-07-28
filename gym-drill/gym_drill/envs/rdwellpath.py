@@ -45,7 +45,7 @@ def targetset_to_file(file_name, tset_list):
             tmp = separator.join(target_str_list)
             file.write(tmp)
             # Print dash
-            file.write("-")
+            file.write("/")
 
             # Print hazards
             hazard_str_list = []
@@ -217,6 +217,6 @@ def random_targetset_to_file(file_name, n_sets, n_targets, start_pos, min_len, m
 
 
 if __name__ == "__main__":
-    random_targetset_to_file("deletethis.txt", 4, 5, [100, 100, 100], 140, 270)
+    random_targetset_to_file("deletethis.txt", 4, 5, [100, 100, 100], 180, 320)
 
 

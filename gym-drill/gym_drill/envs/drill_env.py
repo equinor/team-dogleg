@@ -25,7 +25,7 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
 }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False,activate_log=False):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=True,activate_log=False):
         self.activate_log = activate_log
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
@@ -63,7 +63,7 @@ class DrillEnv(gym.Env):
         # Generate feasible environments to train in using a Monte Carlo simulation 
         if self.monte_carlo:
             print("Running", str(cfg.NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
-            rwp.random_targetset_to_file(cfg.ENVIRONMENT_FILENAME,cfg.NUM_MONTE_CARLO_ENVS,cfg.NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],120,200)      
+            rwp.random_targetset_to_file(cfg.ENVIRONMENT_FILENAME,cfg.NUM_MONTE_CARLO_ENVS,cfg.NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],cfg.MC_PATH_LENGTH_BOUND[0],cfg.MC_PATH_LENGTH_BOUND[1])      
 
         self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
@@ -89,7 +89,7 @@ class DrillEnv(gym.Env):
             else:
                 self.hazards = []
         else:
-            linenr = np.random.randint(1,cfg.NUM_MONTE_CARLO_ENVS)
+            linenr = np.random.randint(1,cfg.NUM_MONTE_CARLO_ENVS-10)
             self.targets,self.hazards = es._read_env_from_file(cfg.ENVIRONMENT_FILENAME,linenr)
             # Overwrite hazards to be empty if not activated
             if not self.activate_hazards:
@@ -106,7 +106,6 @@ class DrillEnv(gym.Env):
 
         self.state = self.get_state()
         return np.array(self.state), reward, done, {}
-
     
 
     def get_reward_and_done_signal(self):
@@ -123,8 +122,7 @@ class DrillEnv(gym.Env):
             reward += cfg.ANGULAR_ACCELERATION_PENALTY
         
         if self.inclination_angVel != 0:
-            reward += cfg.ANGULAR_VELOCITY_PENALTY
-        
+            reward += cfg.ANGULAR_VELOCITY_PENALTY        
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < cfg.SCREEN_X and 0 < self.bitLocation.y < cfg.SCREEN_Y and 0 < self.bitLocation.z < cfg.SCREEN_Z):
