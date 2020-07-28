@@ -2,8 +2,8 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-import matplotlib as mpl # To remove plotting in the browser remove this line
-mpl.use("WebAgg") # and remove this line
+#import matplotlib as mpl # To remove plotting in the browser remove this line
+#mpl.use("WebAgg") # and remove this line
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
@@ -157,25 +157,12 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
-            pre_adjusted_azimuth_reward = np.cos(self.get_relative_azimuth_angle(current_target)) # value between -1 and +1 
+            pre_adjusted_azimuth_reward = np.cos(es.get_relative_azimuth_angle(self.bitLocation, self.azimuth_heading, current_target)) # value between -1 and +1 
             reward += pre_adjusted_azimuth_reward*cfg.ANGLE_REWARD_FACTOR
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
                 reward += np.cos(self.inclination_heading)*(height_diff/abs(height_diff))*cfg.INCLINATION_REWARD_FACTOR #reward for going in the right directen (up/down)
         return reward, done
-
-
-    def get_horizontal_dist(self,obj):
-        return np.sqrt((obj.center.x -self.bitLocation.x)**2+(obj.center.y - self.bitLocation.y)**2)
-        
-    def get_relative_azimuth_angle(self,obj):
-        object_hor_pos_vector = np.array([obj.center.x,obj.center.y])
-        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
-        appr_vec = object_hor_pos_vector - curr_drill_hor_pos_vector
-        head_vec = np.array([np.cos(self.azimuth_heading), np.sin(self.azimuth_heading)])
-        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-
-        return angle_between_vectors
 
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
@@ -256,8 +243,8 @@ class DrillEnv(gym.Env):
         for target in self.observation_space_container.target_window:
 
             state_list.append(target.center.z-self.bitLocation.z)
-            state_list.append(self.get_horizontal_dist(target))
-            state_list.append(self.get_relative_azimuth_angle(target))
+            state_list.append(es.get_horizontal_dist(self.bitLocation,target))
+            state_list.append(es.get_relative_azimuth_angle(self.bitLocation, self.azimuth_heading,target))
             state_list.append(target.radius)
 
 
@@ -265,8 +252,8 @@ class DrillEnv(gym.Env):
         for hazard in self.observation_space_container.hazard_window:
 
             state_list.append(hazard.center.z-self.bitLocation.z)
-            state_list.append(self.get_horizontal_dist(hazard))
-            state_list.append(self.get_relative_azimuth_angle(hazard))
+            state_list.append(es.get_horizontal_dist(self.bitLocation,hazard))
+            state_list.append(es.get_relative_azimuth_angle(self.bitLocation, self.azimuth_heading,hazard))
             state_list.append(hazard.radius)
 
 
@@ -323,8 +310,8 @@ class DrillEnv(gym.Env):
             self.viewer = None
     
     def display_state(self):
-        print("Bit location (Not in ObsSpace):", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
-        print("Bit angles: ", self.state[0:5])
+        print("Bit location (Not a part of ObsSpace):", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
+        print("Bit angles: ", self.state[0:2],"\n","angular velocities: ", self.state[2:4],"\n","angular accelerations: ", self.state[4:6])
         print("Targets inside window: ")
         for i in range(len(self.observation_space_container.target_window)):
             t = TargetBall(self.state[6+4*i],self.state[7+4*i],self.state[8+4*i],self.state[9+4*i])
@@ -596,22 +583,34 @@ if __name__ == '__main__':
     action = random.choice(range(action_size))
     env.step(action)
     print("I took one step, this is what the current state is:")
-    print(env.state)
-
+    #print(env.state)
+    print("\n display state: \n")
+    env.display_state()
+    print("\n") 
+    print("\n display targets: \n")
+    env.observation_space_container.display_targets()
+    print("\n") 
+    print("\n display hazards: \n")
     env.observation_space_container.display_hazards()
+    print("\n") 
     env.display_3d_environment()
 
-    for _ in range (5000):
+    for _ in range (500):
         action = random.choice(range(action_size))
         env.step(action)
-    print("50 steps later")
+    print("500 steps later")
+    print("\n display state: \n")
     env.display_state()
-    env.observation_space_container.display_hazards()
+
+    #env.observation_space_container.display_targets()
+    #env.observation_space_container.display_hazards()
     env.display_3d_environment()
 
-    print("Resetting")
+    print("\n Resetting \n")
     env.reset()
+    print("\n display state: \n")
     env.display_state()
-    env.observation_space_container.display_hazards()
+    #env.observation_space_container.display_targets()
+    #env.observation_space_container.display_hazards()
     env.display_3d_environment()
    

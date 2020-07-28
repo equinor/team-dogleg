@@ -8,7 +8,7 @@ import numpy as np
 import gym
 from gym import spaces
 
-# Targets are assumed to be ordered ObservationSpace(TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
+# Targets are assumed to be ordered ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
 class ObservationSpace:
     def __init__(self,space_bounds,target_bounds,hazard_bounds,bit_bounds,targets,hazards, bit_starting_pos):
         # Spacial
@@ -46,15 +46,15 @@ class ObservationSpace:
         self.hazard_r_bound = hazard_bounds[3]
 
     def display_targets(self):
-        print("The current target window looks like this:")
+        print("The current target window contains the following target(s):")
         for w in self.target_window:
             print(w)
         print("The remaining targets are:")
-        for t in self.remaining_targets:
+        for t in self.remaining_targets[(cfg.TARGET_WINDOW_SIZE-1):]:
             print(t)
 
     def display_hazards(self):
-        print("The current hazard window looks like this:")
+        print("The current hazard window contains the following hazard(s):")
         for w in self.hazard_window:
             print(w)
         print("All hazards are:")
@@ -63,15 +63,15 @@ class ObservationSpace:
             
     # To print the obs_space. Can be nice for debugging purposes
     def __str__(self):
-        text = "The observation space looks like this: \n \n" + "Spacial bounds: " \
-        + str(self.lower_x) + " < x < " + str(self.upper_x) +" and " + str(self.lower_y) \
-        + " < y < " + str(self.upper_y)+ ". \n \n" \
+        text = "The observation space looks like this: \n \n" \
         + "Bit related bounds: \n" + "Azimuth heading interval: [" + str(self.lower_azimuth_heading)+","\
         + str(self.upper_azimuth_heading) + "] \n" \
         + "Inclination heading interval: [" + str(self.lower_inclination_heading)+","\
         + str(self.upper_inclination_heading) + "] \n" \
-        + "Angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
-        + "Angular acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
+        + "Azimuth angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
+        + "Inclination angular velocity interval [" + str(self.lower_ang_vel) + ","+ str(self.upper_ang_vel) + "] \n"   \
+        + "Azimuth angular acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
+        + "Inclination acceleration interval [" + str(self.lower_ang_acc) + "," + str(self.upper_ang_acc) + "] \n \n" \
         + "There are " + str(cfg.TARGET_WINDOW_SIZE) + " targets inside the window. These are: \n" 
         
         for t in self.target_window:
@@ -137,7 +137,7 @@ class ObservationSpace:
             print("No more targets to add to window, we are done!")    
     
 
-    def get_space_box(self):#This has to be updated to fit the 3D environment
+    def get_space_box(self):
         lower = np.array([self.lower_azimuth_heading,self.lower_inclination_heading,self.lower_ang_vel,self.lower_ang_vel,self.lower_ang_acc,self.lower_ang_acc])
         upper = np.array([self.upper_azimuth_heading,self.upper_inclination_heading,self.upper_ang_vel,self.upper_ang_vel,self.upper_ang_acc,self.upper_ang_acc])
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
     SCREEN_Y = 2000
     SCREEN_Z = 2000
 
-    SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z] # x_low,x_high,y_low,y_high
-    BIT_BOUNDS = [0,2*np.pi,0,np.pi,-0.05,0.05,-0.05,0.05,-0.1,0.1,-0.1,0.1] #
+    SPACE_BOUNDS = [0,SCREEN_X,0,SCREEN_Y,0,SCREEN_Z]
+    BIT_BOUNDS = [0,2*np.pi,0,np.pi,-0.05,0.05,-0.05,0.05,-0.1,0.1,-0.1,0.1]
 
     TARGET_BOUND_X = [0.5*SCREEN_X,0.9*SCREEN_X]
     TARGET_BOUND_Y = [0.1*SCREEN_Y,0.6*SCREEN_Y]
@@ -180,14 +180,7 @@ if __name__ == '__main__':
         target_candidate = TargetBall(target_center.x,target_center.y,target_center.z,target_radius)
         targets.append(target_candidate)
     
-    hazards = []
-    # Additional data
-    DIAGONAL = np.sqrt(SCREEN_X**2 + SCREEN_Y**2 + SCREEN_Z**2)
-    TARGET_DISTANCE_BOUND = [0,DIAGONAL]
-    RELATIVE_ANGLE_BOUND = [-np.pi,np.pi]
-    EXTRA_DATA_BOUNDS = [TARGET_DISTANCE_BOUND,RELATIVE_ANGLE_BOUND]
-
-    
+    hazards = []  
     for _ in range(4):
         hazard_center = Coordinate(np.random.uniform(HAZARD_BOUND_X[0],HAZARD_BOUND_X[1]),np.random.uniform(HAZARD_BOUND_Y[0],HAZARD_BOUND_Y[1]),np.random.uniform(HAZARD_BOUND_Z[0],HAZARD_BOUND_Z[1]))
         hazard_radius = np.random.uniform(HAZARD_RADII_BOUND[0],HAZARD_RADII_BOUND[1])
@@ -198,7 +191,6 @@ if __name__ == '__main__':
     print("Creating obs_space")
     print()
     obs_space = ObservationSpace(SPACE_BOUNDS,TARGET_BOUNDS,HAZARD_BOUNDS,BIT_BOUNDS,targets,hazards,Coordinate(1000,1000,1000))
-    #print(obs_space)
     print("test hazard window")
     obs_space.update_hazard_window(Coordinate(600,600,600))
     print(obs_space.hazard_window)
@@ -206,7 +198,7 @@ if __name__ == '__main__':
     
     box = obs_space.get_space_box()
     print(box)
-    print("Expected dimension of the obs space is: ", 6 + 4*cfg.TARGET_WINDOW_SIZE + 4*(cfg.HAZARD_WINDOW_SIZE) + 0) # Only 0 extra data
+    print("Expected dimension of the obs space is: ", 6 + 4*cfg.TARGET_WINDOW_SIZE + 4*(cfg.HAZARD_WINDOW_SIZE))
     
     print("Test shifting of window")
     print("State before shifting")
