@@ -4,6 +4,7 @@ import random
 import numpy as np 
 import matplotlib.pyplot as plt
 import os
+from random import uniform
 
 from gym_drill.envs.Coordinate import Coordinate
 #from gym_drill.envs.Policies import CustomPolicy
@@ -26,7 +27,7 @@ print("-------------------------------------------------------------------------
 
 # Creating an environment with default settings. See register function for details
 ENV_name = 'drill-v0'
-ENV = gym.make(ENV_name, bitInitialization= [0.0,0.0,0.0,0.0,0.0,0.0], activate_hazards = True)
+ENV = gym.make(ENV_name, bitInitialization= [uniform(0,2*np.pi),uniform(0,np.pi/4),0.0,0.0,0.0,0.0], activate_hazards = True)
 
 #Custom network architecture 
 policy_kwargs= dict(act_fun=tf.nn.relu,  layers=[64,64,64,64,64,32,16]) # Use as argument when doing model =...(policy_kwargs = policy_kwargs)
