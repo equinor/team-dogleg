@@ -2,9 +2,11 @@ import gym
 import gym_drill
 import random
 import numpy as np 
-import matplotlib.pyplot as plt
 import os
 from random import uniform
+import matplotlib as mpl # To remove plotting in the browser remove this line
+mpl.use("WebAgg") # and remove this line
+import matplotlib.pyplot as plt
 
 from gym_drill.envs.Coordinate import Coordinate
 #from gym_drill.envs.Policies import CustomPolicy
@@ -128,16 +130,50 @@ def display_agent(model,*,num_episodes = 1,source_folder = TRAINED_MODEL_FOLDER_
 			while not done:
 				action, _states = trained_model.predict(obs)
 				obs, rewards, done, info = ENV.step(action)
-			print("Showing 3D plot at: http://127.0.0.1:8988/")
-			ENV.display_3d_environment()
-			print("Showing Planes plot at: http://127.0.0.1:8988/")
-			ENV.display_planes()
-			state = ENV.reset()
-			
+
+			fig_xy = ENV.get_xy_plane_figure()
+			fig_xz = ENV.get_xz_plane_figure()
+			fig_3d = ENV.get_3d_figure()
 			print('[EPISODE ENDED]')
+			print("Showing plots at: http://127.0.0.1:8988/")		
+			plt.show()	
+
+			obs = ENV.reset()
+			
 
 	else:
 		print("Vectorized env not implemented yet")
+def get_environment_figures(model,*,source_folder = TRAINED_MODEL_FOLDER_DOCKER,vector = False):
+	if not vector:
+		try:
+			model_to_load = source_folder + model 
+			trained_model = DQN.load(model_to_load, ENV)
+		except Exception as e:
+			try:
+				source_folder = TRAINED_MODEL_FOLDER_LOCAL
+				model_to_load = source_folder + model
+				trained_model = DQN.load(model_to_load, ENV)
+			except Exception as e:
+				print("Failed to load model.")
+				print("If model is not inside the trained_model folder, override the source_folder to match the desired folder")
+				print(str(e))
+				os._exit(0)
+
+		# Show the result of the training
+		obs = ENV.reset()
+		for episode in range (1):
+			done = False
+			while not done:
+				action, _states = trained_model.predict(obs)
+				obs, rewards, done, info = ENV.step(action)
+
+			fig_xy = ENV.get_xy_plane_figure()
+			fig_xz = ENV.get_xz_plane_figure()
+			fig_3d = ENV.get_3d_figure()
+			return fig_xy,fig_xz,fig_3d
+	else:
+		print("Vectorized env not implemented yet")
+
 
 # Change mode to path to get path data
 def benchmark_environment(targets,hazards,model,*, 

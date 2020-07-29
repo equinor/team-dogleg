@@ -2,8 +2,6 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-#import matplotlib as mpl # To remove plotting in the browser remove this line
-#mpl.use("WebAgg") # and remove this line
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
@@ -333,8 +331,8 @@ class DrillEnv(gym.Env):
             h = Hazard(self.state[6+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[7+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[8+cfg.TARGET_WINDOW_SIZE*4+4*i],self.state[9+cfg.TARGET_WINDOW_SIZE*4+4*i])
             print(h)
 
-    def display_planes(self):
-        plt.subplot(2,1,1)
+    def get_xy_plane_figure(self):
+        fig = plt.figure()
 
         x_positions = []
         y_positions = []
@@ -389,10 +387,11 @@ class DrillEnv(gym.Env):
         plt.plot(x_positions,y_positions,"grey")
         plt.title("Well trajectory path in horizontal plane (x,y)")
         plt.legend()
+        
+        return fig
 
-    
-
-        plt.subplot(2,1,2)
+    def get_xz_plane_figure(self):
+        fig1 = plt.figure()
         x_positions = []
         z_positions = []
         for position in self.step_history:
@@ -447,10 +446,9 @@ class DrillEnv(gym.Env):
         plt.title("Well trajectory path in vertical plane (x,z)")
         plt.legend()
         
-        plt.show()
-    
+        return fig1    
 
-    def display_3d_environment(self):
+    def get_3d_figure(self):
         # Get data
         x_positions = []
         y_positions = []
@@ -481,7 +479,6 @@ class DrillEnv(gym.Env):
             }
         cnt = 1
         for target in self.targets:
-
             plot_sphere(target.center.x,target.center.y,target.center.z,target.radius,"green",ax,str(cnt))
             #label = "Target #" + str(cnt)
             
@@ -500,9 +497,7 @@ class DrillEnv(gym.Env):
         ax.set_ylabel("East")
         ax.set_zlabel("Down")
 
-        plt.show()
-
-   
+        return fig   
 
 def plot_sphere(x0, y0, z0, r, c, ax, name=''):
     # Make data

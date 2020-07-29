@@ -48,9 +48,21 @@ function delete_running($name) {
 function run {
     run_container ; if($?) {run_tensorboard} ; if ($?) {run_python_script $python_filename $action $name $algorithm $timesteps $new_save_name}    
 }
+function run2($script_action) {
+    if ($script_action -eq "load") {
+        Write-Output("Load")
+    }
+    elseif ($script_action -eq "train" -or $script_action -eq "retrain"){
+        Write-Output("train")
+    }
+    else{
+        Write-Output($script_action, "is not a valid argument!")
+    }
+}
 
 if ($build -or $b) {build_container}
-elseif ($run -or $r) {run}
+#elseif ($run -or $r) {run}
+elseif ($run -or $r) {run2($action)}
 elseif ($auto -or $a) {build_container ; if ($?) {run}}
 else {    
     Write-Output("You must specify an action!")
