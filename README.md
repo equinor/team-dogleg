@@ -1,27 +1,43 @@
 # Automate well trajectory planning using artificial intelligence - Team Dogleg
-Team repo for Team Dogleg, working on the case *Test reinforcement learning to automate well trajectories*- Equinor Virtual Summer Internship 2020. 
+Team repo for Team Dogleg, working on the case *Test reinforcement learning to automate well trajectories* - Equinor Virtual Summer Internship 2020. 
 
 ## Table of Contents
 
 - [What it is](#what-it-is)
+    - [The problem](#the-problem)
+    - [The soltuion](#the-solution)
 - [Quickstart](#quickstart)
     - [Run locally](#run-locally)
+        - [Installations](#installations-(local))
+        - [Run the program](#run-the-program)
+        - [Examples of running the program](#examples-of-running-the-program)
     - [Run with Docker using Windows](#run-with-docker-using-windows)
-    - 
+        - [Installations](#installations-(docker))
+        - [Building and running the Docker container](#building-and-running-the-docker-container)
+    - [Run with Docker using MacOS/Linux](#run-with-docker-using-macos/linux)
+- [Available algorithms](#available-algorithms)
+- [Using the custom environment](#using-the-custom-environment)
+- [Adjust training parameters](#adjust-training-parameters) 
+
 
 ## What it is
 
-#### The problem
-Planning the trajectory of a subsurface well is to a large extent a manual process. This is resoruce demanding and will in many cases not yield
+### The problem
+Planning the trajectory of a subsurface well is to a large extent a manual process. This is resoruce demanding and the resulting well path is not usually not the optimal path to the desired target location. It is therefore desirable to automate this process with the goal of simplify the well planning process, saving resources and creating more optimal well paths.
+
+### The solution
+
+This repository proposes software attempting to automate the planning of a well path trajectory using reinforcement learning. An agent is trained in an environment modelling a subsurface environment with hazards (no-go areas) and a set of target balls. It uses a [custom made](gym-drill/README.md) environment compatible with [OpenAI Gym](https://gym.openai.com/). The reinforcement learning is implemented using a set of implementations of reinforcement learning algorithms from [stable-baselines](https://stable-baselines.readthedocs.io/en/master/).
+
 
 ## Quickstart
 
-To quickly train, retrain og load a trained model
+This repository offers two ways to quickly train, retrain or load a trained model using a variety of the [available stable-baslines reinforcement learning algortihms](#available-algorithms). The solution has been dockerized for easy "shipping around-ability", however it is also possible to simply execute the python code outside of Docker on your host machine.  
 
 ### Run locally
 It is recommended to [run using docker](#run-with-docker-using-windows), however if you don't have Docker available it is possible to run it *normally* on your computer.
 
-### Installations
+### Installations (local)
 
 Install the requried dependencies:
 
@@ -65,7 +81,7 @@ The arguments are summarized in the table below.
 | Further train existing agent                       	| retrain  	| \<save_name>  \<algorithm_used> 	| \<timesteps>  \<new_save_name> 	|
 | Load and display existing agent in the environment 	| load     	| \<save_name>  \<algorithm_used> 	| -                              	|
 
-### Examples
+### Examples of running the program
 To further clarify how to properly run the program three examples demonstrating the three possible actions are shown.
 
 1. To **train** a new agent for a total of **600** timesteps using the **DQN** algorithm and saving the agent as **my_trained_agent** do:
@@ -84,17 +100,18 @@ To further clarify how to properly run the program three examples demonstrating 
 ```
 
 ## Run with Docker using Windows
-### Installations
+Running with Docker ensures that the code can execute on any computer with Docker installed. For user convenience all interactions with the Docker container is done from a PowerShell script. Should detalis regarding the specific Docker commands be of interest the user is reffered to [the script itself](run.ps1). It is recommended that you run the script from a PowerShell terminal as administrator. To get started, make sure you are allowed to execute scripts by setting the execution policy to unrestriced. In PowerShell, run
+
+```
+~$ Set-ExecutionPolicy Unrestricted
+``` 
+### Installations (Docker)
 
 Running with Docker is recommended to ensure a satisfying runtime environment. If you haven't already, install [Docker for Windows](https://docs.docker.com/docker-for-windows/install/).
 
 ### Building and running the Docker container
 
-For user convenience all interactions with the Docker container is done from a PowerShell script. Should detalis regarding the specific Docker commands be of interest the user is reffered to [the script itself](run.ps1). It is recommended that you run the script from a PowerShell terminal as administrator. To get started, make sure you are allowed to execute scripts by setting the execution policy to unrestriced. In PowerShell, run
-
-```
-~$ Set-ExecutionPolicy Unrestricted
-```
+Building and running the docker container is done by passing different flags as arguments to the ``./run.ps1`` script.
 
 #### Building the Docker container
 Build the Docker container using the ``-build`` flag:
@@ -133,6 +150,27 @@ All previously mentioned flags that can be passed to ```run.ps1``` have a corres
 
 Currently we don't have a fancy script for Linux users. To run with linux you would have to manually pass the commands from the ```run.ps1``` script into the terminal.
 
+Build the container using
+```cmd
+~$ docker build -t auto_well_path .
+```
+
+Then, run the conatiner using
+```cmd
+~$ docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  0.0.0.0:8988:8988 --name auto_well_path_running auto_well_path
+```
+If wanted, start the tensorboard server displaying the tensorboard graphs in the browser using
+
+```cmd
+~$ docker exec -dit auto_well_path_running tensorboard --logdir /usr/src/app/tensorboard_logs --host 0.0.0.0 --port 6006
+```
+
+Finally, start the python program using
+```
+~$ docker exec -it auto_well_path_running python main.py <action> <save_name> <algorithm> <timesteps>* <new_save_name>*
+```
+
+where the arguments are the same as the ones in the [running the program locally section](#run-the-program).
 ## Available algorithms
 
 The following algorithms to train agents are available 
@@ -142,9 +180,11 @@ The following algorithms to train agents are available
 
 More algorithms comming soon!
 
-## Life advice when using docker
+## Using the custom environment
 
-- List all your docker images by running `docker image`
-- Delete a docker image using `docker image rm [IMAGE ID]`. You can find the ID of the image by listing all images using `docker image`
+If it is desirable to perform your own non-stable-baselines training or just customize the training in general, using the custom made OpenAI Gym compatible environment, see the custom gym environment [documentation](gym-drill/README.md).
 
+## Adjust training parameters
+
+To tweak parameters related to the training in stable-baselines, see the [agent_training](gym-drill/agent_training.py) file together with the stable baselines documentation for the [specific algorithm you want to alter](#available-algorithms).
 
