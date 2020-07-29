@@ -1,5 +1,5 @@
 """
-Simple Coordinate classs
+Simple Coordinate class
 """
 import numpy as np
 

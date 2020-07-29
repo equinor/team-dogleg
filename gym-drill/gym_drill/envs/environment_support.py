@@ -37,7 +37,7 @@ def _read_env_from_file(filename,line_number):
             environment_line = line
             break
     
-    target_string = environment_line.split("-")[0]
+    target_string = environment_line.split("/")[0]
     target_list_string = target_string.split(";")
     for t in target_list_string:
         # "10,10,5"
@@ -53,12 +53,17 @@ def _read_env_from_file(filename,line_number):
             r = int(r)
 
         except Exception:
+            print(target_string)
+            print(target_list_string)
+            print("t;",t)
+            print("l;",l)
+        
             raise ValueError("Coordinates in file are not numbers!")
         target_ball = TargetBall(x,y,z,r)
         targets.append(target_ball)   
     
     try: 
-        hazard_string = environment_line.split("-")[1]
+        hazard_string = environment_line.split("/")[1]
         hazard_list_string = hazard_string.split(";")
         
         for h in hazard_list_string:
@@ -178,6 +183,18 @@ def _create_unique_random_hazard(start_pos,x_bound,y_bound,z_bound,r_bound,exist
 
 def _is_within(bitPosition,targetPosition,targetRadius):
     return (bitPosition.x - targetPosition.x)**2 + (bitPosition.y - targetPosition.y)**2 +(bitPosition.z - targetPosition.z)**2 < targetRadius**2
+
+def get_horizontal_dist(bitPosition,obj):
+    return np.sqrt((obj.center.x - bitPosition.x)**2+(obj.center.y - bitPosition.y)**2)
+
+def get_relative_azimuth_angle(bitPosition,azimuth_head,obj):
+    object_hor_pos_vector = np.array([obj.center.x,obj.center.y])
+    curr_drill_hor_pos_vector = np.array([bitPosition.x,bitPosition.y])
+    appr_vec = object_hor_pos_vector - curr_drill_hor_pos_vector
+    head_vec = np.array([np.cos(azimuth_head), np.sin(azimuth_head)])
+    angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
+
+    return angle_between_vectors
 
 def angle_between_vectors(v1, v2):
     # Returns the angle in radians between vectors 'v1' and 'v2'

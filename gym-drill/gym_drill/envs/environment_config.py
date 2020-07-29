@@ -1,34 +1,42 @@
+"""
+This config file completely describes the "physical" aspects of the environment aswell as its rewards system
+"""
+
 import numpy as np
 
-# Environment variables
+# Limits on the angles. They should match the limits of angles describing a sphere in spherical coordinates
 MIN_INCL_ANGLE = 0
 MAX_INCL_ANGLE = np.pi
+MAX_AZIMUTH_ANGLE = 2*np.pi
 
-# Max values for angular velocity and acceleration
+# Max values for angular velocity and acceleration for both angles
 MAX_ANGVEL = 0.1
 MAX_ANGACC = 0.02
 
-# The allowed increment. We either add or remove this value to the angular acceleration
+# The allowed increment. We either add or remove this value to both angles angular acceleration 
 ANGACC_INCREMENT = 0.02
-DRILL_SPEED = 10
 
-# Screen size, environment should be square
+# Step size. For each step the bit position gets updated with DRILL_SPEED multiplied with cos/sin of one of the angles
+DRILL_SPEED = STEP_SIZE = 10
+MC_DRILL_SPEED = MC_STEP_SIZE = 30
+
+# Envrionment dimensions
 SCREEN_X = 2000
 SCREEN_Y = 2000
 SCREEN_Z = 2000
 
 # Step budget agent has available 
-NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.3
+NUM_MAX_STEPS = ((SCREEN_X+SCREEN_Y+SCREEN_Z)/DRILL_SPEED)*1.5
 
-# Target specs specifying where a target can exist
+# Target specs specifying where a target can exist and how big it (the radius) can be
 TARGET_BOUND_X = [0.25*SCREEN_X,0.75*SCREEN_X]
 TARGET_BOUND_Y = [0.25*SCREEN_Y,0.75*SCREEN_Y]
 TARGET_BOUND_Z = [0.40*SCREEN_Z,0.85*SCREEN_Z]
 TARGET_RADII_BOUND = [40,50]
 
-NUM_TARGETS = 2
-TARGET_WINDOW_SIZE = 2
-
+# Numbers of targets in the environment and number of targets stored in the observation space at all times
+NUM_TARGETS = 8
+TARGET_WINDOW_SIZE = 3
 
 # Hazard specs. Can exist in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
@@ -36,6 +44,7 @@ HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_BOUND_Z = [0,SCREEN_Z]
 HAZARD_RADII_BOUND = [100,150]
 
+# Numbers of hazards in the environment and number of hazards stored in the observation space at all times
 NUM_HAZARDS = 8
 HAZARD_WINDOW_SIZE = 1
 
@@ -61,6 +70,7 @@ ANGLE_REWARD_FACTOR = 0.5
 INCLINATION_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
-# Generating environments with a Monte Carlo simulation
-NUM_MONTE_CARLO_ENVS = int(1e3)
+# Monte Carlo simulation specs
+NUM_MONTE_CARLO_ENVS = int(1e4)
+MC_PATH_LENGTH_BOUND = [100,340]
 ENVIRONMENT_FILENAME = "environments.txt"

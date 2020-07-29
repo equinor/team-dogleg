@@ -4,6 +4,7 @@ import random
 import numpy as np 
 import matplotlib.pyplot as plt
 import os
+from random import uniform
 
 from gym_drill.envs.Coordinate import Coordinate
 #from gym_drill.envs.Policies import CustomPolicy
@@ -26,10 +27,10 @@ print("-------------------------------------------------------------------------
 
 # Creating an environment with default settings. See register function for details
 ENV_name = 'drill-v0'
-ENV = gym.make(ENV_name, activate_hazards = True)
+ENV = gym.make(ENV_name, bitInitialization= [uniform(0,2*np.pi),uniform(0,np.pi/4),0.0,0.0,0.0,0.0], activate_hazards = True)
 
 #Custom network architecture 
-policy_kwargs= dict(act_fun=tf.nn.relu,  layers=[64,64,64,64,64,64,32,16]) # Use as argument when doing model =...(policy_kwargs = policy_kwargs)
+policy_kwargs= dict(act_fun=tf.nn.relu,  layers=[64,64,64,64,64,32,16]) # Use as argument when doing model =...(policy_kwargs = policy_kwargs)
 
 
 # Foldernames
@@ -40,7 +41,8 @@ TENSORBOARD_FOLDER_DQN = "../tensorboard_logs/DQN/"
 TENSORBOARD_FOLDER_PPO2 = "../tensorboard_logs/PPO2/"
 
 def train_new_DQN(total_timesteps,save_name):
-	model = DQN(LnMlpPolicy, ENV, verbose=1, learning_rate=0.0003, exploration_fraction=0.2,policy_kwargs=policy_kwargs,exploration_final_eps=0.0,tensorboard_log=TENSORBOARD_FOLDER_DQN)
+	print("Starting DQN training session of",total_timesteps,"timesteps...")
+	model = DQN(LnMlpPolicy, ENV, verbose=1, learning_rate=0.0003,gamma=0.999, exploration_fraction=0.2,policy_kwargs=policy_kwargs,exploration_final_eps=0.0,tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "DQN")
 	print("Done training with DQN algorithm.")
 	save_model(model,save_name)

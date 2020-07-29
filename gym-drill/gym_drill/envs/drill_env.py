@@ -2,8 +2,8 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-import matplotlib as mpl # To remove plotting in the browser remove this line
-mpl.use("WebAgg") # and remove this line
+#import matplotlib as mpl # To remove plotting in the browser remove this line
+#mpl.use("WebAgg") # and remove this line
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.lines import Line2D
@@ -41,14 +41,12 @@ class DrillEnv(gym.Env):
 
         # We init parameters here        
         self.bitLocation = startLocation
-        self.azimuth_heading = uniform(0,np.pi/2)
-        self.inclination_heading = uniform(0,np.pi/4)
+        self.azimuth_heading = bitInitialization[0]
+        self.inclination_heading = bitInitialization[1]
 
-        #self.angVel = bitInitialization[1]
         self.azimuth_angVel = bitInitialization[2]
         self.inclination_angVel =bitInitialization[3]
 
-        #self.angAcc = bitInitialization[2]
         self.azimuth_angAcc = bitInitialization[4]
         self.inclination_angAcc =bitInitialization[5]      
 
@@ -63,8 +61,15 @@ class DrillEnv(gym.Env):
         # Generate feasible environments to train in using a Monte Carlo simulation 
         if self.monte_carlo:
             print("Running", str(cfg.NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
-            rwp.random_targetset_to_file(cfg.ENVIRONMENT_FILENAME,cfg.NUM_MONTE_CARLO_ENVS,cfg.NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],120,200)      
-
+            
+            rwp.generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS,
+            [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
+            [cfg.TARGET_BOUND_X[1],cfg.TARGET_BOUND_Y[1],cfg.TARGET_BOUND_Z[1]],
+            cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1],
+            [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
+            cfg.NUM_MONTE_CARLO_ENVS, cfg.ENVIRONMENT_FILENAME)
+     
+            
         self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
         self.observation_space = self.observation_space_container.get_space_box()        
@@ -89,7 +94,7 @@ class DrillEnv(gym.Env):
             else:
                 self.hazards = []
         else:
-            linenr = np.random.randint(1,cfg.NUM_MONTE_CARLO_ENVS)
+            linenr = np.random.randint(1,cfg.NUM_MONTE_CARLO_ENVS-10)
             self.targets,self.hazards = es._read_env_from_file(cfg.ENVIRONMENT_FILENAME,linenr)
             # Overwrite hazards to be empty if not activated
             if not self.activate_hazards:
@@ -106,7 +111,6 @@ class DrillEnv(gym.Env):
 
         self.state = self.get_state()
         return np.array(self.state), reward, done, {}
-
     
 
     def get_reward_and_done_signal(self):
@@ -123,8 +127,7 @@ class DrillEnv(gym.Env):
             reward += cfg.ANGULAR_ACCELERATION_PENALTY
         
         if self.inclination_angVel != 0:
-            reward += cfg.ANGULAR_VELOCITY_PENALTY
-        
+            reward += cfg.ANGULAR_VELOCITY_PENALTY        
 
         # If drill is no longer on screen, game over.
         if not (0 < self.bitLocation.x < cfg.SCREEN_X and 0 < self.bitLocation.y < cfg.SCREEN_Y and 0 < self.bitLocation.z < cfg.SCREEN_Z):
@@ -158,7 +161,7 @@ class DrillEnv(gym.Env):
                 self.observation_space_container.shift_target_window()
         
         else:
-            pre_adjusted_azimuth_reward = np.cos(self.get_relative_azimuth_angle(current_target)) # value between -1 and +1 
+            pre_adjusted_azimuth_reward = np.cos(es.get_relative_azimuth_angle(self.bitLocation, self.azimuth_heading, current_target)) # value between -1 and +1 
             reward += pre_adjusted_azimuth_reward*cfg.ANGLE_REWARD_FACTOR
             height_diff = current_target_pos[2]-self.bitLocation.z
             if height_diff != 0:
@@ -170,35 +173,30 @@ class DrillEnv(gym.Env):
 
         return reward, done
 
-
-    def get_horizontal_dist(self,obj):
-        return np.sqrt((obj.center.x -self.bitLocation.x)**2+(obj.center.y - self.bitLocation.y)**2)
-        
-    def get_relative_azimuth_angle(self,obj):
-        object_hor_pos_vector = np.array([obj.center.x,obj.center.y])
-        curr_drill_hor_pos_vector = np.array([self.bitLocation.x,self.bitLocation.y])
-        appr_vec = object_hor_pos_vector - curr_drill_hor_pos_vector
-        head_vec = np.array([np.cos(self.azimuth_heading), np.sin(self.azimuth_heading)])
-        angle_between_vectors = np.math.atan2(np.linalg.det([appr_vec, head_vec]), np.dot(appr_vec, head_vec))
-
-        return angle_between_vectors
-
     # For encapsulation. Updates the bit according to the action
     def update_bit(self,action):
+        #indexes of action space:
+        #---------------------#
+        #   0       1       2 # (0-2): accelerate upwards
+        #   3       4       5 # (3-5): don't accelate in the vertical plane
+        #   6       7       8 # (6-8): accelerate downwards
+        #---------------------#
+        # (0,3,6): accelerate left
+        # (1,4,7): don't accelerate in the horizontal plane 
+        # (2,5,8): accelerate right
+        
         # Update angular acceleration, if within limits
-        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:             #indexes of action space:
-            self.inclination_angAcc += cfg.ANGACC_INCREMENT                     #   0       1       2 | (0-2): accelerate upwards
-        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:          #   3       4       5 | (3-5): don't accelate in the vertical plane
-            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                     #   6       7       8 | (6-8): accelerate downwards
-                                                                                #---------------------
-                                                                                #(0,3,6): accelerate left 
-                                                                                #        (1,4,7): don't accelerate in the horizontal plane
-                                                                                #                (2,5,8): accelerate right
+        # Inclinaition
+        if action < 3 and self.inclination_angAcc < cfg.MAX_ANGACC:             
+            self.inclination_angAcc += cfg.ANGACC_INCREMENT                     
+        elif action > 5 and self.inclination_angAcc > -cfg.MAX_ANGACC:          
+            self.inclination_angAcc -= cfg.ANGACC_INCREMENT                
+        
+        # Azmuth             
         if (action == 0 or action == 3 or action == 6) and self.azimuth_angAcc > -cfg.MAX_ANGACC:
             self.azimuth_angAcc -= cfg.ANGACC_INCREMENT
         elif (action == 2 or action == 5 or action == 8) and self.azimuth_angAcc < cfg.MAX_ANGACC:
-            self.azimuth_angAcc += cfg.ANGACC_INCREMENT
-        
+            self.azimuth_angAcc += cfg.ANGACC_INCREMENT        
 
         # Update angular velocity
         # Inclination
@@ -225,10 +223,8 @@ class DrillEnv(gym.Env):
             self.inclination_angVel = cfg.MAX_ANGVEL
             self.inclination_angAcc = 0
 
-
         # Update heading
-        self.azimuth_heading = (self.azimuth_heading + self.azimuth_angVel) % (2 * np.pi)
-
+        self.azimuth_heading = (self.azimuth_heading + self.azimuth_angVel) % (cfg.MAX_AZIMUTH_ANGLE)
         
         if ((self.inclination_heading + self.inclination_angVel) < cfg.MAX_INCL_ANGLE) and ((self.inclination_heading + self.inclination_angVel) > cfg.MIN_INCL_ANGLE):
             self.inclination_heading= self.inclination_heading + self.inclination_angVel
@@ -242,8 +238,6 @@ class DrillEnv(gym.Env):
             self.inclination_heading = cfg.MIN_INCL_ANGLE
             self.inclination_angVel = 0
             self.inclination_angAcc = 0
-
-
 
         # Update position
         self.bitLocation.x += cfg.DRILL_SPEED * np.sin(self.inclination_heading)*np.cos(self.azimuth_heading)
@@ -260,8 +254,8 @@ class DrillEnv(gym.Env):
         for target in self.observation_space_container.target_window:
 
             state_list.append(target.center.z-self.bitLocation.z)
-            state_list.append(self.get_horizontal_dist(target))
-            state_list.append(self.get_relative_azimuth_angle(target))
+            state_list.append(es.get_horizontal_dist(self.bitLocation,target))
+            state_list.append(es.get_relative_azimuth_angle(self.bitLocation, self.azimuth_heading,target))
             state_list.append(target.radius)
 
 
@@ -269,8 +263,8 @@ class DrillEnv(gym.Env):
         for hazard in self.observation_space_container.hazard_window:
 
             state_list.append(hazard.center.z-self.bitLocation.z)
-            state_list.append(self.get_horizontal_dist(hazard))
-            state_list.append(self.get_relative_azimuth_angle(hazard))
+            state_list.append(es.get_horizontal_dist(self.bitLocation,hazard))
+            state_list.append(es.get_relative_azimuth_angle(self.bitLocation, self.azimuth_heading,hazard))
             state_list.append(hazard.radius)
 
 
@@ -328,8 +322,8 @@ class DrillEnv(gym.Env):
             self.viewer = None
     
     def display_state(self):
-        print("Bit location (Not in ObsSpace):", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
-        print("Bit angles: ", self.state[0:5])
+        print("Bit location (Not a part of ObsSpace):", Coordinate(self.bitLocation.x,self.bitLocation.y,self.bitLocation.z))
+        print("Bit angles: ", self.state[0:2],"\n","angular velocities: ", self.state[2:4],"\n","angular accelerations: ", self.state[4:6])
         print("Targets inside window: ")
         for i in range(len(self.observation_space_container.target_window)):
             t = TargetBall(self.state[6+4*i],self.state[7+4*i],self.state[8+4*i],self.state[9+4*i])
@@ -601,22 +595,34 @@ if __name__ == '__main__':
     action = random.choice(range(action_size))
     env.step(action)
     print("I took one step, this is what the current state is:")
-    print(env.state)
-
+    #print(env.state)
+    print("\n display state: \n")
+    env.display_state()
+    print("\n") 
+    print("\n display targets: \n")
+    env.observation_space_container.display_targets()
+    print("\n") 
+    print("\n display hazards: \n")
     env.observation_space_container.display_hazards()
+    print("\n") 
     env.display_3d_environment()
 
-    for _ in range (5000):
+    for _ in range (500):
         action = random.choice(range(action_size))
         env.step(action)
-    print("50 steps later")
+    print("500 steps later")
+    print("\n display state: \n")
     env.display_state()
-    env.observation_space_container.display_hazards()
+
+    #env.observation_space_container.display_targets()
+    #env.observation_space_container.display_hazards()
     env.display_3d_environment()
 
-    print("Resetting")
+    print("\n Resetting \n")
     env.reset()
+    print("\n display state: \n")
     env.display_state()
-    env.observation_space_container.display_hazards()
+    #env.observation_space_container.display_targets()
+    #env.observation_space_container.display_hazards()
     env.display_3d_environment()
    
