@@ -17,7 +17,7 @@ MAX_ANGACC = 0.02
 ANGACC_INCREMENT = 0.02
 
 # Step size. For each step the bit position gets updated with DRILL_SPEED multiplied with cos/sin of one of the angles
-DRILL_SPEED = 10
+DRILL_SPEED = STEP_SIZE = 10
 
 # Envrionment dimensions
 SCREEN_X = 2000

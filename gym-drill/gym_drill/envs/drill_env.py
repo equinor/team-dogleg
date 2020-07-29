@@ -61,8 +61,8 @@ class DrillEnv(gym.Env):
         # Generate feasible environments to train in using a Monte Carlo simulation 
         if self.monte_carlo:
             print("Running", str(cfg.NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
-            rwp.random_targetset_to_file(cfg.ENVIRONMENT_FILENAME,cfg.NUM_MONTE_CARLO_ENVS,cfg.NUM_TARGETS,[self.bitLocation.x,self.bitLocation.y,self.bitLocation.z],cfg.MC_PATH_LENGTH_BOUND[0],cfg.MC_PATH_LENGTH_BOUND[1])      
-
+            rwp.generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS, [0,0,0], [cfg.SCREEN_X, cfg.SCREEN_Y, cfg.SCREEN_Z], cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1], [cfg.SCREEN_X, cfg.SCREEN_Y, cfg.SCREEN_Z], cfg.NUM_MONTE_CARLO_ENVS, cfg.ENVIRONMENT_FILENAME)
+            
         self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
         self.observation_space = self.observation_space_container.get_space_box()        
