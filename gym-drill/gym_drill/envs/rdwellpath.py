@@ -23,14 +23,14 @@ def get_random_angle(mean, standard_deviation, limit):
         angle = np.random.normal(mean, standard_deviation)
     return angle
 
-def get_hazards(n_hazards, min_coords, max_coords):
+def get_hazards(n_hazards):
 
     hazards = np.zeros((3, n_hazards))
 
     # Generate n x-coords, y-coords and z-coords
-    hazards[0] = np.random.randint(min_coords[0], max_coords[0], n_hazards)
-    hazards[1] = np.random.randint(min_coords[1], max_coords[1], n_hazards)
-    hazards[2] = np.random.randint(min_coords[2], max_coords[2], n_hazards)
+    hazards[0] = np.random.randint(cfg.HAZARD_BOUND_X[0], cfg.HAZARD_BOUND_X[1], n_hazards)
+    hazards[1] = np.random.randint(cfg.HAZARD_BOUND_Y[0], cfg.HAZARD_BOUND_Y[1], n_hazards)
+    hazards[2] = np.random.randint(cfg.HAZARD_BOUND_Z[0], cfg.HAZARD_BOUND_Z[1], n_hazards)
     hazards = hazards.T
 
     # Generate radiuses
@@ -68,7 +68,7 @@ def generate_targets_hazards(n_targets, n_hazards, min_coords, max_coords, min_p
         # Create a set of hazards, if there should be any
         if n_hazards > 0:
         
-            haz_coords, haz_radiuses = get_hazards(n_hazards, min_coords, max_coords)
+            haz_coords, haz_radiuses = get_hazards(n_hazards)
             # Create a KD-tree from the hazard coordinates
             haz_coord_tree = spatial.cKDTree(haz_coords)
 
@@ -271,9 +271,17 @@ if __name__ == "__main__":
     min_pathlen = 140
     max_pathlen = 400
     start_pos = 140
-    n_sets = 4
+    n_sets = 5
     file_name = "delete.txt"
     SHOW_GENERATED_PLOTS = True
-    generate_targets_hazards_to_file(n_targets, n_hazards, min_coords, max_coords, min_pathlen, max_pathlen, start_pos, n_sets, file_name)
+    
+    #generate_targets_hazards_to_file(n_targets, n_hazards, min_coords, max_coords, min_pathlen, max_pathlen, start_pos, n_sets, file_name)
+    generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS,
+    [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
+    [cfg.TARGET_BOUND_X[1],cfg.TARGET_BOUND_Y[1],cfg.TARGET_BOUND_Z[1]],
+    cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1],
+    [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
+    n_sets, file_name)
+    
     SHOW_GENERATED_PLOTS = False
 

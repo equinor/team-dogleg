@@ -61,7 +61,14 @@ class DrillEnv(gym.Env):
         # Generate feasible environments to train in using a Monte Carlo simulation 
         if self.monte_carlo:
             print("Running", str(cfg.NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
-            rwp.generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS, [0,0,0], [cfg.SCREEN_X, cfg.SCREEN_Y, cfg.SCREEN_Z], cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1], [cfg.SCREEN_X, cfg.SCREEN_Y, cfg.SCREEN_Z], cfg.NUM_MONTE_CARLO_ENVS, cfg.ENVIRONMENT_FILENAME)
+            
+            rwp.generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS,
+            [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
+            [cfg.TARGET_BOUND_X[1],cfg.TARGET_BOUND_Y[1],cfg.TARGET_BOUND_Z[1]],
+            cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1],
+            [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
+            cfg.NUM_MONTE_CARLO_ENVS, cfg.ENVIRONMENT_FILENAME)
+     
             
         self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)
