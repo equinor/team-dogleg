@@ -18,6 +18,7 @@ ANGACC_INCREMENT = 0.02
 
 # Step size. For each step the bit position gets updated with DRILL_SPEED multiplied with cos/sin of one of the angles
 DRILL_SPEED = STEP_SIZE = 10
+MC_DRILL_SPEED = MC_STEP_SIZE = 30
 
 # Envrionment dimensions
 SCREEN_X = 2000
@@ -71,5 +72,5 @@ FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 # Monte Carlo simulation specs
 NUM_MONTE_CARLO_ENVS = int(1e4)
-MC_PATH_LENGTH_BOUND = [250,350]
+MC_PATH_LENGTH_BOUND = [100,340]
 ENVIRONMENT_FILENAME = "environments.txt"

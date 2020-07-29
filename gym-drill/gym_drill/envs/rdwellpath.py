@@ -117,8 +117,8 @@ def generate_targets_hazards(n_targets, n_hazards, min_coords, max_coords, min_p
                 inc += inc_ang_vel
                 azi += azi_ang_vel
 
-                # Create 3D step vector of length STEP_SIZE
-                step_vec = cfg.STEP_SIZE * np.array([np.sin(inc) * np.cos(azi), np.sin(inc) * np.sin(azi), np.cos(inc)])
+                # Create 3D step vector of length MC_STEP_SIZE
+                step_vec = cfg.MC_STEP_SIZE * np.array([np.sin(inc) * np.cos(azi), np.sin(inc) * np.sin(azi), np.cos(inc)])
                 
                 # Add step vector to position vector
                 pos = pos + step_vec
@@ -166,7 +166,7 @@ def generate_targets_hazards(n_targets, n_hazards, min_coords, max_coords, min_p
 
     # Eliminate all but every x points from being chosen.
     # This helps space the target balls out.
-    every = int((cfg.TARGET_RADII_BOUND[0] + cfg.TARGET_RADII_BOUND[1]) / cfg.STEP_SIZE)
+    every = int((cfg.TARGET_RADII_BOUND[0] + cfg.TARGET_RADII_BOUND[1]) / cfg.MC_STEP_SIZE)
     
     # Pick random positions in the pos_arr to use as positions for target balls.
     # This is done by picking random indexes from the array.
@@ -268,8 +268,8 @@ if __name__ == "__main__":
     n_hazards = 6
     min_coords = [0, 0, 0]
     max_coords = [cfg.SCREEN_X, cfg.SCREEN_Y, cfg.SCREEN_Z]
-    min_pathlen = 140
-    max_pathlen = 400
+    min_pathlen = 100
+    max_pathlen = 340
     start_pos = 140
     n_sets = 5
     file_name = "delete.txt"
@@ -279,7 +279,7 @@ if __name__ == "__main__":
     generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS,
     [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
     [cfg.TARGET_BOUND_X[1],cfg.TARGET_BOUND_Y[1],cfg.TARGET_BOUND_Z[1]],
-    cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1],
+    min_pathlen, max_pathlen,
     [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
     n_sets, file_name)
     

@@ -259,7 +259,7 @@ import gym
 import gym_drill
 import numpy as np 
 
-from gym_drill.envs.customAdditions import Coordinate
+from gym_drill.envs.Coordinate import Coordinate
 
 STARTLOCATION = Coordinate(0.0,0.0,0.0)
 BIT_INITIALIZATION = [0.0,0.0,0.0,0.0,0.0,0.0]
