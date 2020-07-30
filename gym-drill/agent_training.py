@@ -4,8 +4,8 @@ import random
 import numpy as np 
 import os
 from random import uniform
-import matplotlib as mpl # To remove plotting in the browser remove this line
-mpl.use("WebAgg") # and remove this line
+#import matplotlib as mpl # To remove plotting in the browser remove this line
+#mpl.use("WebAgg") # and remove this line
 import matplotlib.pyplot as plt
 
 from gym_drill.envs.Coordinate import Coordinate

@@ -18,7 +18,8 @@ param (
 
 $global:container_name = "auto_well_path"
 $global:container_running_name = "auto_well_path_run"
-$global:python_filename = "main.py"
+$global:python_filename_train = "main.py"
+$global:python_filename_load = "FlaskApp.py"
 
 function build_container {
     docker build -t $container_name . ; if ($?) {Write-Output "Success!"} else {Write-Output "Error!"}    
@@ -50,9 +51,10 @@ function run {
 }
 function run2($script_action) {
     if ($script_action -eq "load") {
-        Write-Output("Load")
+        run_container ; if($?) {run_tensorboard} ; if ($?) {run_python_script $python_filename_load $action $name $algorithm $timesteps $new_save_name}
     }
     elseif ($script_action -eq "train" -or $script_action -eq "retrain"){
+        run_container ; if($?) {run_tensorboard} ; if ($?) {run_python_script $python_filename_train $action $name $algorithm $timesteps $new_save_name}
         Write-Output("train")
     }
     else{
@@ -61,9 +63,9 @@ function run2($script_action) {
 }
 
 if ($build -or $b) {build_container}
-#elseif ($run -or $r) {run}
+#elseif ($run -or $r) {run} <- old
 elseif ($run -or $r) {run2($action)}
-elseif ($auto -or $a) {build_container ; if ($?) {run}}
+#elseif ($auto -or $a) {build_container ; if ($?) {run}}
 else {    
     Write-Output("You must specify an action!")
 }
