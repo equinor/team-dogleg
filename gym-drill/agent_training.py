@@ -166,7 +166,7 @@ def get_environment_figures(model,*,source_folder = TRAINED_MODEL_FOLDER_DOCKER,
 				action, _states = trained_model.predict(obs)
 				obs, rewards, done, info = ENV_DISP.step(action)
 
-			fig_xy = ENV_DISPNV.get_xy_plane_figure()
+			fig_xy = ENV_DISP.get_xy_plane_figure()
 			fig_xz = ENV_DISP.get_xz_plane_figure()
 			fig_3d = ENV_DISP.get_3d_figure()
 			return fig_xy,fig_xz,fig_3d
