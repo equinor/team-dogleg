@@ -184,7 +184,9 @@ where the arguments are the same as the ones in the [running the program locally
 The following algorithms to train agents are available 
 
 - **DQN**. For more information see [the stable-baselines documentation](https://stable-baselines.readthedocs.io/en/master/modules/dqn.html). To specify the DQN algorithm when running the program pass "DQN" or "dqn" as the ``<algorithm>`` argument.
-- **PPO2**. For more information see [the stable-baselines documentation](https://stable-baselines.readthedocs.io/en/master/modules/ppo2.html). To specify the PPO2 algorithm when running the program pass "PPO2" or "ppo2" as the ``<algorithm>`` argument.
+- **PPO2**. For more information see [the stable-baselines documentation](https://stable-baselines.readthedocs.io/en/master/modules/ppo2.html). To specify the PPO2 algorithm when running the program pass "PPO2" or "ppo2" as the ``<algorithm>`` argument. 
+
+    **NB:** *Since the results with the PPO2 algorithm during development have been weak, the support for PPO2 is limited. Functionality for dispaying trained PPO2 agents have not been developed.*
 
 More algorithms comming soon!
 

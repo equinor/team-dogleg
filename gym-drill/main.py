@@ -102,5 +102,5 @@ if __name__ == '__main__':
             train.display_agent(name)
             # show model
         elif algorithm == "PPO2":
-            model = train.get_trained_PPO2_model()
+            model = train.get_trained_PPO2_model(name)
             train.display_agent(model)

@@ -71,7 +71,7 @@ def get_trained_DQN_model(model_to_load,*,exploration_initial_eps=0.02,learning_
 	return model
 
 def train_new_PPO2(total_timesteps,save_name):
-	model = PPO2(LnMlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_PPO2)
+	model = PPO2(MlpPolicy, ENV, verbose=1, tensorboard_log=TENSORBOARD_FOLDER_PPO2)
 	model.learn(total_timesteps=total_timesteps, tb_log_name = "PPO2")
 	print("Done training with PPO2 algorithm.")
 	save_model(model,save_name)
@@ -88,10 +88,10 @@ def train_existing_PPO2(model_to_load,total_timesteps,save_name):
 def get_trained_PPO2_model(model_to_load):
 	load_location = TRAINED_MODEL_FOLDER_DOCKER + model_to_load
 	try:
-		model = PPO2.load(load_location, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
-	except FileNotFoundError:
+		model = PPO2.load(load_location, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+	except Exception:
 		load_location = TRAINED_MODEL_FOLDER_LOCAL + model_to_load
-		model = PPO2.load(load_location, ENV, exploration_initial_eps=exploration_initial_eps, learning_rate= learning_rate, tensorboard_log=TENSORBOARD_FOLDER_DQN)
+		model = PPO2.load(load_location, ENV, tensorboard_log=TENSORBOARD_FOLDER_DQN)
 	
 	return model
     	

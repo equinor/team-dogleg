@@ -23,7 +23,7 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
 }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=True,activate_log=False,load=True):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=True,monte_carlo=False,activate_log=False,load=False):
         self.activate_log = activate_log
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
