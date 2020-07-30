@@ -6,3 +6,4 @@ tensorflow==1.15
 stable-baselines
 #tornado
 Flask
+mpld3
