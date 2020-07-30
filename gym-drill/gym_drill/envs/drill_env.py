@@ -23,7 +23,7 @@ class DrillEnv(gym.Env):
         'video.frames_per_second': 50
 }
 
-    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=False,activate_log=False):
+    def __init__(self,startLocation,bitInitialization,*,activate_hazards=False,monte_carlo=True,activate_log=False,load=True):
         self.activate_log = activate_log
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
@@ -54,10 +54,10 @@ class DrillEnv(gym.Env):
         self.initial_azimuth_angVel = bitInitialization[2]
         self.initial_inclination_angVel = bitInitialization[3]
         self.initial_azimuth_angAcc = bitInitialization[4]
-        self.initial_inclination_angAcc = bitInitialization[5]
+        self.initial_inclination_angAcc = bitInitialization[5]        
         
         # Generate feasible environments to train in using a Monte Carlo simulation 
-        if self.monte_carlo:
+        if self.monte_carlo and not load:
             print("Running", str(cfg.NUM_MONTE_CARLO_ENVS),"Monte Carlo simulations to generate target sets!")
             
             rwp.generate_targets_hazards_to_file(cfg.NUM_TARGETS, cfg.NUM_HAZARDS,
@@ -66,7 +66,10 @@ class DrillEnv(gym.Env):
             cfg.MC_PATH_LENGTH_BOUND[0], cfg.MC_PATH_LENGTH_BOUND[1],
             [cfg.TARGET_BOUND_X[0],cfg.TARGET_BOUND_Y[0],cfg.TARGET_BOUND_Z[0]],
             cfg.NUM_MONTE_CARLO_ENVS, cfg.ENVIRONMENT_FILENAME)
-     
+        elif load and self.monte_carlo:
+            print("Using prexisting Monte Carlo generated environment")
+            print("Make sure it matches your trained models setting. See environment.txt for details!")           
+        
             
         self.create_targets_and_hazards()
         self.observation_space_container= ObservationSpace(cfg.SPACE_BOUNDS,cfg.TARGET_BOUNDS,cfg.HAZARD_BOUNDS,cfg.BIT_BOUNDS,self.targets,self.hazards,self.bitLocation)

@@ -106,17 +106,18 @@ def save_model(model,save_name,*,folder_name = TRAINED_MODEL_FOLDER_DOCKER):
 
 	print("Results have been saved in ", save_location)
 
+ENV_DISP = gym.make(ENV_name, bitInitialization= [uniform(0,2*np.pi),uniform(0,np.pi/4),0.0,0.0,0.0,0.0], activate_hazards = True,load = False)
 # Will display model from trained_models folder. To override, specify FOLDERNAME in source_folder
 def display_agent(model,*,num_episodes = 1,source_folder = TRAINED_MODEL_FOLDER_DOCKER,vector = False):
 	if not vector:
 		try:
 			model_to_load = source_folder + model 
-			trained_model = DQN.load(model_to_load, ENV)
+			trained_model = DQN.load(model_to_load, ENV_DISP)
 		except Exception as e:
 			try:
 				source_folder = TRAINED_MODEL_FOLDER_LOCAL
 				model_to_load = source_folder + model
-				trained_model = DQN.load(model_to_load, ENV)
+				trained_model = DQN.load(model_to_load, ENV_DISP)
 			except Exception as e:
 				print("Failed to load model.")
 				print("If model is not inside the trained_model folder, override the source_folder to match the desired folder")
@@ -124,22 +125,20 @@ def display_agent(model,*,num_episodes = 1,source_folder = TRAINED_MODEL_FOLDER_
 				os._exit(0)
 
 		# Show the result of the training
-		obs = ENV.reset()
+		obs = ENV_DISP.reset()
 		for episode in range (num_episodes):
 			done = False
 			while not done:
 				action, _states = trained_model.predict(obs)
-				obs, rewards, done, info = ENV.step(action)
+				obs, rewards, done, info = ENV_DISP.step(action)
 
-			fig_xy = ENV.get_xy_plane_figure()
-			fig_xz = ENV.get_xz_plane_figure()
-			fig_3d = ENV.get_3d_figure()
+			fig_xy = ENV_DISP.get_xy_plane_figure()
+			fig_xz = ENV_DISP.get_xz_plane_figure()
+			fig_3d = ENV_DISP.get_3d_figure()
 			print('[EPISODE ENDED]')
-			print("Showing plots at: http://127.0.0.1:8988/")		
 			plt.show()	
 
-			obs = ENV.reset()
-			
+			obs = ENV_DISP.reset()			
 
 	else:
 		print("Vectorized env not implemented yet")
@@ -147,12 +146,12 @@ def get_environment_figures(model,*,source_folder = TRAINED_MODEL_FOLDER_DOCKER,
 	if not vector:
 		try:
 			model_to_load = source_folder + model 
-			trained_model = DQN.load(model_to_load, ENV)
+			trained_model = DQN.load(model_to_load, ENV_DISP)
 		except Exception as e:
 			try:
 				source_folder = TRAINED_MODEL_FOLDER_LOCAL
 				model_to_load = source_folder + model
-				trained_model = DQN.load(model_to_load, ENV)
+				trained_model = DQN.load(model_to_load, ENV_DISP)
 			except Exception as e:
 				print("Failed to load model.")
 				print("If model is not inside the trained_model folder, override the source_folder to match the desired folder")
@@ -160,16 +159,16 @@ def get_environment_figures(model,*,source_folder = TRAINED_MODEL_FOLDER_DOCKER,
 				os._exit(0)
 
 		# Show the result of the training
-		obs = ENV.reset()
+		obs = ENV_DISP.reset()
 		for episode in range (1):
 			done = False
 			while not done:
 				action, _states = trained_model.predict(obs)
-				obs, rewards, done, info = ENV.step(action)
+				obs, rewards, done, info = ENV_DISP.step(action)
 
-			fig_xy = ENV.get_xy_plane_figure()
-			fig_xz = ENV.get_xz_plane_figure()
-			fig_3d = ENV.get_3d_figure()
+			fig_xy = ENV_DISPNV.get_xy_plane_figure()
+			fig_xz = ENV_DISP.get_xz_plane_figure()
+			fig_3d = ENV_DISP.get_3d_figure()
 			return fig_xy,fig_xz,fig_3d
 	else:
 		print("Vectorized env not implemented yet")

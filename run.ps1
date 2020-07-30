@@ -7,6 +7,7 @@ param (
     [switch]$r = $false,
     [switch]$auto = $false,
     [switch]$a = $false,
+    [switch]$help = $false,
  
     # Arguments for python script
     $action = $args[0],
@@ -46,10 +47,8 @@ function run_tensorboard {
 function delete_running($name) {
      docker rm -f $name
 }
-function run {
-    run_container ; if($?) {run_tensorboard} ; if ($?) {run_python_script $python_filename $action $name $algorithm $timesteps $new_save_name}    
-}
-function run2($script_action) {
+
+function run($script_action) {
     if ($script_action -eq "load") {
         run_container ; if($?) {run_tensorboard} ; if ($?) {run_python_script $python_filename_load $action $name $algorithm $timesteps $new_save_name}
     }
@@ -63,9 +62,12 @@ function run2($script_action) {
 }
 
 if ($build -or $b) {build_container}
-#elseif ($run -or $r) {run} <- old
-elseif ($run -or $r) {run2($action)}
-#elseif ($auto -or $a) {build_container ; if ($?) {run}}
+elseif ($run -or $r) {run($action)}
+elseif ($auto -or $a) {build_container ; if ($?) {run($action)}}
+elseif ($help){
+    Write-Output("Use -build to build, use -run to run og use -auto to do both")
+}
+
 else {    
-    Write-Output("You must specify an action!")
+    Write-Output("You must specify a flag! For info, pass -help")
 }
