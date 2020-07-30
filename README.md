@@ -135,6 +135,9 @@ Having built the container, you can run it be passing the ``-run`` flag. Running
 ```
 ~$ ./run.ps1 -run <action> <save_name> <algorithm> <timesteps>* <new_save_name>*
 ```
+
+Tensorboard graphs will be running on http://localhost:6006 and if you choose to load trained models, the results will be displayed on http://localhost:5000.
+
 Compared to running the program locally ``python main.py`` has been replaced with ``./run.ps1 -run``.
 
 #### Build and run simultaneously
