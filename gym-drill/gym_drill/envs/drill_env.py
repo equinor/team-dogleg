@@ -27,9 +27,6 @@ class DrillEnv(gym.Env):
         self.activate_log = activate_log
         self.activate_hazards = activate_hazards
         self.monte_carlo = monte_carlo
-        # Monte carlo does not currently support hazards
-        if self.monte_carlo:
-            self.activate_hazards = False
 
         self.start_x = startLocation.x
         self.start_y = startLocation.y
