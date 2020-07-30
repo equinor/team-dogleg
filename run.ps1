@@ -17,7 +17,7 @@ param (
 )
 
 $global:container_name = "auto_well_path"
-$global:container_running_name = "auto_well_path_run"
+$global:container_running_name = "auto_well_path_running"
 $global:python_filename_train = "main.py"
 $global:python_filename_load = "FlaskApp.py"
 
@@ -32,9 +32,9 @@ function run_container {
         delete_running($container_running_name)
     }
     catch{
-        docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  0.0.0.0:8988:8988 --name $container_running_name $container_name
+        docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  5000:5000 --name $container_running_name $container_name
     }
-    docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  0.0.0.0:8988:8988 --name $container_running_name $container_name   
+    docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  5000:5000 --name $container_running_name $container_name   
 }
 
 function run_python_script($filename,$action,$name,$algorithm,$timesteps,$new_save_name){
