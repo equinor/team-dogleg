@@ -17,8 +17,8 @@ MAX_ANGACC = 0.02
 ANGACC_INCREMENT = 0.02
 
 # Step size. For each step the bit position gets updated with DRILL_SPEED multiplied with cos/sin of one of the angles
-DRILL_SPEED = STEP_SIZE = 10
-MC_DRILL_SPEED = MC_STEP_SIZE = 30
+DRILL_SPEED = STEP_SIZE = 5
+MC_DRILL_SPEED = MC_STEP_SIZE = 10
 
 # Envrionment dimensions
 SCREEN_X = 2000
@@ -36,13 +36,13 @@ TARGET_RADII_BOUND = [40,50]
 
 # Numbers of targets in the environment and number of targets stored in the observation space at all times
 NUM_TARGETS = 8
-TARGET_WINDOW_SIZE = 3
+TARGET_WINDOW_SIZE = 1
 
 # Hazard specs. Can exist in entire screen
 HAZARD_BOUND_X = [0,SCREEN_X]
 HAZARD_BOUND_Y = [0,SCREEN_Y]
 HAZARD_BOUND_Z = [0,SCREEN_Z]
-HAZARD_RADII_BOUND = [100,150]
+HAZARD_RADII_BOUND = [80,120]
 
 # Numbers of hazards in the environment and number of hazards stored in the observation space at all times
 NUM_HAZARDS = 8
@@ -71,6 +71,6 @@ INCLINATION_REWARD_FACTOR = 0.5
 FINISHED_EARLY_FACTOR = 1 # Point per unused step
 
 # Monte Carlo simulation specs
-NUM_MONTE_CARLO_ENVS = int(1e4)
+NUM_MONTE_CARLO_ENVS = int(2e4)
 MC_PATH_LENGTH_BOUND = [100,340]
 ENVIRONMENT_FILENAME = "environments.txt"
