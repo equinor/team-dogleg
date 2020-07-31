@@ -168,7 +168,7 @@ Build the container using
 
 Then, run the conatiner using
 ```cmd
-~$ docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  0.0.0.0:8988:8988 --name auto_well_path_running auto_well_path
+~$ docker run -dit --mount type=bind,source="$(pwd)",target=/usr/src/app -p 0.0.0.0:6006:6006 -p  5000:5000 --name auto_well_path_running auto_well_path
 ```
 If wanted, start the tensorboard server displaying the tensorboard graphs in the browser using
 
