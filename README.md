@@ -26,6 +26,7 @@ Team repo for Team Dogleg, working on the case *Test reinforcement learning to a
         - [Adjust environment parameters](#adjust-environment-parameters)
         - [Key functions to utilize when training](#key-functions-and-attributes-to-utilize-when-training)
 
+- [2D Version](#2d-version)
 
 
 ## What it is
@@ -237,7 +238,7 @@ and run:
 Thats it. Happy training!
 ### Quick start
 
-To use the environment both ``gym`` and ``gym_drill`` must be imported to the python file where an instance of the environment will be created. Notice the difference between the ``gym-drill`` and the ``gym_drill`` folder (TODO: what is the difference, haha). To create an instance of the environment, use OpenAI Gyms ``make()`` function and pass the environment name ``drill-v0`` as argument
+To use the environment both ``gym`` and ``gym_drill`` must be imported to the python file where an instance of the environment will be created. Notice the difference between the ``gym-drill`` and the ``gym_drill`` folder. To create an instance of the environment, use OpenAI Gyms ``make()`` function and pass the environment name ``drill-v0`` as argument
 
 ```python
 import gym
@@ -306,4 +307,8 @@ As the environment is OpenAI gym compatible it has all the attributes and functi
 
 The only deviation from the functions describes in the documentation is that the ``render()`` function that most OpenAI gym environment use to display the environment has been replaced with two seperate functions. ``display_planes()`` for displaying the horizontal (xy) and vertical (zy) planes and ``display_3d_environment()`` which displays the path and environment in a 3D plot.
 
-*Last updated 28.07.2020*
+## 2D Version
+
+A 2D version of the environment was us as the stepping stone to develop the complete 3D environment. It is contained in the [2D-version folder](2D-version/). Be aware that it is outdated and does contain some bugs
+
+*Last updated 31.07.2020*

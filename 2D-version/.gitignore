@@ -1,0 +1,8 @@
+.vs/
+.vscode/
+__pycache__/
+/gym-drill/gym_drill.egg-info
+*.pyc
+videos/
+*.txt
+/algorithm_performance_comparison_v0.1
