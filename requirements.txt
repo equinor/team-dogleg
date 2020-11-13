@@ -2,7 +2,7 @@
 gym 
 numpy 
 matplotlib 
-tensorflow==1.15 
+tensorflow==2.3.1 
 stable-baselines
 #tornado
 Flask
